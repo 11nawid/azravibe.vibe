@@ -1,0 +1,8 @@
+[package]
+name = "azra"
+version = "0.0.1"
+edition = "2024"
+description = "Azra (.vibe) standalone interpreter/VM for the Azravibe ecosystem"
+license = "MIT"
+
+[dependencies]

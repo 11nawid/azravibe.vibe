@@ -1,0 +1,22 @@
+# Rust build artifacts
+/target
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+
+
+# Added by cargo
+#
+# already existing elements were commented out
+
+#/target
