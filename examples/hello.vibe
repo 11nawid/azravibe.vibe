@@ -1,0 +1,14 @@
+note: hello.vibe — minimal Azra (.vibe) example
+note: no brackets anywhere: blocks start with `:` and use 4-space indentation
+
+set greeting to "Hello from Azra!"
+say greeting
+
+set items to "sword", "shield", "potion"
+for each item in items:
+    say "slot:", item
+
+define greet with name:
+    say "welcome,", name
+
+greet with "player"

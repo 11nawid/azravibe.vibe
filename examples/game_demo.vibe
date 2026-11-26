@@ -1,0 +1,73 @@
+note: --- 1. VARIABLES & LISTS ---
+set player_name to "Ali"
+set health to 100
+set max_health to 100
+set move_speed to 12.5
+set is_alive to true
+
+set inventory to "sword", "shield", "potion"
+add "gold_key" to inventory
+
+note: --- 2. PRINTING ---
+say "Welcome to Azravibe,", player_name
+say "Starting health:", health
+
+note: --- 3. CREATING 3D OBJECTS (MAKE) ---
+make rounded_box as lava_block
+set lava_block.color to "red"
+set lava_block.material to "glowing"
+set lava_block.position to 0, 5, 10
+set lava_block.size to 4, 1, 4
+
+make sound as boom_sfx
+set boom_sfx.file to "explosion.wav"
+
+note: --- 4. MATH & CONDITIONS ---
+subtract 25 from health
+
+if health less_than= 0:
+    set is_alive to false
+    error "Player has died!"
+otherwise if health less_than 30 and is_alive equals true:
+    warn "Low health warning!"
+otherwise if health greater_than= max_health:
+    say "Full health!"
+otherwise:
+    say "Current health is", health
+
+note: --- 5. LOOPS ---
+repeat 3 times:
+    say "Countdown tick..."
+
+for each item in inventory:
+    say "Inventory slot:", item
+
+note: --- 6. FUNCTIONS ---
+define heal_player with target, amount:
+    add amount to target.health
+    say "Healed by", amount, "points."
+    give back target.health
+
+set updated_hp to heal_player with player, 25
+
+note: --- 7. GAME ENGINE EVENTS ---
+when player touches lava_block:
+    set player.health to 0
+    play boom_sfx
+    destroy lava_block
+    say "Game Over!"
+
+when key "space" is pressed:
+    jump player with 15
+
+note: --- 8. MULTIPLY / DIVIDE & ZERO-ARG FUNCTIONS ---
+multiply health by 2
+say "Health doubled to:", health
+divide health by 2
+say "Health back to:", health
+
+define status_report:
+    give back "all systems go"
+
+set report to status_report
+say "System report:", report

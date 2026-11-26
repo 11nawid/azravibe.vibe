@@ -85,6 +85,32 @@ Interactive REPL:
 cargo run -- repl
 ```
 
+Evaluate a snippet directly:
+
+```bash
+cargo run -- eval 'say "hi from Azra"'
+```
+
+### Standalone engine verbs
+
+Game scripts can call engine actions directly — in standalone CLI mode they
+are logged cleanly instead of touching a 3D scene:
+
+```vibe
+play boom_sfx
+destroy lava_block
+jump player with 15
+spawn zombie
+move player
+rotate lava_block
+wait
+```
+
+→ `[ENGINE] play <sound file=explosion.wav volume=1>` etc.
+
+`add "gold_key" to loot` also bootstraps `loot` as a list when the variable
+does not exist yet (numbers still require `set coins to 0` first).
+
 ## Embedding as a library
 
 ```rust
@@ -101,7 +127,8 @@ let output = engine.take_output();
 | Path                    | Purpose                                          |
 |-------------------------|--------------------------------------------------|
 | `src/lib.rs`            | Public embedding API (`AzraEngine`)             |
-| `src/main.rs`           | CLI: `azra run <file>` and `azra repl`          |
+| `src/main.rs`           | CLI: `azra run <file>`, `azra eval`, `azra repl` |
+| `src/error.rs`          | `AzraError` with line/column diagnostics        |
 | `src/token.rs`          | Token definitions                                |
 | `src/lexer.rs`          | Tokenizer with line/column tracking & INDENT/DEDENT |
 | `src/ast.rs`            | AST node definitions                             |
