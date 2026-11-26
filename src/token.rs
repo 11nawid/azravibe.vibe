@@ -35,6 +35,31 @@ impl fmt::Display for Num {
     }
 }
 
+/// One piece of a string literal: literal text or an interpolated
+/// `{dotted.path}` reference (string interpolation).
+#[derive(Debug, Clone, PartialEq)]
+pub enum StrPart {
+    Text(String),
+    /// `{"a.b.c"}` — the dotted variable path inside the braces.
+    Path(Vec<String>),
+}
+
+impl StrPart {
+    /// Approximate source rendering (used in `when` event phrases and
+    /// error messages).
+    pub fn source(&self) -> String {
+        match self {
+            StrPart::Text(s) => s.clone(),
+            StrPart::Path(p) => format!("{{{}}}", p.join(".")),
+        }
+    }
+}
+
+/// Render a whole string token back to readable source.
+pub fn render_str_parts(parts: &[StrPart]) -> String {
+    parts.iter().map(|p| p.source()).collect()
+}
+
 /// Every token the Azra lexer can produce.
 ///
 /// English keywords (`set`, `if`, `equals`, ...) are lexed as `Word` and
@@ -44,7 +69,8 @@ impl fmt::Display for Num {
 pub enum TokenKind {
     Word(String),
     Number(Num),
-    Str(String),
+    /// A quoted string, split into literal text and `{interpolation}` parts.
+    Str(Vec<StrPart>),
     Plus,
     Minus,
     Star,
@@ -52,6 +78,8 @@ pub enum TokenKind {
     Comma,
     Colon,
     Dot,
+    /// Possessive `'s` (as in `stats's "strength"`).
+    Possessive,
     /// `less_than=` (single token, no spaces allowed)
     LessThanEq,
     /// `greater_than=` (single token, no spaces allowed)
@@ -67,7 +95,7 @@ impl fmt::Display for TokenKind {
         match self {
             TokenKind::Word(w) => write!(f, "`{}`", w),
             TokenKind::Number(n) => write!(f, "`{}`", n),
-            TokenKind::Str(s) => write!(f, "`\"{}\"`", s),
+            TokenKind::Str(s) => write!(f, "`\"{}\"`", render_str_parts(s)),
             TokenKind::Plus => write!(f, "`+`"),
             TokenKind::Minus => write!(f, "`-`"),
             TokenKind::Star => write!(f, "`*`"),
@@ -75,6 +103,7 @@ impl fmt::Display for TokenKind {
             TokenKind::Comma => write!(f, "`,`"),
             TokenKind::Colon => write!(f, "`:`"),
             TokenKind::Dot => write!(f, "`.`"),
+            TokenKind::Possessive => write!(f, "`'s`"),
             TokenKind::LessThanEq => write!(f, "`less_than=`"),
             TokenKind::GreaterThanEq => write!(f, "`greater_than=`"),
             TokenKind::Newline => write!(f, "end of line"),

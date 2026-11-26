@@ -1,25 +1,27 @@
 //! Tokenizer for Azra: line/column tracking, strings, numbers,
 //! `note:` comments, trailing periods, and the INDENT/DEDENT stack.
 
+mod literals;
+
 use crate::error::AzraError;
-use crate::token::{Num, Token, TokenKind};
+use crate::token::{Token, TokenKind};
 
 /// Tokenize a whole `.vibe` source string.
 pub fn tokenize(source: &str) -> Result<Vec<Token>, AzraError> {
     Lexer::new(source).run()
 }
 
-struct Lexer {
+pub(super) struct Lexer {
     chars: Vec<char>,
     pos: usize,
-    line: usize,
-    col: usize,
+    pub(super) line: usize,
+    pub(super) col: usize,
     /// Indentation stack, always starts with `0`.
     indent_stack: Vec<usize>,
     tokens: Vec<Token>,
     at_line_start: bool,
     /// Whether the current line produced any real token.
-    line_has_tokens: bool,
+    pub(super) line_has_tokens: bool,
 }
 
 impl Lexer {
@@ -36,16 +38,16 @@ impl Lexer {
         }
     }
 
-    fn peek(&self) -> Option<char> {
+    pub(super) fn peek(&self) -> Option<char> {
         self.chars.get(self.pos).copied()
     }
 
-    fn peek_at(&self, offset: usize) -> Option<char> {
+    pub(super) fn peek_at(&self, offset: usize) -> Option<char> {
         self.chars.get(self.pos + offset).copied()
     }
 
     /// Consume one character, advancing the column.
-    fn bump(&mut self) {
+    pub(super) fn bump(&mut self) {
         self.pos += 1;
         self.col += 1;
     }
@@ -58,7 +60,7 @@ impl Lexer {
         self.at_line_start = true;
     }
 
-    fn push(&mut self, kind: TokenKind, line: usize, column: usize) {
+    pub(super) fn push(&mut self, kind: TokenKind, line: usize, column: usize) {
         self.tokens.push(Token::new(kind, line, column));
     }
 
@@ -212,6 +214,19 @@ impl Lexer {
             ',' => self.single(TokenKind::Comma, line, column),
             ':' => self.single(TokenKind::Colon, line, column),
             '.' => self.single(TokenKind::Dot, line, column),
+            // Possessive `'s` glued to a closing quote: `nested's "inner"'s "mp"`.
+            '\'' if self.pos > 0
+                && matches!(self.chars.get(self.pos - 1), Some('"' | '\''))
+                && self.peek_at(1) == Some('s')
+                && self
+                    .peek_at(2)
+                    .is_none_or(|ch| ch.is_whitespace() || ch == '"') =>
+            {
+                self.bump(); // '
+                self.bump(); // s
+                self.push(TokenKind::Possessive, line, column);
+                self.line_has_tokens = true;
+            }
             '"' | '\'' => self.lex_string(line, column)?,
             '0'..='9' => self.lex_number(line, column)?,
             '=' => {
@@ -237,147 +252,5 @@ impl Lexer {
         self.bump();
         self.push(kind, line, column);
         self.line_has_tokens = true;
-    }
-
-    fn lex_string(&mut self, line: usize, column: usize) -> Result<(), AzraError> {
-        let quote = self.peek().expect("string starts with a quote");
-        self.bump(); // opening quote
-        let mut out = String::new();
-        loop {
-            match self.peek() {
-                None | Some('\n') => {
-                    return Err(AzraError::syntax_at(
-                        format!(
-                            "unterminated string literal (started at line {}, column {})",
-                            line, column
-                        ),
-                        line,
-                        column,
-                    ));
-                }
-                Some('\\') => {
-                    self.bump();
-                    match self.peek() {
-                        Some('n') => {
-                            out.push('\n');
-                            self.bump();
-                        }
-                        Some('t') => {
-                            out.push('\t');
-                            self.bump();
-                        }
-                        Some('r') => {
-                            out.push('\r');
-                            self.bump();
-                        }
-                        Some('\\') => {
-                            out.push('\\');
-                            self.bump();
-                        }
-                        Some('"') => {
-                            out.push('"');
-                            self.bump();
-                        }
-                        Some('\'') => {
-                            out.push('\'');
-                            self.bump();
-                        }
-                        Some(other) => {
-                            return Err(AzraError::syntax_at(
-                                format!("unknown escape sequence `\\{}`", other),
-                                self.line,
-                                self.col,
-                            ));
-                        }
-                        None => {
-                            return Err(AzraError::syntax_at(
-                                format!(
-                                    "unterminated string literal (started at line {}, column {})",
-                                    line, column
-                                ),
-                                line,
-                                column,
-                            ));
-                        }
-                    }
-                }
-                Some(c) if c == quote => {
-                    self.bump();
-                    break;
-                }
-                Some(c) => {
-                    out.push(c);
-                    self.bump();
-                }
-            }
-        }
-        self.push(TokenKind::Str(out), line, column);
-        self.line_has_tokens = true;
-        Ok(())
-    }
-
-    fn lex_number(&mut self, line: usize, column: usize) -> Result<(), AzraError> {
-        let mut raw = String::new();
-        while matches!(self.peek(), Some(c) if c.is_ascii_digit()) {
-            raw.push(self.peek().unwrap());
-            self.bump();
-        }
-        // A `.` only belongs to the number when a digit follows, so the
-        // optional trailing statement period (`set x to 5.`) stays a Dot.
-        let mut is_float = false;
-        if self.peek() == Some('.') && matches!(self.peek_at(1), Some(c) if c.is_ascii_digit()) {
-            is_float = true;
-            raw.push('.');
-            self.bump();
-            while matches!(self.peek(), Some(c) if c.is_ascii_digit()) {
-                raw.push(self.peek().unwrap());
-                self.bump();
-            }
-        }
-        let num = if is_float {
-            Num::Float(raw.parse::<f64>().unwrap_or(f64::NAN))
-        } else {
-            match raw.parse::<i64>() {
-                Ok(i) => Num::Int(i),
-                // Integer literal too large for i64: fall back to float.
-                Err(_) => Num::Float(raw.parse::<f64>().unwrap_or(f64::NAN)),
-            }
-        };
-        self.push(TokenKind::Number(num), line, column);
-        self.line_has_tokens = true;
-        Ok(())
-    }
-
-    fn lex_word(&mut self, line: usize, column: usize) -> Result<(), AzraError> {
-        let mut word = String::new();
-        while matches!(self.peek(), Some(c) if c.is_ascii_alphanumeric() || c == '_') {
-            word.push(self.peek().unwrap());
-            self.bump();
-        }
-        // `note:` comment (also usable inline after code).
-        if word == "note" && self.peek() == Some(':') {
-            while let Some(c) = self.peek() {
-                if c == '\n' {
-                    break;
-                }
-                self.bump();
-            }
-            return Ok(());
-        }
-        // Single-token English comparison operators containing `=`.
-        if (word == "less_than" || word == "greater_than") && self.peek() == Some('=') {
-            self.bump(); // consume '='
-            let kind = if word == "less_than" {
-                TokenKind::LessThanEq
-            } else {
-                TokenKind::GreaterThanEq
-            };
-            self.push(kind, line, column);
-            self.line_has_tokens = true;
-            return Ok(());
-        }
-        self.push(TokenKind::Word(word), line, column);
-        self.line_has_tokens = true;
-        Ok(())
     }
 }

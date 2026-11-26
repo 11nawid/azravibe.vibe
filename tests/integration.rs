@@ -1,37 +1,9 @@
-//! Integration tests covering every feature of the Azra (`.vibe`)
-//! specification in `docs/langauge.vibetxt`.
+//! Core language integration tests for Azra (`.vibe`).
 
-use azra::{lexer, parser, AzraEngine, AzraError, Num, OutputLevel, TokenKind, Value};
+mod common;
 
-/// Run a snippet and return (result, captured output lines).
-fn run(src: &str) -> (Result<(), AzraError>, Vec<String>) {
-    let mut engine = AzraEngine::new();
-    let result = engine.eval_str(src);
-    let out = engine
-        .take_output()
-        .into_iter()
-        .map(|l| l.text)
-        .collect();
-    (result, out)
-}
-
-/// Run a snippet that must succeed and return its output.
-fn ok(src: &str) -> Vec<String> {
-    let (result, out) = run(src);
-    match result {
-        Ok(()) => out,
-        Err(e) => panic!("expected success, got error: {}", e),
-    }
-}
-
-/// Run a snippet that must fail and return the error.
-fn err(src: &str) -> AzraError {
-    let (result, _) = run(src);
-    match result {
-        Ok(()) => panic!("expected an error, but the script succeeded"),
-        Err(e) => e,
-    }
-}
+use azra::{lexer, AzraEngine, AzraError, Num, OutputLevel, TokenKind, Value};
+use common::{err, ok, run};
 
 // --------------------------------------------------------------- core syntax
 
@@ -102,7 +74,6 @@ fn remove_missing_list_item_is_a_noop() {
 
 #[test]
 fn add_bootstraps_a_undefined_list() {
-    // `add` on a not-yet-defined variable creates a list (non-numbers).
     let out = ok("add \"gold\" to loot\nadd \"key\" to loot\nsay loot\n");
     assert_eq!(out, vec!["[gold, key]"]);
 }
@@ -222,7 +193,6 @@ fn logical_operators() {
 
 #[test]
 fn operator_precedence() {
-    // (1 < 2 and 3 > 4) or (5 == 5)  ->  false or true -> true
     let out = ok("say 1 less_than 2 and 3 greater_than 4 or 5 equals 5\n");
     assert_eq!(out, vec!["true"]);
 }
@@ -375,7 +345,15 @@ fn when_handlers_register_and_trigger() {
 
     engine.trigger_event("player touches crate").unwrap();
     let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
-    assert_eq!(out, vec!["[ENGINE] destroy <rounded_box color=white material=default position=[0, 0, 0] size=[1, 1, 1]>", "ouch"]);
+    assert_eq!(out.len(), 2);
+    assert!(
+        out[0].starts_with("[ENGINE] destroy <rounded_box color=white material=default position=[0, 0, 0] size=[1, 1, 1]"),
+        "unexpected destroy line: {}",
+        out[0]
+    );
+    assert!(out[0].contains("anchored=true"));
+    assert!(out[0].contains("visible=true"));
+    assert_eq!(out[1], "ouch");
 
     match engine.get_variable("player").unwrap() {
         Value::Object(obj) => {
@@ -391,7 +369,6 @@ fn when_handler_with_quoted_phrase_and_trigger_matching() {
     engine
         .eval_str("when key \"space\" is pressed:\n    jump player with 15\n")
         .unwrap();
-    // Quote style and case must not matter when matching.
     engine.trigger_event("key \"SPACE\" is pressed").unwrap();
     engine.trigger_event("key space is pressed").unwrap();
     let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
@@ -425,7 +402,6 @@ fn host_function_registration() {
         Some(Value::Number(Num::Int(42))) => {}
         other => panic!("expected 42, got {:?}", other),
     }
-    // Host functions are also usable as statements.
     engine.eval_str("set y to 0\ntriple with 7\n").unwrap();
 }
 
@@ -437,153 +413,4 @@ fn state_persists_across_eval_calls() {
     engine.eval_str("say x").unwrap();
     let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
     assert_eq!(out, vec!["42"]);
-}
-
-// -------------------------------------------------------------------- errors
-
-#[test]
-fn syntax_error_reports_line_numbers() {
-    let e = err("set a to 1\nset b to\n");
-    let msg = e.to_string();
-    assert!(msg.contains("line 2"), "got: {}", msg);
-    assert!(msg.contains("syntax error"), "got: {}", msg);
-}
-
-#[test]
-fn undefined_variable_error() {
-    let e = err("say missing_var\n");
-    let msg = e.to_string();
-    assert!(msg.contains("undefined variable `missing_var`"), "got: {}", msg);
-    assert!(msg.contains("line 1"), "got: {}", msg);
-}
-
-#[test]
-fn division_by_zero_error() {
-    let e = err("set x to 10\ndivide x by 0\n");
-    assert!(e.to_string().contains("division by zero"), "got: {}", e);
-}
-
-#[test]
-fn tab_indentation_is_rejected() {
-    let e = err("if true:\n\tsay 1\n");
-    assert!(e.to_string().contains("tabs are not allowed"), "got: {}", e);
-}
-
-#[test]
-fn bad_indentation_is_rejected() {
-    // Not a multiple of 4 / not the expected step.
-    let e = err("set x to 1\n  say x\n");
-    assert!(
-        e.to_string().contains("unexpected indentation"),
-        "got: {}",
-        e
-    );
-}
-
-#[test]
-fn inconsistent_dedent_is_rejected() {
-    let e = err("if true:\n    say \"a\"\n  say \"b\"\n");
-    assert!(
-        e.to_string().contains("inconsistent indentation"),
-        "got: {}",
-        e
-    );
-}
-
-#[test]
-fn missing_property_error() {
-    let e = err("make rounded_box as b\nsay b.nope\n");
-    assert!(
-        e.to_string().contains("has no property `nope`"),
-        "got: {}",
-        e
-    );
-}
-
-#[test]
-fn property_on_non_object_error() {
-    let e = err("set health to 1\nsay health.x\n");
-    assert!(
-        e.to_string().contains("only objects have properties"),
-        "got: {}",
-        e
-    );
-}
-
-#[test]
-fn undefined_function_error() {
-    let e = err("no_such_func with 1\n");
-    assert!(
-        e.to_string().contains("undefined function `no_such_func`"),
-        "got: {}",
-        e
-    );
-}
-
-#[test]
-fn stray_otherwise_error() {
-    let e = err("otherwise:\n    say \"x\"\n");
-    assert!(
-        e.to_string().contains("stray `otherwise`"),
-        "got: {}",
-        e
-    );
-}
-
-#[test]
-fn standalone_equals_sign_is_rejected() {
-    let e = err("set x to 1\nset y to x = 1\n");
-    assert!(e.to_string().contains("English operators"), "got: {}", e);
-}
-
-#[test]
-fn unterminated_string_error() {
-    let e = err("say \"oops\n");
-    assert!(e.to_string().contains("unterminated string"), "got: {}", e);
-}
-
-#[test]
-fn parser_reports_incomplete_input_for_repl() {
-    let toks = lexer::tokenize("if true:").unwrap();
-    let e = parser::parse(&toks).unwrap_err();
-    assert!(e.is_incomplete());
-
-    let toks = lexer::tokenize("set x to 5").unwrap();
-    assert!(parser::parse(&toks).is_ok());
-}
-
-// --------------------------------------------------------------- file & demo
-
-#[test]
-fn game_demo_file_runs_end_to_end() {
-    let mut engine = AzraEngine::new();
-    engine.eval_file("examples/game_demo.vibe").unwrap();
-    let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
-    assert_eq!(out[0], "Welcome to Azravibe, Ali");
-    assert_eq!(out[1], "Starting health: 100");
-    assert_eq!(out[2], "Current health is 75");
-    assert!(out.iter().any(|l| l == "Countdown tick..."));
-    assert!(out.iter().any(|l| l == "Inventory slot: gold_key"));
-    assert!(out.iter().any(|l| l == "Healed by 25 points."));
-    assert!(out.iter().any(|l| l == "System report: all systems go"));
-
-    // Trigger both registered engine events.
-    engine.trigger_event("player touches lava_block").unwrap();
-    let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
-    assert!(out.iter().any(|l| l.starts_with("[ENGINE] play")));
-    assert!(out.iter().any(|l| l.starts_with("[ENGINE] destroy")));
-    assert!(out.iter().any(|l| l == "Game Over!"));
-
-    engine.trigger_event("key space is pressed").unwrap();
-    let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
-    assert!(out.iter().any(|l| l.starts_with("[ENGINE] jump")));
-}
-
-#[test]
-fn hello_file_runs() {
-    let mut engine = AzraEngine::new();
-    engine.eval_file("examples/hello.vibe").unwrap();
-    let out: Vec<String> = engine.take_output().into_iter().map(|l| l.text).collect();
-    assert_eq!(out[0], "Hello from Azra!");
-    assert!(out.iter().any(|l| l == "welcome, player"));
 }

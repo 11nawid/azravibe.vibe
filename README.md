@@ -124,20 +124,24 @@ let output = engine.take_output();
 
 ## Repository layout
 
-| Path                    | Purpose                                          |
-|-------------------------|--------------------------------------------------|
-| `src/lib.rs`            | Public embedding API (`AzraEngine`)             |
-| `src/main.rs`           | CLI: `azra run <file>`, `azra eval`, `azra repl` |
-| `src/error.rs`          | `AzraError` with line/column diagnostics        |
-| `src/token.rs`          | Token definitions                                |
-| `src/lexer.rs`          | Tokenizer with line/column tracking & INDENT/DEDENT |
-| `src/ast.rs`            | AST node definitions                             |
-| `src/parser.rs`         | Recursive descent parser with line-numbered errors |
-| `src/value.rs`          | Runtime `Value` enum                             |
-| `src/interpreter.rs`    | Scoped environment, call stack, built-ins        |
-| `docs/langauge.vibetxt` | The Azra language specification                  |
-| `examples/`             | `.vibe` sample scripts                           |
-| `tests/`                | Integration tests covering every language feature |
+| Path                    | Purpose                                                  |
+|-------------------------|----------------------------------------------------------|
+| `src/lib.rs`            | Public embedding API (`AzraEngine`)                      |
+| `src/main.rs`           | CLI: `azra run`, `azra check`, `azra eval`, `azra repl`  |
+| `src/cli/`              | REPL and colorized output presentation                   |
+| `src/error.rs`          | `AzraError` with line/column diagnostics                 |
+| `src/sandbox.rs`        | Security and resource-budget `SandboxConfig`             |
+| `src/env.rs`            | Lexical scope chain                                      |
+| `src/token.rs`          | Token definitions                                        |
+| `src/lexer/`            | Tokenizer with line/column tracking & INDENT/DEDENT      |
+| `src/ast/`              | AST node definitions (`stmt`, `expr`, `target`)          |
+| `src/parser/`           | Recursive descent parser with line-numbered errors       |
+| `src/value.rs`          | Runtime `Value` enum (`Object`, `Map`, `Vec3`, `Color`)  |
+| `src/stdlib/`           | Built-in math, text, time, RNG, and JSON codec           |
+| `src/interpreter/`      | Tree-walking VM, collections, events, timers, modules    |
+| `docs/langauge.vibetxt` | The Azra language specification                          |
+| `examples/`             | `.vibe` sample scripts                                   |
+| `tests/`                | Integration, feature, error, and CLI test suites         |
 
 ## License
 

@@ -1,25 +1,32 @@
-//! Azra CLI — `azra run <file.vibe>` and the interactive `azra repl`.
+//! Azra CLI — `azra run <file.vibe>`, `azra check`, `azra repl` and
+//! `azra eval`.
 
-use azra::{AzraError, AzraEngine, OutputLine, OutputStream};
-use std::io::{BufRead, IsTerminal, Write};
+mod cli;
 
-const YELLOW: &str = "\x1b[33m";
-const RED: &str = "\x1b[31m";
-const RESET: &str = "\x1b[0m";
+use azra::AzraEngine;
+use cli::output::flush_output;
+use cli::repl::cmd_repl;
 
 const USAGE: &str = "\
 Azra (.vibe) interpreter — Azravibe ecosystem
 
 USAGE:
-    azra run <script.vibe> [--trigger \"<event phrase>\"]...
+    azra run <script.vibe> [--ticks <n>] [--trigger \"<event phrase>\"]...
+    azra check <script.vibe>
     azra repl
     azra eval <code>
     azra --help
     azra --version
 
+OPTIONS:
+    --ticks <n>       run n engine frames (1/60 s each) after loading the script
+    --trigger <text>  fire a `when <event>:` handler after loading (repeatable)
+
 EXAMPLES:
     azra run examples/hello.vibe
+    azra run examples/obby_game.vibe --ticks 120
     azra run examples/game_demo.vibe --trigger \"player touches lava_block\"
+    azra check examples/rpg_battle.vibe
     azra repl
 ";
 
@@ -27,6 +34,7 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let code = match args.first().map(String::as_str) {
         Some("run") => cmd_run(&args[1..]),
+        Some("check") => cmd_check(&args[1..]),
         Some("repl") => cmd_repl(),
         Some("eval") => cmd_eval(&args[1..]),
         Some("--help") | Some("-h") | Some("help") => {
@@ -51,10 +59,11 @@ fn main() {
     std::process::exit(code);
 }
 
-/// `azra run <file> [--trigger phrase]...`
+/// `azra run <file> [--ticks n] [--trigger phrase]...`
 fn cmd_run(args: &[String]) -> i32 {
     let mut file: Option<String> = None;
     let mut triggers: Vec<String> = Vec::new();
+    let mut ticks: u64 = 0;
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
@@ -69,6 +78,27 @@ fn cmd_run(args: &[String]) -> i32 {
             }
         } else if let Some(phrase) = arg.strip_prefix("--trigger=") {
             triggers.push(phrase.to_string());
+        } else if arg == "--ticks" {
+            i += 1;
+            match args.get(i).map(|s| s.parse::<u64>()) {
+                Some(Ok(n)) => ticks = n,
+                Some(Err(_)) => {
+                    eprintln!("error: `--ticks` requires a whole number");
+                    return 2;
+                }
+                None => {
+                    eprintln!("error: `--ticks` requires a number");
+                    return 2;
+                }
+            }
+        } else if let Some(n) = arg.strip_prefix("--ticks=") {
+            match n.parse::<u64>() {
+                Ok(v) => ticks = v,
+                Err(_) => {
+                    eprintln!("error: `--ticks` requires a whole number");
+                    return 2;
+                }
+            }
         } else if arg.starts_with("--") {
             eprintln!("error: unknown option `{}`", arg);
             return 2;
@@ -97,6 +127,14 @@ fn cmd_run(args: &[String]) -> i32 {
     }
     flush_output(&mut engine);
 
+    // Engine start: run optional `when game starts:` handlers.
+    if let Err(err) = engine.start() {
+        flush_output(&mut engine);
+        eprintln!("error: {}", err);
+        return 1;
+    }
+    flush_output(&mut engine);
+
     for phrase in triggers {
         if let Err(err) = engine.trigger_event(&phrase) {
             flush_output(&mut engine);
@@ -105,7 +143,43 @@ fn cmd_run(args: &[String]) -> i32 {
         }
         flush_output(&mut engine);
     }
+
+    // Engine loop: n frames at 60 FPS (fires optional `when game updates` + timers).
+    for _ in 0..ticks {
+        if let Err(err) = engine.tick(1.0 / 60.0) {
+            flush_output(&mut engine);
+            eprintln!("error: {}", err);
+            return 1;
+        }
+        flush_output(&mut engine);
+    }
     0
+}
+
+/// `azra check <file>` — parse-only validation including imports.
+fn cmd_check(args: &[String]) -> i32 {
+    let file = match args.first() {
+        Some(f) => f,
+        None => {
+            eprintln!("error: `check` requires a script file\n");
+            eprint!("{}", USAGE);
+            return 2;
+        }
+    };
+    if args.len() > 1 {
+        eprintln!("error: unexpected argument `{}`", args[1]);
+        return 2;
+    }
+    match AzraEngine::check_file(file) {
+        Ok(()) => {
+            println!("ok: {}", file);
+            0
+        }
+        Err(err) => {
+            eprintln!("error: {}", err);
+            1
+        }
+    }
 }
 
 /// `azra eval <code>` — run a one-liner from the command line.
@@ -123,127 +197,4 @@ fn cmd_eval(args: &[String]) -> i32 {
     }
     flush_output(&mut engine);
     0
-}
-
-/// Write buffered output to stdout/stderr, coloring warn/error on a TTY.
-fn flush_output(engine: &mut AzraEngine) {
-    let stderr_tty = std::io::stderr().is_terminal();
-    for line in engine.take_output() {
-        write_line(&line, stderr_tty);
-    }
-}
-
-fn write_line(line: &OutputLine, stderr_tty: bool) {
-    match line.stream() {
-        OutputStream::Stdout => {
-            let stdout = std::io::stdout();
-            let mut out = stdout.lock();
-            let _ = writeln!(out, "{}", line.text);
-            let _ = out.flush();
-        }
-        OutputStream::Stderr => {
-            if stderr_tty {
-                let color = match line.level {
-                    azra::OutputLevel::Warn => YELLOW,
-                    _ => RED,
-                };
-                eprintln!("{}{}{}", color, line.text, RESET);
-            } else {
-                eprintln!("{}", line.text);
-            }
-        }
-    }
-}
-
-/// `azra repl` — interactive multi-line REPL (blocks keep reading while the
-/// parser reports "end of input").
-fn cmd_repl() -> i32 {
-    let mut engine = AzraEngine::new();
-    println!(
-        "Azra REPL v{} — `:help` for commands, `:quit` to exit.",
-        env!("CARGO_PKG_VERSION")
-    );
-    let stdin = std::io::stdin();
-    let mut buffer = String::new();
-    loop {
-        let prompt = if buffer.is_empty() { "azra> " } else { " ...   " };
-        print!("{}", prompt);
-        let _ = std::io::stdout().flush();
-
-        let mut line = String::new();
-        match stdin.lock().read_line(&mut line) {
-            Ok(0) => {
-                println!();
-                break;
-            }
-            Ok(_) => {}
-            Err(err) => {
-                eprintln!("error: {}", err);
-                break;
-            }
-        }
-        let trimmed = line.trim_end();
-
-        // REPL commands work at any time.
-        if trimmed.starts_with(':') && buffer.is_empty() {
-            match trimmed {
-                ":quit" | ":exit" => break,
-                ":help" => print_repl_help(),
-                ":clear" => {}
-                other => eprintln!("error: unknown command `{}` (try `:help`)", other),
-            }
-            continue;
-        }
-        if buffer.is_empty() && trimmed.is_empty() {
-            continue;
-        }
-        if trimmed.starts_with(':') && matches!(trimmed, ":quit" | ":exit" | ":clear") {
-            buffer.clear();
-            continue;
-        }
-
-        buffer.push_str(trimmed);
-        buffer.push('\n');
-
-        match eval_source(&mut engine, &buffer) {
-            Ok(()) => {
-                flush_output(&mut engine);
-                buffer.clear();
-            }
-            Err(err) if err.is_incomplete() => {
-                // Parser ran out of input: keep reading the block.
-            }
-            Err(err) => {
-                flush_output(&mut engine);
-                eprintln!("error: {}", err);
-                buffer.clear();
-            }
-        }
-    }
-    0
-}
-
-fn eval_source(engine: &mut AzraEngine, source: &str) -> Result<(), AzraError> {
-    engine.eval_str(source)
-}
-
-fn print_repl_help() {
-    println!(
-        "{}",
-        "REPL commands:
-    :help    show this help
-    :clear   discard the current multi-line buffer
-    :quit    exit the REPL (also :exit)
-
-Statements are entered one line at a time; a line ending with `:` starts an
-indented block - keep typing lines with 4-space indentation until the block
-parses. Examples:
-
-    say \"hello\"
-    repeat 3 times:
-        say \"tick\"
-    define greet with name:
-        say \"hi\", name
-"
-    );
 }

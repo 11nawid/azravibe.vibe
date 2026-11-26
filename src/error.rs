@@ -32,6 +32,8 @@ pub struct AzraError {
     pub column: Option<usize>,
     /// `true` when parsing ran out of input (used by the REPL to keep reading).
     pub incomplete: bool,
+    /// `true` for sandbox resource aborts (budget / call stack) that `try:` must not swallow.
+    pub(crate) fatal: bool,
 }
 
 impl AzraError {
@@ -42,6 +44,7 @@ impl AzraError {
             line: None,
             column: None,
             incomplete: false,
+            fatal: false,
         }
     }
 
@@ -52,6 +55,7 @@ impl AzraError {
             line: Some(line),
             column: Some(column),
             incomplete: false,
+            fatal: false,
         }
     }
 
@@ -62,6 +66,7 @@ impl AzraError {
             line: None,
             column: None,
             incomplete: false,
+            fatal: false,
         }
     }
 
@@ -72,6 +77,29 @@ impl AzraError {
             line: Some(line),
             column: None,
             incomplete: false,
+            fatal: false,
+        }
+    }
+
+    pub(crate) fn fatal_runtime(message: impl Into<String>) -> Self {
+        AzraError {
+            kind: ErrorKind::Runtime,
+            message: message.into(),
+            line: None,
+            column: None,
+            incomplete: false,
+            fatal: true,
+        }
+    }
+
+    pub(crate) fn fatal_runtime_at(message: impl Into<String>, line: usize) -> Self {
+        AzraError {
+            kind: ErrorKind::Runtime,
+            message: message.into(),
+            line: Some(line),
+            column: None,
+            incomplete: false,
+            fatal: true,
         }
     }
 
@@ -82,6 +110,7 @@ impl AzraError {
             line: None,
             column: None,
             incomplete: false,
+            fatal: false,
         }
     }
 
@@ -94,6 +123,11 @@ impl AzraError {
     /// `true` when the parser simply ran out of input (more lines may follow).
     pub fn is_incomplete(&self) -> bool {
         self.incomplete
+    }
+
+    /// `false` for sandbox resource limits that `try:` blocks cannot catch.
+    pub fn is_catchable(&self) -> bool {
+        !self.fatal
     }
 }
 

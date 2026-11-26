@@ -5,29 +5,36 @@
 //!
 //! let mut engine = AzraEngine::new();
 //! engine.eval_str(r#"say "hello from Rust!""#).unwrap();
+//! engine.start().unwrap();
+//! engine.tick(1.0 / 60.0).unwrap();
 //! ```
 
 pub mod ast;
+pub mod env;
 pub mod error;
 pub mod interpreter;
 pub mod lexer;
 pub mod parser;
+pub mod sandbox;
+pub mod stdlib;
 pub mod token;
 pub mod value;
 
 pub use ast::OutputLevel;
 pub use error::{AzraError, ErrorKind};
 pub use interpreter::{OutputLine, OutputStream};
+pub use sandbox::SandboxConfig;
 pub use token::{Num, Token, TokenKind};
 pub use value::{ObjectData, Value};
 
 use interpreter::Interpreter;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// The embedding handle for the Azra virtual machine.
 ///
-/// Keeps the global scope, registered event handlers, host functions and the
-/// buffered output stream between [`eval_str`](AzraEngine::eval_str) calls.
+/// Keeps the global scope, registered event handlers, timers, loaded
+/// modules, host functions and the buffered output stream between
+/// [`eval_str`](AzraEngine::eval_str) calls.
 pub struct AzraEngine {
     interp: Interpreter,
 }
@@ -40,10 +47,18 @@ impl Default for AzraEngine {
 
 impl AzraEngine {
     /// Create a fresh engine with mock engine types and a default `player`
-    /// entity registered, so game scripts run standalone.
+    /// entity registered, so game scripts run standalone (permissive sandbox).
     pub fn new() -> Self {
         AzraEngine {
             interp: Interpreter::new(),
+        }
+    }
+
+    /// Create an engine with an explicit [`SandboxConfig`] (e.g.
+    /// [`SandboxConfig::strict`] for Azravibe Player).
+    pub fn with_sandbox(config: SandboxConfig) -> Self {
+        AzraEngine {
+            interp: Interpreter::with_sandbox(config),
         }
     }
 
@@ -57,13 +72,44 @@ impl AzraEngine {
         Ok(())
     }
 
-    /// Read a `.vibe` file and execute it.
+    /// Read a `.vibe` file and execute it (also sets the directory used to
+    /// resolve `use "..."` imports inside the file).
     pub fn eval_file(&mut self, path: impl AsRef<Path>) -> Result<(), AzraError> {
         let path = path.as_ref();
         let source = std::fs::read_to_string(path).map_err(|e| {
             AzraError::io(format!("cannot read `{}`: {}", path.display(), e))
         })?;
+        self.interp
+            .set_current_dir(path.parent().map(|p| p.to_path_buf()));
         self.eval_str(&source)
+    }
+
+    /// Parse-only check of a source string (no execution). Also validates
+    /// the syntax of `use` statements present in the source.
+    pub fn check_str(source: &str) -> Result<(), AzraError> {
+        let source = source.strip_prefix('\u{feff}').unwrap_or(source);
+        let tokens = lexer::tokenize(source)?;
+        parser::parse(&tokens)?;
+        Ok(())
+    }
+
+    /// Parse-only check of a `.vibe` file **including its imports**
+    /// (recursively; circular imports are reported, not followed forever).
+    pub fn check_file(path: impl AsRef<Path>) -> Result<(), AzraError> {
+        let path = path.as_ref();
+        let mut seen = Vec::new();
+        check_file_recursive(path, &mut seen)
+    }
+
+    /// Engine start: run every `when game starts:` handler.
+    pub fn start(&mut self) -> Result<(), AzraError> {
+        self.interp.start()
+    }
+
+    /// Advance the engine by `delta_time` seconds (call at your frame rate,
+    /// e.g. 60 times per second with `1.0 / 60.0`).
+    pub fn tick(&mut self, delta_time: f64) -> Result<(), AzraError> {
+        self.interp.tick(delta_time)
     }
 
     /// Register a native host function callable from Azra scripts as
@@ -81,9 +127,25 @@ impl AzraEngine {
         self.interp.trigger_event(phrase)
     }
 
+    /// Fire a registered `when <event>:` handler with arguments bound to
+    /// the handler's `with` parameters.
+    pub fn trigger_event_with_args(&mut self, phrase: &str, args: &[Value]) -> Result<(), AzraError> {
+        self.interp.trigger_event_with_args(phrase, args)
+    }
+
     /// Phrases of all registered `when` handlers.
     pub fn registered_events(&self) -> Vec<String> {
         self.interp.registered_events()
+    }
+
+    /// Objects created with `make`, in creation order (host world queries).
+    pub fn get_world_objects(&self) -> Vec<Value> {
+        self.interp.get_world_objects()
+    }
+
+    /// Current value of the script clock in seconds.
+    pub fn now(&self) -> f64 {
+        self.interp.now()
     }
 
     /// Drain buffered output (`say` / `warn` / `error` / engine logs).
@@ -99,5 +161,76 @@ impl AzraEngine {
     /// Create or overwrite a global variable.
     pub fn set_variable(&mut self, name: &str, value: Value) {
         self.interp.set_global(name, value);
+    }
+
+    /// Names of all global variables (used by the REPL `:vars` command).
+    pub fn variable_names(&self) -> Vec<String> {
+        self.interp.global_names()
+    }
+}
+
+/// Recursively parse a file and every module it `use`s.
+fn check_file_recursive(path: &Path, seen: &mut Vec<PathBuf>) -> Result<(), AzraError> {
+    let canonical = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    if seen.contains(&canonical) {
+        return Ok(());
+    }
+    seen.push(canonical.clone());
+
+    let source = std::fs::read_to_string(path).map_err(|e| {
+        AzraError::io(format!("cannot read `{}`: {}", path.display(), e))
+    })?;
+    let source = source.strip_prefix('\u{feff}').unwrap_or(&source);
+    let tokens = lexer::tokenize(source)?;
+    let program = parser::parse(&tokens)?;
+
+    let base = path.parent();
+    for spec in collect_imports(&program) {
+        let resolved = interpreter::resolve_module_path(base, &spec);
+        check_file_recursive(&resolved, seen)?;
+    }
+    Ok(())
+}
+
+/// Collect every `use "<path>"` spec in a parsed program (recursively).
+fn collect_imports(program: &[ast::Stmt]) -> Vec<String> {
+    let mut specs = Vec::new();
+    collect_imports_into(program, &mut specs);
+    specs
+}
+
+fn collect_imports_into(program: &[ast::Stmt], specs: &mut Vec<String>) {
+    use ast::Stmt;
+    for stmt in program {
+        match stmt {
+            Stmt::Use { path, .. } => specs.push(path.clone()),
+            Stmt::If {
+                branches,
+                otherwise,
+                ..
+            } => {
+                for branch in branches {
+                    collect_imports_into(&branch.body, specs);
+                }
+                if let Some(body) = otherwise {
+                    collect_imports_into(body, specs);
+                }
+            }
+            Stmt::Repeat { body, .. }
+            | Stmt::RepeatRange { body, .. }
+            | Stmt::ForEach { body, .. }
+            | Stmt::While { body, .. }
+            | Stmt::Define { body, .. }
+            | Stmt::When { body, .. }
+            | Stmt::Every { body, .. }
+            | Stmt::After { body, .. } => collect_imports_into(body, specs),
+            Stmt::Try {
+                body, handler, ..
+            } => {
+                collect_imports_into(body, specs);
+                collect_imports_into(handler, specs);
+            }
+            _ => {}
+        }
     }
 }
