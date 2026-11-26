@@ -188,20 +188,69 @@ impl Lexer {
     }
 
     fn lex_token(&mut self) -> Result<(), AzraError> {
+        // Skip leading spaces.
         while self.peek() == Some(' ') {
             self.bump();
         }
+        // Single-line comment starting with '#'.
+        if self.peek() == Some('#') {
+            while let Some(ch) = self.peek() {
+                if ch == '\n' { break; }
+                self.bump();
+            }
+            self.line_has_tokens = false;
+            return Ok(());
+        }
+        // Single-line comment starting with "note:".
+        if self.starts_with_comment() {
+            while let Some(ch) = self.peek() {
+                if ch == '\n' { break; }
+                self.bump();
+            }
+            self.line_has_tokens = false;
+            return Ok(());
+        }
+        // Block comment /* ... */.
+        if self.peek() == Some('/') && self.peek_at(1) == Some('*') {
+            // Consume the opening "/*".
+            self.bump();
+            self.bump();
+            while let Some(ch) = self.peek() {
+                if ch == '*' && self.peek_at(1) == Some('/') {
+                    // Consume the closing "*/".
+                    self.bump(); // '*'
+                    self.bump(); // '/'
+                    break;
+                }
+                if ch == '\n' {
+                    self.bump_newline();
+                } else {
+                    self.bump();
+                }
+            }
+            self.line_has_tokens = false;
+            return Ok(());
+        }
+        // Record current position for token emission.
         let line = self.line;
         let column = self.col;
         let c = match self.peek() {
             Some(c) => c,
             None => return Ok(()),
         };
+        // Inline comment "note:" when not at line start.
+        if self.starts_with_comment() && !self.at_line_start {
+            while let Some(ch) = self.peek() {
+                if ch == '\n' { break; }
+                self.bump();
+            }
+            self.line_has_tokens = false;
+            return Ok(());
+        }
         match c {
             '\n' => {
                 self.bump_newline();
                 self.push(TokenKind::Newline, line, column);
-                // The newline ends the current line's token count.
                 self.line_has_tokens = false;
             }
             '\r' => {
@@ -214,15 +263,8 @@ impl Lexer {
             ',' => self.single(TokenKind::Comma, line, column),
             ':' => self.single(TokenKind::Colon, line, column),
             '.' => self.single(TokenKind::Dot, line, column),
-            // Possessive `'s` glued to a closing quote: `nested's "inner"'s "mp"`.
-            '\'' if self.pos > 0
-                && matches!(self.chars.get(self.pos - 1), Some('"' | '\''))
-                && self.peek_at(1) == Some('s')
-                && self
-                    .peek_at(2)
-                    .is_none_or(|ch| ch.is_whitespace() || ch == '"') =>
-            {
-                self.bump(); // '
+            '\'' if self.pos > 0 && matches!(self.chars.get(self.pos - 1), Some('"' | '\'')) && self.peek_at(1) == Some('s') && self.peek_at(2).is_none_or(|ch| ch.is_whitespace() || ch == '"') => {
+                self.bump(); // '\''
                 self.bump(); // s
                 self.push(TokenKind::Possessive, line, column);
                 self.line_has_tokens = true;

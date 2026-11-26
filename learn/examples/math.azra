@@ -1,0 +1,13 @@
+# Math Helpers (math.azra)
+
+define add a b:
+    give back a + b
+
+define sub a b:
+    give back a - b
+
+define mul a b:
+    give back a * b
+
+define div a b:
+    give back a / b
