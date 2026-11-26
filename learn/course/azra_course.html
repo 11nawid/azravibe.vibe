@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Azra Language Complete Course</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+    <style>
+        pre { background: #f3f4f6; padding: 1rem; overflow-x: auto; border-radius: .5rem; }
+        code { font-family: Menlo, Monaco, "Courier New", monospace; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+    <section class="bg-indigo-600 text-white py-6">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-3xl font-bold">Azra Language – Full Course</h1>
+            <p class="mt-2">Learn the Azra scripting language from zero to a working project, all in one page.</p>
+        </div>
+    </section>
+    <nav class="max-w-4xl mx-auto py-4">
+        <ul class="flex flex-col space-y-2">
+            <li><a href="#intro" class="text-indigo-600 hover:underline">1. Introduction</a></li>
+            <li><a href="#basics" class="text-indigo-600 hover:underline">2. Basic Syntax</a></li>
+            <li><a href="#variables" class="text-indigo-600 hover:underline">3. Variables & Types</a></li>
+            <li><a href="#control" class="text-indigo-600 hover:underline">4. Control Flow</a></li>
+            <li><a href="#functions" class="text-indigo-600 hover:underline">5. Functions</a></li>
+            <li><a href="#modules" class="text-indigo-600 hover:underline">6. Modules & Imports</a></li>
+            <li><a href="#example" class="text-indigo-600 hover:underline">7. Full Example Project</a></li>
+        </ul>
+    </nav>
+
+    <!-- 1. Introduction -->
+    <section id="intro" class="max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">1. Introduction</h2>
+        <p>Welcome to the Azra Language tutorial! This guide will take you from zero knowledge to building real programs, step‑by‑step, using plain English explanations.</p>
+        <h3 class="mt-4 font-semibold">What is Azra?</h3>
+        <ul class="list-disc list-inside ml-4">
+            <li>A lightweight, interpreted scripting language.</li>
+            <li>Designed for teaching programming concepts.</li>
+            <li>Syntax looks like natural English, making it easy to read.</li>
+        </ul>
+        <h3 class="mt-4 font-semibold">How to run Azra code</h3>
+        <ol class="list-decimal list-inside ml-4">
+            <li>Install the Azra interpreter (already bundled in this repository).</li>
+            <li>Run <code>azra my_script.azra</code> from the command line.</li>
+            <li>Start an interactive REPL with <code>azra</code>.</li>
+        </ol>
+        <h3 class="mt-4 font-semibold">Your first program</h3>
+        <pre><code class="language-azra">say "Hello, world!"</code></pre>
+        <p>Run it with <code>azra hello.azra</code> – you should see <em>Hello, world!</em> printed.</p>
+    </section>
+
+    <!-- 2. Basic Syntax -->
+    <section id="basics" class="bg-gray-100 max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">2. Basic Syntax</h2>
+        <p>Azra programs consist of statements, each ending with a newline. Indentation defines blocks, similar to Python.</p>
+        <h3 class="font-semibold">Hello World</h3>
+        <pre><code class="language-azra">say "Hello, world!"</code></pre>
+        <h3 class="font-semibold mt-4">Comments</h3>
+        <pre><code class="language-azra"># This is a comment
+say "Hi"
+</code></pre>
+    </section>
+
+    <!-- 3. Variables & Types -->
+    <section id="variables" class="max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">3. Variables & Types</h2>
+        <p>Use the <code>set</code> keyword to store values. Types are inferred automatically.</p>
+        <pre><code class="language-azra">set name to "Alice"   # String
+set age to 30          # Integer
+set price to 12.99     # Float
+set active to true     # Boolean
+</code></pre>
+        <h3 class="font-semibold mt-4">Collections</h3>
+        <p><strong>List</strong> – ordered collection:</p>
+        <pre><code class="language-azra">set numbers to [1, 2, 3]
+</code></pre>
+        <p><strong>Map</strong> – key‑value pairs:</p>
+        <pre><code class="language-azra">set person to {"name": "Bob", "age": 25}
+</code></pre>
+    </section>
+
+    <!-- 4. Control Flow -->
+    <section id="control" class="bg-gray-100 max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">4. Control Flow</h2>
+        <h3 class="font-semibold">If / Else</h3>
+        <pre><code class="language-azra">if age >= 18:
+    say "Adult"
+else:
+    say "Minor"
+</code></pre>
+        <h3 class="font-semibold mt-4">While Loop</h3>
+        <pre><code class="language-azra">set counter to 0
+while counter < 5:
+    say counter
+    set counter to counter + 1
+</code></pre>
+        <h3 class="font-semibold mt-4">For Loop (over a list)</h3>
+        <pre><code class="language-azra">set items to ["a", "b", "c"]
+for item in items:
+    say item
+</code></pre>
+    </section>
+
+    <!-- 5. Functions -->
+    <section id="functions" class="max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">5. Functions</h2>
+        <h3 class="font-semibold">Defining a Function</h3>
+        <pre><code class="language-azra">define greet name:
+    say "Hello, " + name
+</code></pre>
+        <h3 class="font-semibold mt-4">Calling a Function</h3>
+        <pre><code class="language-azra">greet "Bob"
+</code></pre>
+        <h3 class="font-semibold mt-4">Returning Values</h3>
+        <pre><code class="language-azra">define add a b:
+    give back a + b
+
+set sum to add 3 5
+say sum   # prints 8
+</code></pre>
+    </section>
+
+    <!-- 6. Modules & Imports -->
+    <section id="modules" class="bg-gray-100 max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">6. Modules & Imports</h2>
+        <p>Split large projects into multiple files. Load a module with <code>use "filename.azra"</code>.</p>
+        <h3 class="font-semibold">Creating a Module (math.azra)</h3>
+        <pre><code class="language-azra">define add a b:
+    give back a + b
+
+define sub a b:
+    give back a - b
+
+define mul a b:
+    give back a * b
+
+define div a b:
+    give back a / b
+</code></pre>
+        <h3 class="font-semibold mt-4">Using the Module</h3>
+        <pre><code class="language-azra">use "math.azra"
+set a to read number
+set b to read number
+
+say "Sum: " + add a b
+say "Difference: " + sub a b
+say "Product: " + mul a b
+if b != 0:
+    say "Quotient: " + div a b
+else:
+    say "Cannot divide by zero"
+</code></pre>
+    </section>
+
+    <!-- 7. Full Example Project -->
+    <section id="example" class="max-w-4xl mx-auto px-4 py-8">
+        <h2 class="text-2xl font-bold text-indigo-600 mb-4">7. Full Example Project – Simple Calculator</h2>
+        <p>Combine everything into a small calculator program.</p>
+        <h3 class="font-semibold">File structure</h3>
+        <pre><code>learn/course/
+├─ math.azra
+└─ calc.azra
+</code></pre>
+        <h3 class="font-semibold mt-4">math.azra (module)</h3>
+        <pre><code class="language-azra">define add a b:
+    give back a + b
+
+define sub a b:
+    give back a - b
+
+define mul a b:
+    give back a * b
+
+define div a b:
+    give back a / b
+</code></pre>
+        <h3 class="font-semibold mt-4">calc.azra (main script)</h3>
+        <pre><code class="language-azra"># Import math helpers
+use "math.azra"
+
+say "Enter first number:"
+set a to read number
+say "Enter second number:"
+set b to read number
+
+say "Sum: " + add a b
+say "Difference: " + sub a b
+say "Product: " + mul a b
+if b != 0:
+    say "Quotient: " + div a b
+else:
+    say "Cannot divide by zero"
+</code></pre>
+        <h3 class="font-semibold mt-4">Running the program</h3>
+        <pre><code>azra calc.azra</code></pre>
+        <p>You will be prompted for two numbers and see the calculated results.</p>
+        <p class="mt-4 font-bold">Congratulations! You have completed the Azra language course.</p>
+    </section>
+
+    <footer class="bg-indigo-600 text-white py-4 mt-12">
+        <div class="max-w-4xl mx-auto text-center">
+            <p>© 2026 Azra Language – All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>
