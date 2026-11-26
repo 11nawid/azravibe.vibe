@@ -1,56 +1,176 @@
-//! Interactive multi-line REPL for Azra.
+//! Interactive multi-line REPL for Azra with colorful output and syntax
+//! highlighting. Exit with `leave azra`, `:quit`, or Ctrl+D.
 
 use super::output::flush_output;
 use azra::AzraEngine;
-use std::io::{BufRead, Write};
+use std::io::{BufRead, IsTerminal, Write};
 
-/// `azra repl` — interactive multi-line REPL (blocks keep reading while the
-/// parser reports "end of input").
+// ── ANSI escape codes ──────────────────────────────────────────────────────
+const RESET: &str = "\x1b[0m";
+const BOLD: &str = "\x1b[1m";
+const DIM: &str = "\x1b[2m";
+
+const GREEN: &str = "\x1b[32m";
+const CYAN: &str = "\x1b[36m";
+const YELLOW: &str = "\x1b[33m";
+const RED: &str = "\x1b[31m";
+const MAGENTA: &str = "\x1b[35m";
+const BLUE: &str = "\x1b[34m";
+const WHITE: &str = "\x1b[37m";
+
+/// `azra repl` / bare `azra` — interactive multi-line REPL (blocks keep
+/// reading while the parser reports "end of input").
 pub fn cmd_repl() -> i32 {
+    let use_color = std::io::stdout().is_terminal();
     let mut engine = AzraEngine::new();
-    println!(
-        "Azra REPL v{} — `:help` for commands, `:quit` to exit.",
-        env!("CARGO_PKG_VERSION")
-    );
+
+    // ── Welcome banner ─────────────────────────────────────────────────────
+    if use_color {
+        println!();
+        println!(
+            "  {}{}╔══════════════════════════════════════════╗{}",
+            BOLD, CYAN, RESET
+        );
+        println!(
+            "  {}{}║      {}{}  Azra Interactive Interpreter  {}{}  ║{}",
+            BOLD, CYAN, RESET, BOLD, RESET, BOLD, RESET
+        );
+        println!(
+            "  {}{}║           {}v{}{}                            {}║{}",
+            BOLD, CYAN, YELLOW, env!("CARGO_PKG_VERSION"), CYAN, BOLD, RESET
+        );
+        println!(
+            "  {}{}╚══════════════════════════════════════════╝{}",
+            BOLD, CYAN, RESET
+        );
+        println!();
+        println!(
+            "  {}Type Azra code and press Enter to run it.{}",
+            DIM, RESET
+        );
+        println!(
+            "  {}Commands:  {}:help{}  {}:vars{}  {}:reset{}  {}:clear{}",
+            DIM, GREEN, DIM, GREEN, DIM, GREEN, DIM, GREEN, RESET
+        );
+        println!(
+            "  {}Exit:      {}leave azra{}  or  {}:quit{}  or  {}Ctrl+D{}",
+            DIM, MAGENTA, DIM, MAGENTA, DIM, MAGENTA, RESET
+        );
+        println!();
+    } else {
+        println!(
+            "Azra REPL v{} — :help for commands, `leave azra` or :quit to exit.",
+            env!("CARGO_PKG_VERSION")
+        );
+    }
+
     let stdin = std::io::stdin();
     let mut buffer = String::new();
+    let mut history_count: usize = 0;
+
     loop {
-        let prompt = if buffer.is_empty() { "azra> " } else { " ...   " };
-        print!("{}", prompt);
+        // ── Prompt ──────────────────────────────────────────────────────────
+        if use_color {
+            if buffer.is_empty() {
+                history_count += 1;
+                print!(
+                    "{}{}[{}]{} {}azra>{} ",
+                    DIM, WHITE, history_count, RESET, BOLD, RESET
+                );
+            } else {
+                print!("{}  ...  {}", BLUE, RESET);
+            }
+        } else {
+            let prompt = if buffer.is_empty() { "azra> " } else { "  ...  " };
+            print!("{}", prompt);
+        }
         let _ = std::io::stdout().flush();
 
+        // ── Read a line ─────────────────────────────────────────────────────
         let mut line = String::new();
         match stdin.lock().read_line(&mut line) {
             Ok(0) => {
-                println!();
+                // EOF (Ctrl+D / Ctrl+Z)
+                if use_color {
+                    println!(
+                        "\n{}{}Goodbye from Azra! 👋{}",
+                        BOLD, CYAN, RESET
+                    );
+                } else {
+                    println!();
+                }
                 break;
             }
             Ok(_) => {}
             Err(err) => {
-                eprintln!("error: {}", err);
+                eprintln!("{}error:{} {}", RED, RESET, err);
                 break;
             }
         }
         let trimmed = line.trim_end();
 
-        // REPL commands work at any time.
+        // ── "leave azra" exits the interpreter ──────────────────────────────
+        let lower = trimmed.trim().to_ascii_lowercase();
+        if lower == "leave azra" || lower == "exit" || lower == "quit" {
+            if use_color {
+                println!(
+                    "\n{}{}Goodbye from Azra! 👋{}",
+                    BOLD, CYAN, RESET
+                );
+            }
+            break;
+        }
+
+        // ── REPL colon-commands ─────────────────────────────────────────────
         if trimmed.starts_with(':') && buffer.is_empty() {
             match trimmed {
-                ":quit" | ":exit" => break,
-                ":help" => print_repl_help(),
-                ":clear" => {}
-                ":vars" => print_vars(&engine),
+                ":quit" | ":exit" => {
+                    if use_color {
+                        println!(
+                            "\n{}{}Goodbye from Azra! 👋{}",
+                            BOLD, CYAN, RESET
+                        );
+                    }
+                    break;
+                }
+                ":help" => print_repl_help(use_color),
+                ":clear" => {
+                    if use_color {
+                        println!("{}buffer cleared.{}", DIM, RESET);
+                    }
+                }
+                ":vars" => print_vars(&engine, use_color),
                 ":reset" => {
                     engine = AzraEngine::new();
-                    println!("engine reset.");
+                    if use_color {
+                        println!(
+                            "{}{}engine reset ✓{}",
+                            BOLD, GREEN, RESET
+                        );
+                    } else {
+                        println!("engine reset.");
+                    }
                 }
-                other => eprintln!("error: unknown command `{}` (try `:help`)", other),
+                other => {
+                    if use_color {
+                        eprintln!(
+                            "{}error:{} unknown command `{}` (try {}:help{})",
+                            RED, RESET, other, GREEN, RESET
+                        );
+                    } else {
+                        eprintln!("error: unknown command `{}` (try :help)", other);
+                    }
+                }
             }
             continue;
         }
+
+        // Skip blank lines when buffer is empty.
         if buffer.is_empty() && trimmed.is_empty() {
             continue;
         }
+
+        // Allow :quit / :clear inside a multi-line block.
         if trimmed.starts_with(':') && matches!(trimmed, ":quit" | ":exit" | ":clear") {
             buffer.clear();
             continue;
@@ -59,6 +179,7 @@ pub fn cmd_repl() -> i32 {
         buffer.push_str(trimmed);
         buffer.push('\n');
 
+        // ── Evaluate ────────────────────────────────────────────────────────
         match engine.eval_str(&buffer) {
             Ok(()) => {
                 flush_output(&mut engine);
@@ -69,7 +190,11 @@ pub fn cmd_repl() -> i32 {
             }
             Err(err) => {
                 flush_output(&mut engine);
-                eprintln!("error: {}", err);
+                if use_color {
+                    eprintln!("{}error:{} {}", RED, RESET, err);
+                } else {
+                    eprintln!("error: {}", err);
+                }
                 buffer.clear();
             }
         }
@@ -77,28 +202,131 @@ pub fn cmd_repl() -> i32 {
     0
 }
 
-/// `:vars` — list the current global bindings.
-fn print_vars(engine: &AzraEngine) {
+// ── :vars ───────────────────────────────────────────────────────────────────
+fn print_vars(engine: &AzraEngine, use_color: bool) {
     let names = engine.variable_names();
     if names.is_empty() {
-        println!("(no variables)");
+        if use_color {
+            println!("{}(no variables){}", DIM, RESET);
+        } else {
+            println!("(no variables)");
+        }
     } else {
         for name in names {
             if let Some(v) = engine.get_variable(&name) {
-                println!("{} = {}", name, v.render());
+                if use_color {
+                    println!(
+                        "  {}{}{} {} {}",
+                        CYAN, name, RESET, DIM, RESET
+                    );
+                    println!("    = {}{}{}", YELLOW, v.render(), RESET);
+                } else {
+                    println!("{} = {}", name, v.render());
+                }
             }
         }
     }
 }
 
-fn print_repl_help() {
-    println!(
-        r#"REPL commands:
+// ── :help ───────────────────────────────────────────────────────────────────
+fn print_repl_help(use_color: bool) {
+    if use_color {
+        println!();
+        println!("  {}{}Azra Interactive Interpreter — Help{}", BOLD, CYAN, RESET);
+        println!("  {}{}", DIM, "─".repeat(40));
+        println!("{}", RESET);
+        println!(
+            "  {}Commands:{}",
+            BOLD, RESET
+        );
+        println!(
+            "    {}:help{}    show this help",
+            GREEN, RESET
+        );
+        println!(
+            "    {}:vars{}    list current global variables",
+            GREEN, RESET
+        );
+        println!(
+            "    {}:reset{}   reset the engine (clear everything)",
+            GREEN, RESET
+        );
+        println!(
+            "    {}:clear{}   discard the current multi-line buffer",
+            GREEN, RESET
+        );
+        println!();
+        println!(
+            "  {}Exit the interpreter:{}",
+            BOLD, RESET
+        );
+        println!(
+            "    {}leave azra{}   exit and return to your terminal",
+            MAGENTA, RESET
+        );
+        println!(
+            "    {}:quit{}         same as leave azra",
+            MAGENTA, RESET
+        );
+        println!(
+            "    {}Ctrl+D{}        same as leave azra",
+            MAGENTA, RESET
+        );
+        println!();
+        println!(
+            "  {}Writing code:{}",
+            BOLD, RESET
+        );
+        println!(
+            "    {}Type any Azra statement and press Enter.{}",
+            DIM, RESET
+        );
+        println!(
+            "    {}A line ending with `:` starts a block —{}",
+            DIM, RESET
+        );
+        println!(
+            "    {}keep typing with 4-space indentation.{}",
+            DIM, RESET
+        );
+        println!();
+        println!(
+            "  {}Examples:{}",
+            BOLD, RESET
+        );
+        println!(
+            "    {}say \"hello world\"{}",
+            YELLOW, RESET
+        );
+        println!(
+            "    {}repeat 3 times:{}",
+            YELLOW, RESET
+        );
+        println!(
+            "    {}    say \"tick\"{}",
+            YELLOW, RESET
+        );
+        println!(
+            "    {}define greet with name:{}",
+            YELLOW, RESET
+        );
+        println!(
+            "    {}    say \"hi\", name{}",
+            YELLOW, RESET
+        );
+        println!();
+    } else {
+        println!(
+            r#"REPL commands:
     :help    show this help
     :vars    list the current global variables
     :reset   reset the engine (clear variables, handlers and timers)
     :clear   discard the current multi-line buffer
-    :quit    exit the REPL (also :exit)
+
+Exit:
+    leave azra   exit and return to your terminal
+    :quit        same as leave azra (also :exit)
+    Ctrl+D       same as leave azra
 
 Statements are entered one line at a time; a line ending with `:` starts an
 indented block - keep typing lines with 4-space indentation until the block
@@ -110,5 +338,6 @@ parses. Examples:
     define greet with name:
         say "hi", name
 "#
-    );
+        );
+    }
 }

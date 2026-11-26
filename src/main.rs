@@ -11,6 +11,7 @@ const USAGE: &str = "\
 Azra (.vibe) interpreter — Azravibe ecosystem
 
 USAGE:
+    azra                               start the interactive interpreter
     azra run <script.vibe> [--ticks <n>] [--trigger \"<event phrase>\"]...
     azra check <script.vibe>
     azra repl
@@ -23,6 +24,7 @@ OPTIONS:
     --trigger <text>  fire a `when <event>:` handler after loading (repeatable)
 
 EXAMPLES:
+    azra                              (opens interactive interpreter)
     azra run examples/hello.vibe
     azra run examples/obby_game.vibe --ticks 120
     azra run examples/game_demo.vibe --trigger \"player touches lava_block\"
@@ -32,6 +34,8 @@ EXAMPLES:
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    let launched_bare = args.is_empty();
+
     let code = match args.first().map(String::as_str) {
         Some("run") => cmd_run(&args[1..]),
         Some("check") => cmd_check(&args[1..]),
@@ -52,10 +56,22 @@ fn main() {
             2
         }
         None => {
-            print!("{}", USAGE);
-            0
+            // No arguments: start the interactive interpreter
+            cmd_repl()
         }
     };
+
+    // If launched by double-clicking (no args), wait for Enter before closing
+    // so the user can see any output. When run from an existing terminal this
+    // doesn't trigger because there were args (even `repl` counts).
+    if launched_bare {
+        use std::io::Write;
+        println!();
+        print!("Press Enter to close this window...");
+        let _ = std::io::stdout().flush();
+        let _ = std::io::stdin().read_line(&mut String::new());
+    }
+
     std::process::exit(code);
 }
 

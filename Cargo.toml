@@ -6,3 +6,4 @@ description = "Azra (.vibe) standalone interpreter/VM for the Azravibe ecosystem
 license = "MIT"
 
 [dependencies]
+
