@@ -17,6 +17,15 @@ Semantic Versioning where practical (pre-1.0 versions may break syntax).
 - `azra-lsp` language server with diagnostics, completion, hover,
   go-to-definition and formatting, plus VS Code and Neovim clients.
 - WebAssembly bridge and browser playground in `playground/`.
+- Round 5: one-command installers for Windows/Linux/macOS with PATH setup and
+  automatic VS Code extension installation; all stdlib modules embedded in the
+  executable; `azra build` now creates a self-contained exe by appending the
+  script to the interpreter (no Rust/C++ toolchain needed); official icon in
+  the exe; GitHub Actions release workflow for all platforms.
+- Round 4: set, stack, priority, url, jwt, ledger, backup, audit, stringfmt,
+  cli_table, retry and token modules with self-hosted tests. Official high-res
+  logo and ICO; `azra build` now embeds the icon in Windows executables and the
+  playground uses it as its favicon.
 - Round 3: native Win32 GUI core (`azra gui-native`, `std/nativegui`) with no
   browser, plus stat, pagination, cookie, tween, geo, matrix, graph, astar and
   physics modules and their self-hosted test suite.

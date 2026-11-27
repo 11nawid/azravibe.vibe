@@ -9,6 +9,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 fn main() {
+    generate_stdlib_index();
     println!("cargo::rustc-check-cfg=cfg(azra_native_cpp)");
     println!("cargo:rerun-if-changed=native/azra_net.cpp");
     println!("cargo:rerun-if-changed=native/azra_net.h");
@@ -21,10 +22,13 @@ fn main() {
     let out = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
     match build_native(&out) {
         Ok(lib_dir) => {
+            if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+                let _ = embed_icon(&lib_dir);
+            }
             println!("cargo:rustc-cfg=azra_native_cpp");
             println!("cargo:rustc-link-search=native={}", lib_dir.display());
             println!("cargo:rustc-link-lib=static=azra_net");
-            if cfg!(windows) {
+            if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
                 println!("cargo:rustc-link-lib=ws2_32");
                 println!("cargo:rustc-link-lib=user32");
             } else {
@@ -40,8 +44,107 @@ fn main() {
     }
 }
 
+/// Generate `include_str!` lookup table so the stdlib ships inside the exe.
+fn generate_stdlib_index() {
+    let out = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
+    let std_dir = Path::new("std");
+    let mut source = String::from(
+        "/// Standard-library modules embedded at compile time.\n\
+         pub fn get(name: &str) -> Option<&'static str> {\n    match name {\n",
+    );
+    let mut modules: Vec<(String, PathBuf)> = Vec::new();
+    if let Ok(entries) = fs::read_dir(std_dir) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("vibe"))
+            {
+                if let Some(stem) = path.file_stem() {
+                    modules.push((stem.to_string_lossy().to_string(), path));
+                }
+            }
+        }
+    }
+    modules.sort();
+    for (name, path) in modules {
+        let absolute = fs::canonicalize(&path).unwrap_or(path.clone());
+        let literal = absolute.to_string_lossy().replace('\\', "/");
+        source.push_str(&format!(
+            "        {:?} => Some(include_str!({:?})),\n",
+            name, literal
+        ));
+    }
+    source.push_str("        _ => None,\n    }\n}\n");
+    let _ = fs::write(out.join("stdlib_embedded.rs"), source);
+    println!("cargo:rerun-if-changed=std");
+}
+
+fn find_rc() -> Option<PathBuf> {
+    let sdk = r"C:\Program Files (x86)\Windows Kits\10\bin";
+    if let Ok(versions) = fs::read_dir(sdk) {
+        for version in versions.flatten() {
+            let rc = version.path().join("x64").join("rc.exe");
+            if rc.exists() {
+                return Some(rc);
+            }
+        }
+    }
+    let roots = [
+        PathBuf::from(r"C:\Program Files\Microsoft Visual Studio"),
+        PathBuf::from(r"C:\Program Files (x86)\Microsoft Visual Studio"),
+    ];
+    for root in roots {
+        for year in list_dirs(&root) {
+            for edition in list_dirs(&year) {
+                let tools = edition.join("VC").join("Tools").join("MSVC");
+                for version in list_dirs(&tools) {
+                    let rc = version
+                        .join("bin")
+                        .join("Hostx64")
+                        .join("x64")
+                        .join("rc.exe");
+                    if rc.exists() {
+                        return Some(rc);
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn embed_icon(out: &Path) -> Result<(), String> {
+    let rc = find_rc().ok_or("rc.exe not found")?;
+    let icon = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs")
+        .join("assets")
+        .join("icon.ico");
+    if !icon.exists() {
+        return Err("icon.ico missing".to_string());
+    }
+    let rc_source = out.join("azra.rc");
+    let script = format!(
+        "1 ICON \"{}\"\n",
+        icon.to_string_lossy().replace('\\', "\\\\")
+    );
+    fs::write(&rc_source, script).map_err(|e| e.to_string())?;
+    let resource = out.join("azra.res");
+    let status = Command::new(rc)
+        .arg("/nologo")
+        .arg(format!("/fo{}", resource.display()))
+        .arg(&rc_source)
+        .status()
+        .map_err(|e| e.to_string())?;
+    if !status.success() {
+        return Err("rc.exe failed".to_string());
+    }
+    println!("cargo:rustc-link-arg-bins={}", resource.display());
+    Ok(())
+}
+
 fn build_native(out: &Path) -> Result<PathBuf, String> {
-    if cfg!(windows) {
+    if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
         build_msvc(out)
     } else {
         build_gcc(out)

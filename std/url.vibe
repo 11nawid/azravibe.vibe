@@ -1,0 +1,47 @@
+note: std/url — URL parsing and query manipulation
+note: use "std/url"
+
+define parse with text:
+    set result to empty map
+    set parts to split text by "://"
+    if length of parts greater_than 1:
+        set key "scheme" of result to item 1 of parts
+        set rest to item 2 of parts
+    otherwise:
+        set key "scheme" of result to "http"
+        set rest to text
+    set authority_parts to split rest by "/"
+    set authority to item 1 of authority_parts
+    set path to ""
+    if length of authority_parts greater_than 1:
+        set path to "/" + item 2 of authority_parts
+    set host_parts to split authority by ":"
+    set key "host" of result to item 1 of host_parts
+    if length of host_parts greater_than 1:
+        set key "port" of result to item 2 of host_parts
+    otherwise:
+        set key "port" of result to 80
+    set key "path" of result to path
+    set query_parts to split path by "?"
+    if length of query_parts greater_than 1:
+        set key "path" of result to item 1 of query_parts
+        set key "query" of result to item 2 of query_parts
+    otherwise:
+        set key "query" of result to ""
+    give back result
+
+define build with scheme, host, port, path, query:
+    set text to scheme + "://" + host + ":" + port + path
+    if length of query greater_than 0:
+        set text to text + "?" + query
+    give back text
+
+define with_param with text, name, value:
+    set parsed to parse with text
+    set query to key "query" of parsed
+    if length of query greater_than 0:
+        set query to query + "&"
+    set encoded_name to url_encode with name
+    set encoded_value to url_encode with value
+    set query to query + encoded_name + "=" + encoded_value
+    give back build with key "scheme" of parsed, key "host" of parsed, key "port" of parsed, key "path" of parsed, query

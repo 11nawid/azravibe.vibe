@@ -1,0 +1,22 @@
+note: std/retry — retry an operation until it succeeds
+note: use "std/retry"
+
+define attempt with operation, tries:
+    set n to 0
+    while n less_than tries:
+        try:
+            set result to operation with n
+            give back result
+        if error as err:
+            set n to n + 1
+    give back null
+
+define attempt_value with operation, argument, tries:
+    set n to 0
+    while n less_than tries:
+        try:
+            set result to operation with argument
+            give back result
+        if error as err:
+            set n to n + 1
+    give back null

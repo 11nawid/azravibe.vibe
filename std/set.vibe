@@ -1,0 +1,36 @@
+note: std/set — set operations on lists
+note: use "std/set"
+
+define unique with values:
+    set out to empty list
+    for each value in values:
+        if out contains value equals false:
+            add value to out
+    give back out
+
+define union with left, right:
+    set out to unique with left
+    for each value in right:
+        if out contains value equals false:
+            add value to out
+    give back out
+
+define intersection with left, right:
+    set out to empty list
+    for each value in left:
+        if right contains value equals true:
+            if out contains value equals false:
+                add value to out
+    give back out
+
+define difference with left, right:
+    set out to empty list
+    for each value in left:
+        if right contains value equals false:
+            add value to out
+    give back out
+
+define symmetric_difference with left, right:
+    set first to difference with left, right
+    set second to difference with right, left
+    give back union with first, second

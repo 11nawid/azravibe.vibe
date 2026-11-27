@@ -22,6 +22,14 @@ impl Interpreter {
                 line,
             ));
         }
+        // Standard-library modules are embedded in the executable, so an
+        // installed interpreter needs no adjacent `std/` directory.
+        if let Some(name) = spec.strip_prefix("std/") {
+            let name = name.trim_end_matches(".vibe");
+            if let Some(source) = crate::stdlib_embed::get(name) {
+                return self.exec_embedded_use(name, source, alias, line);
+            }
+        }
         let resolved = resolve_module_path(self.current_dir.as_deref(), spec);
         let key = std::fs::canonicalize(&resolved).unwrap_or_else(|_| resolved.clone());
 
@@ -84,6 +92,54 @@ impl Interpreter {
         self.modules.insert(key, exports.clone());
         self.bind_exports(&exports, alias)?;
         Ok(())
+    }
+
+    /// Load a stdlib module compiled into the binary (no filesystem access).
+    fn exec_embedded_use(
+        &mut self,
+        name: &str,
+        source: &str,
+        alias: &Option<String>,
+        line: usize,
+    ) -> Result<(), AzraError> {
+        let key = PathBuf::from(format!("std://{name}.vibe"));
+        if self.module_stack.contains(&key) {
+            return Err(AzraError::runtime_at(
+                format!("circular import detected: std/{name}"),
+                line,
+            ));
+        }
+        if let Some(exports) = self.modules.get(&key).cloned() {
+            self.bind_exports(&exports, alias)?;
+            return Ok(());
+        }
+        let tokens = crate::lexer::tokenize(source)?;
+        let program = crate::parser::parse(&tokens)?;
+        let module_scope = Scope::new(&self.globals);
+        let importer_scope = self.scope.clone();
+        self.module_stack.push(key.clone());
+        self.scope = module_scope.clone();
+        let flow = self.exec_block(&program);
+        self.module_stack.pop();
+        self.scope = importer_scope;
+        match flow? {
+            Flow::Normal => {}
+            Flow::Return(_) => {
+                return Err(AzraError::runtime_at(
+                    "`give back` outside of a function (in a module)",
+                    line,
+                ));
+            }
+            Flow::Break | Flow::Continue => {
+                return Err(AzraError::runtime_at(
+                    "`stop loop` / `skip next` outside of a loop (in a module)",
+                    line,
+                ));
+            }
+        }
+        let exports = module_scope.entries();
+        self.modules.insert(key, exports.clone());
+        self.bind_exports(&exports, alias)
     }
 
     /// Bind module exports into the importing scope.

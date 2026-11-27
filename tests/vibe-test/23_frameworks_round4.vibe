@@ -1,0 +1,125 @@
+note: 23_frameworks_round4.vibe — Round 4 library checks
+use "std/set"
+use "std/stack"
+use "std/priority"
+use "std/url"
+use "std/jwt"
+use "std/ledger"
+use "std/backup"
+use "std/audit"
+use "std/stringfmt"
+use "std/cli_table"
+use "std/retry"
+use "std/token"
+
+set attempts to 0
+
+define flaky with n:
+    set attempts to attempts + 1
+    if attempts less_than 2:
+        fail with "not yet"
+    give back "done"
+
+test "set framework":
+    set left to 1, 2, 2
+    set right to 2, 3
+    set all to union with left, right
+    assert equals length of all, 3
+    set both to intersection with left, right
+    assert equals length of both, 1
+    set only to difference with left, right
+    assert equals length of only, 1
+    set symmetric to symmetric_difference with left, right
+    assert equals length of symmetric, 2
+
+test "stack framework":
+    set items to empty list
+    set pushed to push with items, 1
+    set pushed to push with pushed, 2
+    set top to peek with pushed
+    assert equals top, 2
+    set popped to pop with pushed
+    assert equals popped, 2
+    set remaining to size with pushed
+    assert equals remaining, 1
+
+test "priority framework":
+    set items to empty list
+    set queued to enqueue with items, "low", 1
+    set queued to enqueue with queued, "high", 9
+    set queued to enqueue with queued, "mid", 5
+    set top to highest with queued
+    assert equals top, "high"
+    set first to dequeue with queued
+    assert equals first, "high"
+
+test "url framework":
+    set parsed to parse with "https://example.com:443/path?a=1"
+    assert equals key "host" of parsed, "example.com"
+    assert equals key "path" of parsed, "/path"
+    assert equals key "query" of parsed, "a=1"
+    set extended to with_param with "https://example.com/path", "b", "two words"
+    assert extended contains "b=two%20words"
+
+test "JWT framework":
+    set token to encode with "user:1", "secret"
+    set valid to verify with token, "secret"
+    assert valid
+    set payload to payload_of with token
+    assert equals payload, "user:1"
+    set bad to verify with token, "wrong"
+    assert bad equals false
+
+test "ledger framework":
+    write "[]" to file "_round4_ledger.json"
+    set entry to post_entry with "_round4_ledger.json", "cash", 10, "gift"
+    assert equals key "memo" of entry, "gift"
+    set total to balance with "_round4_ledger.json", "cash"
+    assert equals total, 10
+    set found to entries_for with "_round4_ledger.json", "cash"
+    assert equals length of found, 1
+
+test "backup framework":
+    write "hello" to file "_round4_source.txt"
+    set name to snapshot with "_round4_source.txt"
+    set target to restore with name, "_round4_restored.txt"
+    assert equals read file target, "hello"
+
+test "audit framework":
+    set event to log_event with "login", "ali"
+    assert equals key "action" of event, "login"
+    assert equals count, 1
+    set found to for_action with "login"
+    assert equals length of found, 1
+
+test "string formatting framework":
+    set values to empty list
+    add "Azra" to values
+    set text to format with "Hi \{\}!", values
+    assert equals text, "Hi Azra!"
+    set padded to pad with "x", 3
+    assert equals padded, "x  "
+
+test "CLI table framework":
+    set cells to "a", "b"
+    set widths to 3, 3
+    set line to row with cells, widths
+    assert line contains "| a   |"
+    set rule to separator with widths
+    assert rule contains "+-----+"
+    set rows to empty list
+    add cells to rows
+    set table_text to table with rows, widths
+    assert table_text contains "| b   |"
+
+test "retry framework":
+    set attempts to 0
+    set result to attempt with flaky, 3
+    assert equals result, "done"
+    assert equals attempts, 2
+
+test "token framework":
+    set id to random with "u"
+    assert id contains "u-"
+    set short_token to short with "s", 8
+    assert equals length of short_token, 8

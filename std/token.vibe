@@ -1,0 +1,20 @@
+note: std/token — random identifiers and short tokens
+note: use "std/token"
+
+define random with prefix:
+    set id to uuid with
+    set digest to sha256 with id
+    give back prefix + "-" + digest
+
+define short with prefix, size:
+    set full to random with prefix
+    set chars to split full by ""
+    set out to ""
+    set i to 1
+    while i less_than= size and i less_than= length of chars:
+        set out to out + item i of chars
+        set i to i + 1
+    give back out
+
+define session_id:
+    give back short with "sess", 16

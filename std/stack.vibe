@@ -1,0 +1,25 @@
+note: std/stack — LIFO stack helpers (lists are passed by reference)
+note: use "std/stack"
+
+define push with items, value:
+    add value to items
+    give back items
+
+define peek with items:
+    if length of items equals 0:
+        give back null
+    give back item length of items of items
+
+define pop with items:
+    if length of items equals 0:
+        give back null
+    set last to item length of items of items
+    remove item length of items from items
+    give back last
+
+define size with items:
+    give back length of items
+
+define clear_stack with items:
+    clear items
+    give back items

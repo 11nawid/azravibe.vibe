@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::process::Command;
 
 #[test]
-#[ignore = "compiles a generated Rust crate (~20s)"]
 fn builds_and_runs_a_standalone_executable() {
     let out = std::env::temp_dir().join("azra_builder_test.exe");
     let build = Command::new(env!("CARGO_BIN_EXE_azra"))

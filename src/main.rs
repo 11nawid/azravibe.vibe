@@ -47,6 +47,19 @@ EXAMPLES:
 ";
 
 fn main() {
+    // Executables produced by `azra build` carry their script as an overlay
+    // and run it directly — no interpreter arguments or extra files needed.
+    if let Some(source) = azra::embedded::read_self() {
+        match azra::run_source_with_hosts(&source) {
+            Ok(text) => print!("{text}"),
+            Err(error) => {
+                eprintln!("{error}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
+
     let args: Vec<String> = std::env::args().skip(1).collect();
     let launched_bare = args.is_empty();
 

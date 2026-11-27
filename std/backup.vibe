@@ -1,0 +1,19 @@
+note: std/backup — timestamped local file backups
+note: use "std/backup"
+
+define snapshot with path:
+    set data to read file path
+    set stamp to now_ms with
+    set name to path + "." + stamp + ".bak"
+    write data to file name
+    give back name
+
+define restore with backup_path, target:
+    set data to read file backup_path
+    write data to file target
+    give back target
+
+define snapshot_text with path, text:
+    set name to path + "." + now_ms with + ".bak"
+    write text to file name
+    give back name

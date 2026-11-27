@@ -1,0 +1,24 @@
+note: std/stringfmt — positional {} formatting
+note: use "std/stringfmt"
+
+use "std/string"
+
+define format with template, values:
+    set parts to split template by "\{\}"
+    set out to item 1 of parts
+    set i to 2
+    while i less_than= length of parts:
+        set index to i - 1
+        if index less_than= length of values:
+            set value to item index of values
+            set out to out + value
+        set out to out + item i of parts
+        set i to i + 1
+    give back out
+
+define pad with text, width:
+    set missing to width - length of text
+    if missing less_than= 0:
+        give back text
+    set spaces to repeat_text with " ", missing
+    give back text + spaces

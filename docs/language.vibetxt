@@ -418,4 +418,31 @@ ative/azra_net.cpp) and
 - Round 3 modules: `std/stat`, `std/pagination`, `std/cookie`,
   `std/tween`, `std/geo`, `std/matrix`, `std/graph`, `std/astar`,
   `std/physics`, `std/nativegui`.
+
+14. ROUND 4 AND BRANDING
+--------------------------------------------------------------------------------
+- Round 4 modules: `std/set`, `std/stack`, `std/priority`, `std/url`,
+  `std/jwt`, `std/ledger`, `std/backup`, `std/audit`,
+  `std/stringfmt`, `std/cli_table`, `std/retry`, `std/token`.
+- The official Azra logo is `docs/assets/logo.png` (a cleaned, high-resolution
+  version of the community-supplied mark). `docs/assets/icon.ico` is embedded
+  as the application icon of executables produced by `azra build` and is also
+  used as the playground favicon.
+
+15. INSTALLATION AND SELF-CONTAINED APPS
+--------------------------------------------------------------------------------
+- One-command installers live in `install/`:
+  Windows: `irm https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/install.ps1 | iex`
+  Linux/macOS: `curl -fsSL https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/install.sh | sh`
+- Installers add `azra` and `azra-lsp` to PATH and install the VS Code
+  extension (`install/azra-vibe.vsix`) when VS Code is present.
+- All `std/*.vibe` modules are embedded into the executable at compile time
+  (`src/stdlib_embed.rs`), so `use "std/math"` works from any directory
+  without source files next to the exe.
+- `azra build app.vibe --out app.exe` copies the running interpreter and
+  appends the script as a validated overlay. The resulting single executable
+  runs the script on startup, needs no external tools, and carries the official
+  Azra icon resource.
+- GitHub Actions builds release binaries for Windows, Linux and macOS on tag
+  push; installers download the latest release assets.
 ================================================================================

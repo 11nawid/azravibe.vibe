@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.svg" alt="Azra logo" width="110" />
+<img src="docs/assets/logo.png" alt="Azra logo" width="110" />
 
 # Azra <code>.vibe</code>
 
@@ -70,7 +70,24 @@ flowchart LR
     I --> WASM["WebAssembly playground"]
 ```
 
-## 🚀 Quick start
+## 🚀 Install (one command)
+
+**Windows (PowerShell):**
+
+```powershell
+irm https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/install.ps1 | iex
+```
+
+**Linux / macOS:**
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/install.sh | sh
+```
+
+The installer adds `azra` to PATH and sets up VS Code highlighting automatically.
+No Rust, C++ compiler or Visual Studio needed — the stdlib is embedded in the exe.
+
+## 🚀 Build from source
 
 ```bash
 git clone https://github.com/11nawid/azravibe.vibe.git
@@ -173,7 +190,8 @@ The long-term goal is **500 complete frameworks/libraries**. Progress is tracked
 - [x] Round 1: config, logging, templates, auth, ORM, jobs, CLI, metrics, i18n, uploads, plugins, validation, GUI, exe builder
 - [x] Round 2: sessions, middleware, rate limiting, cache, workers, mail, reports, charts, search, scheduling, state machines, event bus, REST client, security
 - [x] Round 3: native Win32 GUI, statistics, pagination, cookies, tweening, geometry, matrices, graphs, pathfinding, physics
-- [ ] Rounds 4–N: 500 frameworks total — coming continuously
+- [x] Round 4: sets, stacks, priority queues, URLs, JWT, ledgers, backups, audit logs, formatting, CLI tables, retry and tokens
+- [ ] Rounds 5–N: 500 frameworks total — coming continuously
 
 ## 🤝 Support the developer
 

@@ -1,0 +1,54 @@
+name: Release binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            asset: azra-windows-x86_64.zip
+            dir: target/release
+          - os: ubuntu-latest
+            asset: azra-linux-x86_64.tar.gz
+            dir: target/release
+          - os: macos-latest
+            asset: azra-macos-x86_64.tar.gz
+            dir: target/release
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build
+        run: cargo build --release --bins
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          python install/make_vsix.py
+          $stage = Join-Path $env:RUNNER_TEMP "azra-stage"
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          Copy-Item target/release/azra.exe $stage
+          Copy-Item target/release/azra-lsp.exe $stage
+          Copy-Item install/azra-vibe.vsix $stage
+          Copy-Item README.md,LICENSE $stage
+          Compress-Archive -Path "$stage/*" -DestinationPath ${{ matrix.asset }}
+      - name: Package (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          python3 install/make_vsix.py
+          mkdir -p azra-stage
+          cp target/release/azra target/release/azra-lsp install/azra-vibe.vsix README.md LICENSE azra-stage/
+          tar -czf ${{ matrix.asset }} -C azra-stage .
+      - name: Upload asset
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.ref_name }} ${{ matrix.asset }} --clobber

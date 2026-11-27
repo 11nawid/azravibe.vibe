@@ -1,0 +1,33 @@
+note: std/cli_table — terminal-style ASCII tables
+note: use "std/cli_table"
+
+use "std/string"
+
+define row with cells, widths:
+    set line to "|"
+    set i to 1
+    while i less_than= length of cells:
+        set cell to item i of cells
+        set width to item i of widths
+        set filled to pad_right with cell, width, " "
+        set line to line + " " + filled + " |"
+        set i to i + 1
+    give back line
+
+define separator with widths:
+    set line to "+"
+    for each width in widths:
+        set i to 0
+        while i less_than width + 2:
+            set line to line + "-"
+            set i to i + 1
+        set line to line + "+"
+    give back line
+
+define table with rows, widths:
+    set rule to separator with widths
+    set out to rule
+    for each cells in rows:
+        set out to out + "\n" + row with cells, widths
+        set out to out + "\n" + rule
+    give back out

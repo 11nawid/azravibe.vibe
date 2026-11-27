@@ -12,6 +12,8 @@
 pub mod ast;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod builder;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod embedded;
 pub mod env;
 pub mod error;
 pub mod format;
@@ -31,6 +33,7 @@ pub mod sandbox;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod server;
 pub mod stdlib;
+pub mod stdlib_embed;
 pub mod token;
 pub mod value;
 #[cfg(target_arch = "wasm32")]

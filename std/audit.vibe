@@ -1,0 +1,26 @@
+note: std/audit — in-memory audit trail with JSON export
+note: use "std/audit"
+
+set events to empty list
+
+define log_event with action, detail:
+    set event to empty map
+    set key "at" of event to now_ms with
+    set key "action" of event to action
+    set key "detail" of event to detail
+    add event to events
+    give back event
+
+define for_action with action:
+    set out to empty list
+    for each event in events:
+        if key "action" of event equals action:
+            add event to out
+    give back out
+
+define export with path:
+    write to json events to file path
+    give back path
+
+define count:
+    give back length of events

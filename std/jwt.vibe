@@ -1,0 +1,28 @@
+note: std/jwt — HS256 JSON Web Tokens built on std/auth
+note: use "std/jwt"
+
+use "std/auth"
+
+define encode with payload, secret:
+    set header to "\{\"alg\":\"HS256\",\"typ\":\"JWT\"\}"
+    set encoded_header to base64url_encode with header
+    set encoded_payload to base64url_encode with payload
+    set signing_input to encoded_header + "." + encoded_payload
+    set signature to hmac_sha256 with secret, signing_input
+    give back signing_input + "." + signature
+
+define verify with token, secret:
+    set parts to split token by "."
+    if length of parts not_equals 3:
+        give back false
+    set signing_input to item 1 of parts + "." + item 2 of parts
+    set expected to hmac_sha256 with secret, signing_input
+    if expected equals item 3 of parts:
+        give back true
+    give back false
+
+define payload_of with token:
+    set parts to split token by "."
+    if length of parts less_than 2:
+        give back null
+    give back base64url_decode with item 2 of parts

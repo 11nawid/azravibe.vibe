@@ -1,0 +1,35 @@
+note: std/ledger — append-only double-entry-style journal
+note: use "std/ledger"
+
+define open_ledger with path:
+    if file exists path:
+        give back parse json read file path
+    give back empty list
+
+define post_entry with path, account, amount, memo:
+    set entry to empty map
+    set key "id" of entry to uuid with
+    set key "account" of entry to account
+    set key "amount" of entry to amount
+    set key "memo" of entry to memo
+    set key "at" of entry to now_ms with
+    set entries to open_ledger with path
+    add entry to entries
+    write to json entries to file path
+    give back entry
+
+define balance with path, account:
+    set entries to open_ledger with path
+    set total to 0
+    for each entry in entries:
+        if key "account" of entry equals account:
+            set total to total + key "amount" of entry
+    give back total
+
+define entries_for with path, account:
+    set entries to open_ledger with path
+    set out to empty list
+    for each entry in entries:
+        if key "account" of entry equals account:
+            add entry to out
+    give back out
