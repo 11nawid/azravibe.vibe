@@ -6,6 +6,7 @@
 
 # Generated files from .vibe framework tests
 _framework_*.json
+_round2_*.json
 
 # OS files
 .DS_Store

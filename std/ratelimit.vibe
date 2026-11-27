@@ -1,0 +1,33 @@
+note: std/ratelimit — in-memory fixed-window limiter
+note: use "std/ratelimit"
+
+set buckets to empty map
+
+define allow with name, limit, window_seconds:
+    set current to now_ms with
+    set bucket to key name of buckets
+    if bucket equals null:
+        set bucket to empty map
+        set key "start" of bucket to current
+        set key "count" of bucket to 0
+    set start to key "start" of bucket
+    if current - start greater_than window_seconds * 1000:
+        set key "start" of bucket to current
+        set key "count" of bucket to 0
+    set count to key "count" of bucket
+    if count greater_than= limit:
+        give back false
+    set key "count" of bucket to count + 1
+    set key name of buckets to bucket
+    give back true
+
+define remaining with name, limit:
+    set bucket to key name of buckets
+    if bucket equals null:
+        give back limit
+    set count to key "count" of bucket
+    give back limit - count
+
+define reset_bucket with name:
+    set key name of buckets to null
+    give back true

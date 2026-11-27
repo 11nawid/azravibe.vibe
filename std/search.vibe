@@ -1,0 +1,36 @@
+note: std/search — small full-text search over lists of maps
+note: use "std/search"
+
+define score with row, fields, query:
+    set needle to lowercase of query
+    if length of needle equals 0:
+        give back 0
+    set points to 0
+    for each field in fields:
+        set value to lowercase of key field of row
+        if value contains needle:
+            set points to points + 1
+    give back points
+
+define search with rows, fields, query:
+    set found to empty list
+    for each row in rows:
+        set points to score with row, fields, query
+        if points greater_than 0:
+            add row to found
+    give back found
+
+define highlight with text, query:
+    set needle to lowercase of query
+    set lower to lowercase of text
+    set at to 0 - 1
+    set i to 1
+    while i less_than= length of text - length of needle:
+        set slice to split lower by needle
+        if length of slice greater_than 1:
+            set at to 1
+            stop loop
+        set i to i + 1
+    if at greater_than 0 - 1:
+        give back true
+    give back false

@@ -1,0 +1,25 @@
+note: std/worker — background job runner over std/queue
+note: use "std/worker"
+
+use "std/queue"
+
+define run_one with path, handler:
+    set job to dequeue with path
+    if job equals null:
+        give back 0
+    set payload to key "job" of job
+    set result to handler with payload
+    set done to ack with path, key "id" of job
+    give back 1
+
+define drain with path, handler, maximum:
+    set done to 0
+    while done less_than maximum:
+        set processed to run_one with path, handler
+        if processed equals 0:
+            stop loop
+        set done to done + processed
+    give back done
+
+define retry_all with path:
+    give back retry_failed with path

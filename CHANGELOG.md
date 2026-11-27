@@ -17,6 +17,10 @@ Semantic Versioning where practical (pre-1.0 versions may break syntax).
 - `azra-lsp` language server with diagnostics, completion, hover,
   go-to-definition and formatting, plus VS Code and Neovim clients.
 - WebAssembly bridge and browser playground in `playground/`.
+- Round 2 application frameworks: `std/session`, `middleware`, `ratelimit`,
+  `cache`, `worker`, `mail`, `report`, `chart`, `search`, `schedule`, `state`,
+  `eventbus`, `httpclient`, `security`; restyled README with logo, badges,
+  Mermaid architecture diagram and Instagram support section.
 - Round 1 application frameworks: `std/config`, `log`, `template`, `auth`,
   `orm`, `queue`, `cli`, `metrics`, `i18n`, `upload`, `plugin`, `validate`,
   `gui`; common crypto/encoding/environment host functions; browser GUI via

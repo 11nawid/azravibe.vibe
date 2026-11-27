@@ -1,0 +1,44 @@
+note: std/security — escaping, password policy and constant-time compare
+note: use "std/security"
+
+define escape_html with text:
+    set safe to replace "&" with "&amp;" in text
+    set safe to replace "<" with "&lt;" in safe
+    set safe to replace ">" with "&gt;" in safe
+    set safe to replace "\"" with "&quot;" in safe
+    give back safe
+
+define has_digit with text:
+    set digits to "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"
+    for each digit in digits:
+        if text contains digit:
+            give back true
+    give back false
+
+define strong_password with password:
+    if length of password less_than 8:
+        give back false
+    set digit to has_digit with password
+    if digit equals false:
+        give back false
+    give back true
+
+define constant_equals with left, right:
+    if length of left not_equals length of right:
+        give back false
+    set a to split left by ""
+    set b to split right by ""
+    set diff to 0
+    set i to 1
+    while i less_than= length of a:
+        set x to item i of a
+        set y to item i of b
+        if x not_equals y:
+            set diff to diff + 1
+        set i to i + 1
+    if diff equals 0:
+        give back true
+    give back false
+
+define sanitize with text:
+    give back trim of escape_html with text

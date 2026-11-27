@@ -1,0 +1,16 @@
+note: std/eventbus — topic-based event bus with handlers
+note: use "std/eventbus"
+
+use "std/plugin"
+
+define subscribe with topic, handler:
+    give back register with topic, handler
+
+define publish with topic, payload:
+    give back emit with topic, payload
+
+define topics:
+    give back hook_names
+
+define clear_topic with topic:
+    give back clear_hooks with topic

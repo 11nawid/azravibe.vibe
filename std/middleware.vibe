@@ -1,0 +1,22 @@
+note: std/middleware — before/after request pipeline built on hooks
+note: use "std/middleware"
+
+use "std/plugin"
+
+define before with handler:
+    give back register with "http:before", handler
+
+define after with handler:
+    give back register with "http:after", handler
+
+define run_before with request:
+    give back emit with "http:before", request
+
+define run_after with response:
+    give back emit with "http:after", response
+
+define pipeline with request, handler:
+    set count to run_before with request
+    set result to handler with request
+    set after_count to run_after with result
+    give back result

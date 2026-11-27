@@ -1,0 +1,36 @@
+note: std/session — cookie-backed sessions for HTTP apps
+note: use "std/session"
+
+use "std/http"
+
+set sessions to empty map
+
+define cookie_value with request, name:
+    set raw to header with request, "cookie"
+    set pairs to split raw by ";"
+    for each pair in pairs:
+        set kv to split pair by "="
+        if length of kv greater_than 1:
+            set key_name to trim of item 1 of kv
+            if key_name equals name:
+                give back trim of item 2 of kv
+    give back ""
+
+define create_session with user:
+    set token to uuid with
+    set key token of sessions to user
+    give back token
+
+define session_user with request:
+    set token to cookie_value with request, "sid"
+    set user to key token of sessions
+    if user equals null:
+        give back ""
+    give back user
+
+define destroy_session with token:
+    set key token of sessions to null
+    give back true
+
+define session_cookie with token:
+    give back "sid=" + token + "; Path=/; HttpOnly; SameSite=Lax"

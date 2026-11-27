@@ -1,0 +1,148 @@
+note: 21_frameworks_round2.vibe — Round 2 framework checks
+use "std/session"
+use "std/middleware"
+use "std/ratelimit"
+use "std/cache"
+use "std/worker"
+use "std/mail"
+use "std/report"
+use "std/chart"
+use "std/search"
+use "std/schedule"
+use "std/state"
+use "std/eventbus"
+use "std/httpclient"
+use "std/security"
+use "std/queue"
+
+define flag_hook with payload:
+    set key "flag" of payload to true
+    give back 1
+
+define job_handler with payload:
+    give back true
+
+define tick_handler with seconds:
+    give back true
+
+define bus_listener with payload:
+    give back true
+
+test "session framework":
+    set token to create_session with "ali"
+    set cookie to session_cookie with token
+    set request to empty map
+    set key "headers" of request to "cookie: " + cookie + "\n"
+    set found to session_user with request
+    assert equals found, "ali"
+    set gone to destroy_session with token
+    assert gone
+
+test "middleware framework":
+    set count to before with flag_hook
+    assert equals count, 1
+    set context to empty map
+    set key "flag" of context to false
+    set ran to run_before with context
+    assert equals ran, 1
+    assert key "flag" of context equals true
+
+test "rate limiting framework":
+    assert allow with "client", 2, 60
+    assert allow with "client", 2, 60
+    set third to allow with "client", 2, 60
+    assert third equals false
+    set left to remaining with "client", 2
+    assert equals left, 0
+
+test "cache framework":
+    set value to remember with "answer", 42, 60
+    assert equals value, 42
+    set hit to recall with "answer"
+    assert equals hit, 42
+    set cleared to forget with "answer"
+    assert cleared
+    set miss to recall with "answer"
+    assert miss equals null
+
+test "worker framework":
+    write "[]" to file "_round2_queue.json"
+    set job to empty map
+    set key "task" of job to "send"
+    set id to enqueue with "_round2_queue.json", job
+    set processed to drain with "_round2_queue.json", job_handler, 3
+    assert equals processed, 1
+
+test "mail framework":
+    set message to compose with "a@b.com", "Hi", "Body"
+    set text to mime with message
+    assert text contains "Subject: Hi"
+    assert text contains "Body"
+
+test "report framework":
+    set row to empty map
+    set key "id" of row to 1
+    set key "name" of row to "Azra"
+    set rows to empty list
+    add row to rows
+    set columns to "id", "name"
+    set csv_text to csv with rows, columns
+    assert csv_text contains "id,name"
+    set html to html_table with rows, columns
+    assert html contains "<th>name</th>"
+
+test "chart framework":
+    set values to 1, 3, 2
+    set labels to "a", "b", "c"
+    set svg to bars with values, labels, "indigo"
+    assert svg contains "<svg"
+    assert svg contains "<rect"
+    set path to line_path with values
+    assert path contains "M"
+
+test "search framework":
+    set row to empty map
+    set key "name" of row to "Azra language"
+    set rows to empty list
+    add row to rows
+    set fields to empty list
+    add "name" to fields
+    set found to search with rows, fields, "az"
+    assert equals length of found, 1
+    set none to search with rows, fields, "zzz"
+    assert equals length of none, 0
+
+test "scheduling framework":
+    set scheduled to repeat_every with 3600, tick_handler
+    assert scheduled
+
+test "state machine framework":
+    set transitions to empty map
+    set key "idle:start" of transitions to "running"
+    set definition to define_machine with "job", transitions
+    set next to next_state with "job", "idle", "start"
+    assert equals next, "running"
+    set can to can_transition with "job", "idle", "start"
+    assert can
+
+test "event bus framework":
+    set count to subscribe with "round2", bus_listener
+    assert equals count, 1
+    set fired to publish with "round2", empty map
+    assert equals fired, 1
+
+test "HTTP client framework":
+    set response to empty map
+    set key "status" of response to 200
+    assert ok with response
+    set key "status" of response to 500
+    set failed to ok with response
+    assert failed equals false
+
+test "security framework":
+    set safe to escape_html with "<b>"
+    assert equals safe, "&lt;b&gt;"
+    assert strong_password with "abc12345"
+    assert constant_equals with "abc", "abc"
+    set different to constant_equals with "abc", "abd"
+    assert different equals false

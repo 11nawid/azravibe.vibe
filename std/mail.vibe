@@ -1,0 +1,20 @@
+note: std/mail — outbox pattern for email delivery
+note: use "std/mail"
+
+use "std/queue"
+
+define compose with recipient, subject, body:
+    set message to empty map
+    set key "to" of message to recipient
+    set key "subject" of message to subject
+    set key "body" of message to body
+    give back message
+
+define send_later with path, message:
+    give back enqueue with path, message
+
+define mime with message:
+    set head to "To: " + key "to" of message
+    set head to head + "\nSubject: " + key "subject" of message
+    set head to head + "\nContent-Type: text/plain; charset=utf-8\n\n"
+    give back head + key "body" of message

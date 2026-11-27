@@ -1,0 +1,37 @@
+note: std/report — CSV and HTML report generation from rows
+note: use "std/report"
+
+define csv with rows, columns:
+    set line to ""
+    for each column in columns:
+        if length of line greater_than 0:
+            set line to line + ","
+        set line to line + column
+    set out to line
+    for each row in rows:
+        set line to ""
+        for each column in columns:
+            if length of line greater_than 0:
+                set line to line + ","
+            set line to line + key column of row
+        set out to out + "\n" + line
+    give back out
+
+define html_table with rows, columns:
+    set out to "<table><tr>"
+    for each column in columns:
+        set out to out + "<th>" + column + "</th>"
+    set out to out + "</tr>"
+    for each row in rows:
+        set out to out + "<tr>"
+        for each column in columns:
+            set out to out + "<td>" + key column of row + "</td>"
+        set out to out + "</tr>"
+    set out to out + "</table>"
+    give back out
+
+define summary with rows, field:
+    set total to 0
+    for each row in rows:
+        set total to total + key field of row
+    give back total

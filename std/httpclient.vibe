@@ -1,0 +1,28 @@
+note: std/httpclient — REST client with retries and JSON helpers
+note: use "std/httpclient"
+
+use "std/http"
+
+define get with url:
+    give back fetch_json with "GET", url, "", ""
+
+define post_json with url, body:
+    set headers to "Content-Type: application/json\n"
+    give back fetch_json with "POST", url, headers, to json body
+
+define request_with_retry with method, url, headers, body, attempts:
+    set n to 0
+    set result to empty map
+    while n less_than attempts:
+        set result to fetch_json with method, url, headers, body
+        set status to key "status" of result
+        if status less_than 500:
+            give back result
+        set n to n + 1
+    give back result
+
+define ok with response:
+    set status to key "status" of response
+    if status greater_than= 200 and status less_than 300:
+        give back true
+    give back false

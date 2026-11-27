@@ -1,0 +1,40 @@
+note: std/chart — dependency-free SVG charts as strings
+note: use "std/chart"
+
+define svg_open with width, height:
+    give back "<svg xmlns='http://www.w3.org/2000/svg' width='" + width + "' height='" + height + "'>"
+
+define bar with label, value, scale, y, color:
+    set h to value / scale * 100
+    set top to 120 - h
+    set text to "<rect x='" + y + "' y='" + top + "' width='30' height='" + h + "' fill='" + color + "'/>"
+    give back text + "<text x='" + y + "' y='140' font-size='12'>" + label + "</text>"
+
+define bars with values, labels, color:
+    set scale to 1
+    for each value in values:
+        if value greater_than scale:
+            set scale to value
+    set svg to svg_open with 400, 160
+    set i to 1
+    while i less_than= length of values:
+        set x to i * 40
+        set label to item i of labels
+        set value to item i of values
+        set svg to svg + bar with label, value, scale, x, color
+        set i to i + 1
+    give back svg + "</svg>"
+
+define line_path with values:
+    set path to ""
+    set i to 1
+    while i less_than= length of values:
+        set x to i * 20
+        set y to 100 - item i of values
+        if length of path greater_than 0:
+            set path to path + " L"
+        otherwise:
+            set path to path + "M"
+        set path to path + x + "," + y
+        set i to i + 1
+    give back path

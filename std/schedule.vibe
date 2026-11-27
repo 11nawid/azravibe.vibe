@@ -1,0 +1,17 @@
+note: std/schedule — timer-based scheduling helpers
+note: use "std/schedule"
+
+define repeat_every with seconds, handler:
+    every seconds seconds:
+        set result to handler with seconds
+    give back true
+
+define after_delay with seconds, handler:
+    after seconds seconds:
+        set result to handler with seconds
+    give back true
+
+define wait_then with seconds, handler:
+    wait seconds seconds
+    set result to handler with seconds
+    give back result

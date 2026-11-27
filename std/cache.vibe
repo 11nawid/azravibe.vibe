@@ -1,0 +1,30 @@
+note: std/cache — TTL cache with a map-backed store
+note: use "std/cache"
+
+set cache_store to empty map
+
+define remember with name, value, ttl_seconds:
+    set entry to empty map
+    set key "value" of entry to value
+    set expires to now_ms with + ttl_seconds * 1000
+    set key "expires" of entry to expires
+    set key name of cache_store to entry
+    give back value
+
+define recall with name:
+    set entry to key name of cache_store
+    if entry equals null:
+        give back null
+    set current to now_ms with
+    if current greater_than key "expires" of entry:
+        set key name of cache_store to null
+        give back null
+    give back key "value" of entry
+
+define forget with name:
+    set key name of cache_store to null
+    give back true
+
+define clear_cache:
+    set cache_store to empty map
+    give back true

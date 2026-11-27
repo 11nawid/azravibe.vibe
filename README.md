@@ -1,331 +1,188 @@
-# Azra (`.vibe`)
+<div align="center">
 
-**Website: https://azravibe.com/vibe** · **Playground: https://azravibe.com/vibe** · **Source: https://github.com/11nawid/azravibe.vibe**
+<img src="docs/assets/logo.svg" alt="Azra logo" width="110" />
 
-**Azra** is the English-language, general-purpose & game-scripting language of the
-**Azravibe** ecosystem. Azra scripts run through a standalone interpreter (this
-repository) either from the command line or embedded inside the *Azravibe Studio*
-3D rounded-voxel builder.
+# Azra <code>.vibe</code>
 
-> Ecosystem naming:
-> - **Azravibe (`.azr`)** — Persian programming language & RTL IDE
-> - **Azra (`.vibe`)** — General-purpose & game scripting language *(this repo)*
-> - **Azravibe Studio** — 3D rounded-voxel builder, physics & IDE
-> - **Azravibe Player** — Multiplayer game launcher & runtime
+**A zero-bracket, plain-English programming language for apps, games, backends and GUIs.**
 
-## Language highlights
+[![CI](https://github.com/11nawid/azravibe.vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/11nawid/azravibe.vibe/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-0.0.1-8b5cf6.svg)](Cargo.toml)
+[![Website](https://img.shields.io/badge/site-azravibe.com%2Fvibe-4f46e5.svg)](https://azravibe.com/vibe)
 
-- **Zero brackets** — no `{}`, `[]` or `()`. Blocks start with `:` and use
-  exactly **4-space indentation** (`INDENT` / `DEDENT` tokens).
-- **Comments** — `note:`, `#` and `/* ... */` (multi-line). An optional trailing
-  period `.` at the end of a statement is ignored.
-- **English operators** — `equals`, `not_equals`, `less_than`, `less_than=`,
-  `greater_than`, `greater_than=`, plus `is`, `is not`, `contains`,
-  `starts with`, `has key`, `and`, `or`, `not`, math `+ - * / modulo power`.
-- **Variables** — `set health to 100`; lists — `set items to "sword", "shield"`;
-  arithmetic — `add 10 to health`, `subtract 25 from health`,
-  `multiply health by 2`, `divide health by 2`, `add "key" to items`,
-  `remove "key" from items`. Integer division truncates; use a decimal operand
-  (`7 / 2.0`) for a fractional result.
-- **Objects** — `make rounded_box as lava_block` creates a dynamic object whose
-  properties are read/written with dot notation: `set lava_block.color to "red"`.
-  Mock engine types (`rounded_box`, `sound`, `player`, …) are registered so game
-  scripts run and log actions cleanly in standalone CLI mode. `player` is
-  pre-created with `health` 100.
-- **Maps** — `set m to empty map`, `set key "hp" of m to 100`,
-  `say key "hp" of m`, `keys of m`, `m has key "hp"`.
-- **Output** — `say` prints values joined by spaces, `warn` prints `[WARN] …`,
-  `error` prints `[ERROR] …` (both to stderr).
-- **Control flow** — `if …:` / `otherwise if …:` / `otherwise:`,
-  `repeat N times:`, `repeat with i from 1 to 10 by 2:`,
-  `for each item in list:`, `while cond:`, `stop loop` / `break`,
-  `skip next` / `continue`.
-- **Functions** — `define heal_player with target, amount:` … `give back value`,
-  called **without parentheses**: `heal_player with player, 25`.
-- **Modules & errors** — `use "weapons.vibe" as w`,
-  `try:` … `if error as err:` … to catch `fail with "message"`.
-- **Timers & files** — `after 2 seconds:`, `every 1 seconds:`,
-  `wait 0.5 seconds`, `write data to file path`, `read file path`,
-  `parse json text`, `to json value`.
-- **Engine events** — `when player touches lava_block:` blocks are registered as
-  event handlers and can be triggered from the CLI or tests.
-- **String interpolation** — `say "Welcome, {player.name}!"`.
-- **Advanced math** — `pi`, `e`, `tan`/`asin`/`acos`/`atan`/`atan2`,
-  `log`/`log10`/`exp`, `lerp`, degree/radian conversions, and 3D vector
-  `dot`/`cross`/`magnitude`/`normalize`/`distance`/`angle between`.
-- **Built-ins** — math, text, time, RNG, vectors/colors and a JSON codec.
+**[🌐 Website & Playground](https://azravibe.com/vibe)** · **[⭐ GitHub](https://github.com/11nawid/azravibe.vibe)** · **[📸 Instagram](https://www.instagram.com/1n1.nawid/)**
 
-The full language reference is [`docs/language.vibetxt`](docs/language.vibetxt).
+</div>
 
-### Math stress suites
+---
 
-Runnable `.vibe` scripts under `tests/vibe-test/` cover recursion
-(Fibonacci, factorial, Ackermann), a 1..10000 prime sieve, Newton-Raphson,
-quadratics, 3D projectile physics, precision/overflow and every math built-in:
+## ✨ Why Azra?
 
-```bash
-cargo run -- run tests/vibe-test/00_math_stress.vibe
-cargo test --test vibe_scripts
-```
+| | |
+|---|---|
+| **No brackets** | No `{}`, `[]` or `()`. Blocks are `:` + 4 spaces. |
+| **English syntax** | `set health to 100`, `give back value`, `when player touches lava_block:` |
+| **Batteries included** | 36+ standard-library modules, HTTP server, GUI, crypto, SQL-like queries |
+| **Runs anywhere** | CLI, REPL, embedded in Rust, WebAssembly playground, standalone `.exe` |
+| **Game-ready** | vec3 math, physics-friendly numerics, mock engine objects and events |
 
-Also included: `09_euler500.vibe` solves Project Euler #500 in pure Azra
-(answer `35407281`, modulo 500500507) and `10_three_body.vibe` simulates the
-3-4-5 three-star system with adaptive RK4, stopping on ejection or a close
-binary while keeping relative energy drift below 10^-9 (`cargo test -- --ignored`
-runs the slower Euler suite).
-
-### Example
+## ⚡ 30-second tour
 
 ```vibe
-note: variables, objects, loops and functions — no brackets anywhere
+note: everything is plain English — no brackets anywhere
 set inventory to "sword", "shield", "potion"
 make rounded_box as lava_block
 set lava_block.color to "red"
 
-define heal_player with target, amount:
+define heal with target, amount:
     add amount to target.health
     give back target.health
 
 if first item of inventory equals "sword":
-    say "Equipped the sword!"
+    say "Equipped!", pi, dot of vec3 1, 0, 0 and vec3 0, 1, 0
 otherwise:
-    say "Nothing to equip."
+    warn "Nothing equipped."
 
 when player touches lava_block:
-    say "Game Over!"
+    say "Game over!"
 ```
-
-## Building
-
-```bash
-cargo build --release
-```
-
-## CLI usage
-
-Run a script (the `run` keyword is optional for `.vibe` files):
 
 ```bash
 cargo run -- run examples/hello.vibe
-cargo run -- examples/hello.vibe
 ```
 
-Check a script without executing it, or evaluate a snippet directly:
+## 🧩 Architecture
+
+```mermaid
+flowchart LR
+    V[".vibe source"] --> L[Lexer]
+    L --> P[Recursive-descent Parser]
+    P --> A[AST]
+    A --> I[Tree-walking Interpreter]
+    I --> H[Host functions]
+    H --> N["C++ HTTP core"]
+    H --> C[Crypto / Encoding]
+    H --> G[GUI / browser]
+    I --> O[Output / events / timers]
+    N --> S[azra serve / azra gui]
+    I --> W["azra build → standalone .exe"]
+    I --> WASM["WebAssembly playground"]
+```
+
+## 🚀 Quick start
 
 ```bash
-cargo run -- check examples/game_demo.vibe
+git clone https://github.com/11nawid/azravibe.vibe.git
+cd azravibe.vibe
+cargo build --release
+
+cargo run -- run examples/hello.vibe       # execute a script
+cargo run -- check examples/game_demo.vibe # syntax check
+cargo run -- repl                          # interactive interpreter
 cargo run -- eval 'say "hi from Azra"'
+cargo test                                 # full test suite
 ```
 
-Run the game demo and trigger an engine event or simulate engine frames:
+> The CLI also accepts `azra script.vibe` directly.
 
-```bash
-cargo run -- run examples/game_demo.vibe --trigger "player touches lava_block"
-cargo run -- run examples/game_demo.vibe --ticks 120
-```
+<details>
+<summary><b>🛠 CLI commands</b></summary>
 
-Interactive REPL (also starts when `azra` is run with no arguments):
+| Command | Purpose |
+|---|---|
+| `azra run` / `azra check` / `azra eval` | Execute, validate or evaluate a snippet |
+| `azra repl` / bare `azra` | Colored interactive shell (`:help`, `:vars`, `:reset`) |
+| `azra init`, `azra pkg ...` | Manifests, local registry, lockfile, dependencies |
+| `azra test [path]` | Run in-language `test "name":` blocks |
+| `azra fmt [--check]` | 4-space formatter |
+| `azra serve app.vibe --port 8080` | HTTP backend framework |
+| `azra gui app.vibe --port 8080` | Browser GUI + auto-open |
+| `azra build app.vibe --out app.exe` | Standalone executable |
+| `azra-lsp` | Language server (VS Code / Neovim clients included) |
 
-```bash
-cargo run -- repl
-```
+</details>
 
-Inside the REPL: `:help`, `:vars`, `:reset`, `:clear`, `:quit` / `:exit`,
-and `leave azra` to exit. Multi-line blocks are entered with 4-space indentation.
+## 🧠 The language at a glance
 
-### Packages & standard library
+<details>
+<summary><b>Core syntax, operators and semantics</b></summary>
 
-```bash
-azra init my-game                       # create azra.toml + main.vibe
-azra pkg publish ./my-math-lib           # publish to your local registry
-azra pkg add my-math-lib@1.0.0           # add a dependency
-azra pkg install                        # install into .azra/packages + azra.lock
-azra pkg tree                           # show the locked dependency tree
-azra pkg list                           # list registry packages
-```
+- Blocks: `if`, `otherwise if`, `otherwise`, `repeat`, `for each`, `while`, `define`, `when`, `try`.
+- Math: `+ - * / modulo power`, `sqrt abs round floor ceil`, `min of`, `max of`, `clamp ... between ... and ...`, `lerp ... to ... by ...`.
+- Trig/constants: `pi`, `e`, `sin cos tan asin acos atan atan2`, degrees ↔ radians.
+- Logs: `log of x`, `log base b of x`, `log10 of x`, `exp of x`.
+- Vectors: `vec3`, `dot of`, `cross of`, `magnitude of`, `normalize`, `distance between`, `angle between`.
+- Collections: lists, maps, `set key "k" of m to v`, `item 2 of xs`, `sort`, `reverse`, `clear`.
+- Comments: `note:`, `#`, `/* ... */`. Interpolation: `"HP: {player.health}"`.
+- Integer division truncates; `modulo` is Euclidean; NaN comparisons are errors; overflow is checked.
 
-`use "std/math"`, `use "std/collections"`, `use "std/string"`,
-`use "std/vec3"`, `use "std/random"`, `use "std/io"`, `use "std/json"` and
-`use "std/testing"` load curated modules shipped with the interpreter.
-Installed packages are resolved with `use "package-name/module"`.
+Full reference: [`docs/language.vibetxt`](docs/language.vibetxt).
+</details>
 
-### Testing Azra code
+## 📚 Standard library
 
-Write tests directly in `.vibe` files:
+<details>
+<summary><b>36 modules shipped in <code>std/</code></b></summary>
+
+| Area | Modules |
+|---|---|
+| Math & data | `math`, `vec3`, `random`, `query`, `json`, `collections`, `string` |
+| Apps & infra | `config`, `log`, `template`, `auth`, `orm`, `queue`, `cli`, `metrics`, `i18n`, `upload`, `plugin`, `validate` |
+| Web | `http`, `db`, `session`, `middleware`, `ratelimit`, `cache`, `worker`, `mail`, `report`, `chart`, `search`, `schedule`, `state`, `eventbus`, `httpclient`, `security`, `gui` |
+| Testing & I/O | `testing`, `io` |
+
+Use them with `use "std/math"` or `use "std/http"`. Installed packages load with `use "package-name/module"`.
+</details>
+
+## 🌐 Backend, GUI & standalone apps
 
 ```vibe
-test "addition works":
-    assert equals 2 + 2, 4
-    assert "azra" contains "az", "substring check"
-
-test "vectors":
-    set d to dot of vec3 1, 0, 0 and vec3 0, 1, 0
-    assert equals d, 0
-```
-
-Run them with `azra test tests/` (or pass a single file). Assertions support
-`assert CONDITION`, `assert equals A, B` and `assert not_equals A, B`, with an
-optional message. See `std/testing.vibe` for `check`, `check_equal` and
-`check_close` helpers.
-
-### Editor tooling
-
-`cargo build --release --bin azra-lsp` builds a dependency-free language server
-(JSON-RPC over stdio) with diagnostics, completion, hover, go-to-definition and
-formatting. Ready-to-use clients live in `editors/vscode/` and
-`editors/neovim/`.
-
-### Formatting
-
-`azra fmt main.vibe` rewrites blocks to exact 4-space indentation;
-`azra fmt --check main.vibe` only reports whether formatting is needed.
-
-### Browser playground
-
-`playground/` contains a Monaco-based web IDE that runs Azra through
-WebAssembly with shareable URLs. Build and serve it with:
-
-```bash
-cargo build --release --target wasm32-unknown-unknown --lib
-cp target/wasm32-unknown-unknown/release/azra.wasm playground/azra.wasm
-cd playground && python -m http.server 8000
-```
-
-### Application frameworks (Round 1)
-
-Curated modules in `std/`: `config`, `log`, `template`, `auth`, `orm`,
-`queue`, `cli`, `metrics`, `i18n`, `upload`, `plugin`, `validate`, `gui`,
-plus the earlier `http`, `query`, `db`, `math`, `collections`, `string`,
-`vec3`, `random`, `io`, `json` and `testing`. Host functions shared by the
-CLI, REPL, server and generated apps include `sha256`, `hmac_sha256`,
-`base64_encode`/`decode`, `url_encode`/`decode`, `env_get`, `cli_args`,
-`arg_at`, `now_ms`, `uuid`, `file_append` and `open_browser`.
-
-Run the complete framework suite with:
-
-```bash
-azra test tests/vibe-test/20_frameworks.vibe
-```
-
-### GUI apps
-
-`std/gui` generates HTML pages, headings, tables, forms and buttons; the
-browser is the GUI. `azra gui app.vibe --port 8080` serves the app and opens
-it in the default browser. See `examples/gui.vibe`.
-
-```vibe
-use "std/gui"
-set html to page with "Demo", heading with 1, "Hello from Azra"
-```
-
-### Standalone executables
-
-```bash
-azra build app.vibe --name myapp --out myapp.exe
-```
-
-This generates a small Rust crate that embeds the `.vibe` script and the
-Azra runtime, compiles it in release mode and writes a single executable.
-The generated app gets all common host functions through
-`azra::run_source_with_hosts`.
-
-### HTTP server framework
-
-A C++ HTTP core (`native/azra_net.cpp`) is linked through a Rust FFI bridge;
-routing and business logic stay in Azra:
-
-```bash
-azra serve examples/server.vibe --port 8080
-```
-
-```vibe
+note: examples/server.vibe — a real backend in Azra
 use "std/http"
 use "std/db"
 
 when http request with req:
     if req.path equals "/health":
-        send_text with req, 200, "ok"
+        send_json with req, 200, "ok"
     otherwise:
         send_text with req, 404, "not found"
 ```
 
-Host functions: `respond with req, status, body, content_type`,
-`http_fetch with method, url, headers, body` and `http_get with url`.
-`std/http` adds header/query helpers and JSON responders, `std/query` adds
-`where`/`select`/`order_by`, and `std/db` is a JSON-file table store
-(`open_table`, `insert_row`, `find_row`, `save_table`). See
-`examples/server.vibe`. If no C++ compiler is available, a pure-Rust fallback
-with the same API is used automatically.
-
-### Standalone engine verbs
-
-Game scripts can call engine actions directly — in standalone CLI mode they
-are logged cleanly instead of touching a 3D scene:
-
-```vibe
-play boom_sfx
-destroy lava_block
-jump player with 15
-spawn zombie
-move player
-rotate lava_block
-wait
+```bash
+azra serve examples/server.vibe --port 8080
+azra gui examples/gui.vibe --port 8080
+azra build examples/hello.vibe --name myapp --out myapp.exe
 ```
 
-→ `[ENGINE] play <sound file=explosion.wav volume=1>` etc.
+The HTTP core is C++ (`native/azra_net.cpp`) bridged to Rust; the GUI is served HTML;
+`azra build` compiles a tiny Rust crate that embeds the `.vibe` script into one executable.
 
-`add "gold_key" to loot` also bootstraps `loot` as a list when the variable
-does not exist yet (numbers still require `set coins to 0` first).
+## 🗺 Roadmap
 
-## Embedding as a library
+The long-term goal is **500 complete frameworks/libraries**. Progress is tracked in
+[`CHANGELOG.md`](CHANGELOG.md) and pushed in reviewed rounds.
 
-```rust
-use azra::AzraEngine;
+- [x] Core language, REPL, packages, LSP, formatter, WASM playground
+- [x] C++ HTTP server/client, backend framework, JSON table store
+- [x] Round 1: config, logging, templates, auth, ORM, jobs, CLI, metrics, i18n, uploads, plugins, validation, GUI, exe builder
+- [x] Round 2: sessions, middleware, rate limiting, cache, workers, mail, reports, charts, search, scheduling, state machines, event bus, REST client, security
+- [ ] Rounds 3–N: 500 frameworks total — coming continuously
 
-let mut engine = AzraEngine::new();
-engine.eval_str(r#"say "hello from Rust!""#).unwrap();
-engine.register_function("spawn_enemy", |args| { /* ... */ Ok(Value::Null) });
-let output = engine.take_output();
-```
+## 🤝 Support the developer
 
-Use `AzraEngine::with_sandbox(SandboxConfig::strict())` to cap instructions and
-disable I/O when running untrusted scripts.
+If Azra helps you, please **star the repo**, share it, open issues, or just say hello.
 
-## Repository layout
+<p align="center">
+  <a href="https://www.instagram.com/1n1.nawid/">
+    <img src="https://img.shields.io/badge/Instagram-%401n1.nawid-E1306C?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram" />
+  </a>
+</p>
 
-| Path                    | Purpose                                                  |
-|-------------------------|----------------------------------------------------------|
-| `src/lib.rs`            | Public embedding API (`AzraEngine`)                      |
-| `src/main.rs`           | CLI: `azra run`, `check`, `eval`, `repl`                  |
-| `src/cli/`              | REPL and colorized output presentation                   |
-| `src/error.rs`          | `AzraError` with line/column diagnostics                 |
-| `src/sandbox.rs`        | Security and resource-budget `SandboxConfig`             |
-| `src/env.rs`            | Lexical scope chain                                      |
-| `src/token.rs`          | Token definitions                                        |
-| `src/lexer/`            | Tokenizer with line/column tracking & INDENT/DEDENT      |
-| `src/ast/`              | AST node definitions (`stmt`, `expr`, `target`)          |
-| `src/parser/`           | Recursive descent parser with line-numbered errors       |
-| `src/value.rs`          | Runtime `Value` enum (`Object`, `Map`, `Vec3`, `Color`)   |
-| `src/stdlib/`           | Built-in math, text, time, RNG, and JSON codec           |
-| `src/interpreter/`      | Tree-walking VM, collections, events, timers, modules    |
-| `docs/language.vibetxt` | The Azra language specification                          |
-| `examples/`             | `.vibe` sample scripts                                   |
-| `tests/`                | Integration, feature, error, CLI and regression suites   |
-| `tests/vibe-test/`      | Runnable `.vibe` math/algorithm stress suites            |
-| `std/`                  | Standard library modules written in Azra                 |
-| `playground/`           | Browser IDE with a WebAssembly interpreter build         |
-| `editors/`              | VS Code and Neovim language-server clients               |
-| `.github/`              | Issues, PR templates and continuous integration          |
+**DM me on Instagram [@1n1.nawid](https://www.instagram.com/1n1.nawid/)** for questions, ideas,
+collaboration or to support the project. Contributions are currently made by the owner and the
+AI assistant; see [`CONTRIBUTING.md`](CONTRIBUTING.md) for rules and commit conventions.
 
-## Open source & contributing
+## 📄 License
 
-Azra is public, MIT-licensed and developed at
-https://github.com/11nawid/azravibe.vibe. Everyone is welcome to use, learn
-from and report issues. See [CONTRIBUTING.md](CONTRIBUTING.md) for the current
-contributor policy, commit rules and development workflow, and
-[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community expectations.
-The project homepage is https://azravibe.com/vibe.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+MIT — see [`LICENSE`](LICENSE). Built with Rust, C++ and Azra itself.

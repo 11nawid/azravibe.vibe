@@ -1,0 +1,24 @@
+note: std/state — finite state machine tables
+note: use "std/state"
+
+set machines to empty map
+
+define define_machine with name, transitions:
+    set key name of machines to transitions
+    give back transitions
+
+define next_state with name, current, event:
+    set table to key name of machines
+    set lookup to current + ":" + event
+    set target to key lookup of table
+    if target equals null:
+        give back current
+    give back target
+
+define can_transition with name, current, event:
+    set table to key name of machines
+    set lookup to current + ":" + event
+    set target to key lookup of table
+    if target equals null:
+        give back false
+    give back true
