@@ -21,6 +21,15 @@ define request_with_retry with method, url, headers, body, attempts:
         set n to n + 1
     give back result
 
+define https_get with url:
+    set response to https_request with "GET", url, "", ""
+    give back key "body" of response
+
+define https_post_json with url, body:
+    set headers to "Content-Type: application/json\n"
+    set response to https_request with "POST", url, headers, to json body
+    give back key "body" of response
+
 define ok with response:
     set status to key "status" of response
     if status greater_than= 200 and status less_than 300:

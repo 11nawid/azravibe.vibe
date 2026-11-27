@@ -15,23 +15,20 @@ New-Item -ItemType Directory -Force -Path $installDir | Out-Null
 Expand-Archive -Path $zip -DestinationPath $installDir -Force
 Remove-Item $zip -ErrorAction SilentlyContinue
 
-$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-if ($userPath -notlike "*$installDir*") {
-    [Environment]::SetEnvironmentVariable("Path", "$userPath;$installDir", "User")
-    Write-Host "Added $installDir to your user PATH (new terminals will see it)." -ForegroundColor Green
-}
-
 $exe = Join-Path $installDir "azra.exe"
+
+# The exe owns PATH setup so the installer and standalone exe behave identically.
+& $exe setup-path
+
+# Refresh this terminal session as well.
+$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$env:PATH = "$machinePath;$userPath"
 Write-Host "Installed: $exe" -ForegroundColor Green
 & $exe --version
 
 # Set up VS Code highlighting automatically when VS Code is available.
-$code = Get-Command code -ErrorAction SilentlyContinue
-if ($code) {
-    Write-Host "Installing the Azra VS Code extension..." -ForegroundColor Cyan
-    & $exe setup-vscode
-} else {
-    Write-Host "VS Code CLI not found; run `azra setup-vscode` later to enable .vibe highlighting." -ForegroundColor Yellow
-}
+Write-Host "Installing the Azra VS Code extension..." -ForegroundColor Cyan
+& $exe setup-vscode
 
 Write-Host "Done! Open a new terminal and run: azra run app.vibe" -ForegroundColor Green

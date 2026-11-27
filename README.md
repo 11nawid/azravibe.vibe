@@ -135,7 +135,7 @@ cargo test                                 # full test suite
 - Comments: `note:`, `#`, `/* ... */`. Interpolation: `"HP: {player.health}"`.
 - Integer division truncates; `modulo` is Euclidean; NaN comparisons are errors; overflow is checked.
 
-Full reference: [`docs/language.vibetxt`](docs/language.vibetxt).
+Full reference: [`docs/language.vibe.txt`](docs/language.vibe.txt).
 </details>
 
 ## 📚 Standard library

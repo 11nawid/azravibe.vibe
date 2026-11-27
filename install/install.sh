@@ -20,25 +20,13 @@ mkdir -p "$DEST"
 tar -xzf "$TMP/azra.tar.gz" -C "$DEST"
 chmod +x "$DEST/azra" 2>/dev/null || true
 
-case ":$PATH:" in
-  *":$DEST:"*) ;;
-  *)
-    for rc in "$HOME/.profile" "$HOME/.bashrc" "$HOME/.zshrc"; do
-      [ -f "$rc" ] || touch "$rc"
-      printf '\nexport PATH="$HOME/.azra/bin:$PATH" # Azra\n' >> "$rc"
-    done
-    echo "Added $DEST to PATH. Restart your shell (or run: export PATH=\"$DEST:\$PATH\")."
-    ;;
-esac
+"$DEST/azra" setup-path || true
+export PATH="$DEST:$PATH"
 
 "$DEST/azra" --version || true
 
-if command -v code >/dev/null 2>&1; then
-  echo "Installing the Azra VS Code extension..."
-  "$DEST/azra" setup-vscode || true
-else
-  echo "VS Code CLI not found; run 'azra setup-vscode' later to enable highlighting."
-fi
+echo "Installing the Azra VS Code extension..."
+"$DEST/azra" setup-vscode || echo "Extension setup skipped; run 'azra setup-vscode' later."
 
 rm -rf "$TMP"
 echo "Done! Run: azra run app.vibe"

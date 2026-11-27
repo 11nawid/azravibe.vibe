@@ -30,6 +30,7 @@ pub mod native;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native_gui;
 pub mod parser;
+pub mod path_setup;
 pub mod pkg;
 pub mod sandbox;
 #[cfg(not(target_arch = "wasm32"))]
@@ -38,6 +39,7 @@ pub mod stdlib;
 pub mod stdlib_embed;
 pub mod token;
 pub mod value;
+pub mod vm;
 #[cfg(target_arch = "wasm32")]
 pub mod wasm;
 
@@ -72,6 +74,16 @@ pub fn run_source_with_hosts(source: &str) -> Result<String, String> {
             format!("{output}\n{err}")
         }),
     }
+}
+
+/// Compile and execute a script on the bytecode VM instead of the tree walker.
+/// Returns the captured output lines.
+pub fn eval_str_vm(source: &str) -> Result<Vec<String>, AzraError> {
+    let source = source.strip_prefix('\u{feff}').unwrap_or(source);
+    let tokens = lexer::tokenize(source)?;
+    let program = parser::parse(&tokens)?;
+    let bytecode = vm::compile(&program)?;
+    vm::run(&bytecode)
 }
 
 /// Run a source string and return its buffered output as a single string.

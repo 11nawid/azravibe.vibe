@@ -31,7 +31,7 @@ Contributor access may be expanded later; open an issue to discuss it.
    azra test tests/vibe-test/11_test_framework.vibe
    ```
 
-4. If you change the language, update `docs/language.vibetxt`, `README.md` and
+4. If you change the language, update `docs/language.vibe.txt`, `README.md` and
    the relevant module in `std/` or `tests/vibe-test/`.
 5. If you add a built-in, add tests in `tests/features.rs` (or a `.vibe` suite)
    and document the new syntax in the spec.
@@ -99,3 +99,4 @@ Do **not** open a public issue for a vulnerability. Use GitHub's private
 
 By contributing you agree that your contribution is licensed under the MIT
 License, the same as the rest of the project.
+

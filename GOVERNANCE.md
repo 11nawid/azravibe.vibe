@@ -21,7 +21,7 @@ merged by the owner. This will be revisited as the project grows.
 
 - Small, reversible changes (typos, tests, docs) can be merged after review.
 - Language syntax or semantics changes require a clear rationale, an update to
-  `docs/language.vibetxt`, and tests in `tests/` or `tests/vibe-test/`.
+  `docs/language.vibe.txt`, and tests in `tests/` or `tests/vibe-test/`.
 - Breaking changes should be discussed in an issue first and recorded in
   `CHANGELOG.md`.
 - Disagreements are resolved by the project owner after open discussion.
@@ -35,3 +35,4 @@ WebAssembly playground binary is rebuilt for releases that change the runtime.
 ## License
 
 MIT. See `LICENSE`.
+

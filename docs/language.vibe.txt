@@ -447,4 +447,22 @@ ative/azra_net.cpp) and
   Azra icon resource.
 - GitHub Actions builds release binaries for Windows, Linux and macOS on tag
   push; installers download the latest release assets.
+
+16. BYTECODE VM, HTTPS AND SETUP COMMANDS
+--------------------------------------------------------------------------------
+- `azra run --vm app.vibe` compiles the AST to a flat bytecode program and
+  runs it on a stack VM (`src/vm.rs`). Supported: numbers, strings, booleans,
+  variables, arithmetic, comparisons, `if`, `while`, user functions and
+  `say`/`warn`/`error`. Unsupported constructs produce a clear error
+  instead of silently changing behaviour; the tree walker remains the default.
+- HTTPS is available through the `https_request with method, url, headers, body`
+  host function (uses the operating system's `curl`), with `std/httpclient`
+  helpers `https_get` and `https_post_json`. Plain HTTP stays in the C++ core.
+- `azra setup-path` adds the executable's own directory to the user's PATH
+  (Windows user environment or Unix shell profiles) and refreshes the current
+  process. Both installers call this same command, so installing via the exe or
+  via the terminal produces the same result.
+- `azra setup-vscode` writes the embedded extension into
+  `~/.vscode/extensions` (also Insiders/OSS), so highlighting works even when
+  the `code` CLI is not on PATH.
 ================================================================================

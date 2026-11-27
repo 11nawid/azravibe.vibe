@@ -132,6 +132,43 @@ pub fn register_common(engine: &mut AzraEngine) {
         Ok(Value::Str(url_decode(&arg_or(args, 0, ""))))
     });
 
+    engine.register_function("https_request", |args| {
+        let method = arg_string(args, 0, "HTTP method")?;
+        let url = arg_string(args, 1, "URL")?;
+        let headers = arg_or(args, 2, "");
+        let body = arg_or(args, 3, "");
+        let mut command = std::process::Command::new("curl");
+        command
+            .arg("-sS")
+            .arg("-X")
+            .arg(&method)
+            .arg("-w")
+            .arg("\n%{http_code}");
+        for header in headers.lines().filter(|line| !line.trim().is_empty()) {
+            command.arg("-H").arg(header.trim());
+        }
+        if !body.is_empty() {
+            command.arg("--data-binary").arg(&body);
+        }
+        command.arg(&url);
+        let output = command
+            .output()
+            .map_err(|e| AzraError::runtime(format!("HTTPS requires curl: {e}")))?;
+        let text = String::from_utf8_lossy(&output.stdout).to_string();
+        let (payload, status) = match text.rfind('\n') {
+            Some(position) => (
+                text[..position].to_string(),
+                text[position + 1..].trim().parse::<i64>().unwrap_or(0),
+            ),
+            None => (text.clone(), 0),
+        };
+        Ok(Value::map(vec![
+            ("status".to_string(), Value::Number(crate::Num::Int(status))),
+            ("body".to_string(), Value::Str(payload)),
+            ("headers".to_string(), Value::Str(String::new())),
+        ]))
+    });
+
     engine.register_function("open_browser", |args| {
         let url = arg_string(args, 0, "URL")?;
         open_url(&url).map(Value::Bool).map_err(AzraError::runtime)

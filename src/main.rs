@@ -32,10 +32,12 @@ USAGE:
     azra pkg list                          list registry packages
     azra lsp                                   language server (stdio JSON-RPC)
     azra setup-vscode                          install editor support
+    azra setup-path                            add this exe's folder to PATH
     azra --help
     azra --version
 
 OPTIONS:
+    --vm              execute with the bytecode VM instead of the tree walker
     --ticks <n>       run n engine frames (1/60 s each) after loading the script
     --trigger <text>  fire a `when <event>:` handler after loading (repeatable)
 
@@ -100,6 +102,16 @@ fn cli_main(args: &[String]) -> i32 {
             azra::lsp::run();
             0
         }
+        Some("setup-path") => match azra::path_setup::setup() {
+            Ok(message) => {
+                println!("{message}");
+                0
+            }
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        },
         Some("setup-vscode") => match azra::embedded_vsix::install() {
             Ok(message) => {
                 println!("{message}");
@@ -156,10 +168,13 @@ fn cmd_run(args: &[String]) -> i32 {
     let mut file: Option<String> = None;
     let mut triggers: Vec<String> = Vec::new();
     let mut ticks: u64 = 0;
+    let mut use_vm = false;
     let mut i = 0;
     while i < args.len() {
         let arg = &args[i];
-        if arg == "--trigger" {
+        if arg == "--vm" {
+            use_vm = true;
+        } else if arg == "--trigger" {
             i += 1;
             match args.get(i) {
                 Some(phrase) => triggers.push(phrase.clone()),
@@ -210,6 +225,28 @@ fn cmd_run(args: &[String]) -> i32 {
             return 2;
         }
     };
+
+    if use_vm {
+        let source = match std::fs::read_to_string(&file) {
+            Ok(text) => text,
+            Err(error) => {
+                eprintln!("error: cannot read `{file}`: {error}");
+                return 1;
+            }
+        };
+        return match azra::eval_str_vm(&source) {
+            Ok(lines) => {
+                for line in lines {
+                    println!("{line}");
+                }
+                0
+            }
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        };
+    }
 
     let mut engine = cli_engine();
     if let Err(err) = engine.eval_file(&file) {

@@ -17,6 +17,10 @@ Semantic Versioning where practical (pre-1.0 versions may break syntax).
 - `azra-lsp` language server with diagnostics, completion, hover,
   go-to-definition and formatting, plus VS Code and Neovim clients.
 - WebAssembly bridge and browser playground in `playground/`.
+- Bytecode VM mode (`azra run --vm`), HTTPS host functions via curl, `azra setup-path`
+  so exe and terminal installers configure PATH identically, and VS Code setup
+  that installs the extension directly into the extensions folder without the
+  `code` CLI.
 - Single-executable distribution: the LSP is now `azra lsp` and the VS Code
   extension is embedded (`azra setup-vscode`), so releases contain only one
   file per platform.

@@ -30,7 +30,8 @@ VS Code extension if `code` is on PATH. Restart your shell afterwards.
 
 - `azra` — run / check / eval / repl / test / fmt / serve / gui / gui-native / build / pkg / lsp / setup-vscode
 - `azra lsp` — language server (stdio JSON-RPC) built into the same exe
-- `azra setup-vscode` — installs the embedded VS Code highlighting extension automatically
+- `azra setup-vscode` — installs the embedded VS Code extension directly into `~/.vscode/extensions`, so it works even when the `code` CLI is not on PATH
+- `azra setup-path` — adds the exe's own folder to PATH; installers call this command, so the exe and terminal behave identically
 - Embedded `std/` modules — `use "std/math"` works from any folder, no files needed
 - `azra build app.vibe --out app.exe` — the resulting exe is self-contained and
   carries the Azra icon; it needs no installed interpreter
