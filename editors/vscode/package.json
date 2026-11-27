@@ -1,0 +1,55 @@
+{
+  "name": "azra-vibe",
+  "displayName": "Azra (.vibe) Language Support",
+  "description": "Syntax highlighting and language-server support for the Azra programming language.",
+  "version": "0.1.0",
+  "publisher": "azravibe",
+  "license": "MIT",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Programming Languages"],
+  "keywords": ["azra", "vibe", "azravibe"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/11nawid/azravibe.vibe.git"
+  },
+  "homepage": "https://azravibe.com/vibe",
+  "activationEvents": ["onLanguage:vibe"],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "vibe",
+        "aliases": ["Azra", "vibe"],
+        "extensions": [".vibe"],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "vibe",
+        "scopeName": "source.vibe",
+        "path": "./syntaxes/vibe.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "azra.runFile",
+        "title": "Azra: Run Current File",
+        "category": "Azra"
+      }
+    ],
+    "configuration": {
+      "title": "Azra",
+      "properties": {
+        "azra.languageServer": {
+          "type": "string",
+          "default": "azra-lsp",
+          "description": "Path to the azra-lsp executable (build it with `cargo build --release`)."
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  }
+}

@@ -3,7 +3,7 @@
 
 use super::helpers::{attach_line, normalize_phrase, stmt_line};
 use super::mock::mock_object;
-use super::{EventHandler, Flow, Interpreter, OutputLine, Timer, ENGINE_VERBS};
+use super::{ENGINE_VERBS, EventHandler, Flow, Interpreter, OutputLine, TestDef, Timer};
 use crate::ast::*;
 use crate::error::AzraError;
 use crate::value::{FunctionValue, Value};
@@ -23,13 +23,16 @@ impl Interpreter {
     fn exec_stmt(&mut self, stmt: &Stmt) -> Result<Flow, AzraError> {
         self.count_instruction()?;
         let line = stmt_line(stmt);
-        self.exec_stmt_inner(stmt)
-            .map_err(|e| attach_line(e, line))
+        self.exec_stmt_inner(stmt).map_err(|e| attach_line(e, line))
     }
 
     fn exec_stmt_inner(&mut self, stmt: &Stmt) -> Result<Flow, AzraError> {
         match stmt {
-            Stmt::Set { target, value, line } => {
+            Stmt::Set {
+                target,
+                value,
+                line,
+            } => {
                 let val = if value.len() == 1 {
                     self.eval(&value[0])?
                 } else {
@@ -56,13 +59,37 @@ impl Interpreter {
                 let _ = line;
                 Ok(Flow::Normal)
             }
-            Stmt::Add { value, target, line } => self.exec_add(value, target, *line),
-            Stmt::Remove { value, target, line } => self.exec_remove(value, target, *line),
-            Stmt::RemoveAt { index, target, line } => self.exec_remove_at(index, target, *line),
+            Stmt::Add {
+                value,
+                target,
+                line,
+            } => self.exec_add(value, target, *line),
+            Stmt::Remove {
+                value,
+                target,
+                line,
+            } => self.exec_remove(value, target, *line),
+            Stmt::RemoveAt {
+                index,
+                target,
+                line,
+            } => self.exec_remove_at(index, target, *line),
             Stmt::RemoveKey { key, target, line } => self.exec_remove_key(key, target, *line),
-            Stmt::Subtract { value, target, line } => self.exec_subtract(value, target, *line),
-            Stmt::Multiply { target, value, line } => self.exec_multiply(target, value, *line),
-            Stmt::Divide { target, value, line } => self.exec_divide(target, value, *line),
+            Stmt::Subtract {
+                value,
+                target,
+                line,
+            } => self.exec_subtract(value, target, *line),
+            Stmt::Multiply {
+                target,
+                value,
+                line,
+            } => self.exec_multiply(target, value, *line),
+            Stmt::Divide {
+                target,
+                value,
+                line,
+            } => self.exec_divide(target, value, *line),
             Stmt::Clear { target, line } => self.exec_clear(target, *line),
             Stmt::Sort { target, line } => self.exec_sort(target, *line),
             Stmt::Reverse { target, line } => self.exec_reverse(target, *line),
@@ -77,7 +104,10 @@ impl Interpreter {
                     OutputLevel::Warn => format!("[WARN] {}", text),
                     OutputLevel::Error => format!("[ERROR] {}", text),
                 };
-                self.output.push(OutputLine { level: *level, text });
+                self.output.push(OutputLine {
+                    level: *level,
+                    text,
+                });
                 Ok(Flow::Normal)
             }
             Stmt::If {
@@ -104,10 +134,7 @@ impl Interpreter {
             Stmt::Break { .. } => Ok(Flow::Break),
             Stmt::Continue { .. } => Ok(Flow::Continue),
             Stmt::Define {
-                name,
-                params,
-                body,
-                ..
+                name, params, body, ..
             } => {
                 let func = Rc::new(FunctionValue {
                     name: name.clone(),
@@ -225,6 +252,56 @@ impl Interpreter {
                 std::fs::write(&path, data)
                     .map_err(|e| AzraError::io(format!("cannot write file `{}`: {}", path, e)))?;
                 Ok(Flow::Normal)
+            }
+            Stmt::Test { name, body, line } => {
+                self.tests.push(TestDef {
+                    name: name.clone(),
+                    body: body.clone(),
+                    line: *line,
+                });
+                Ok(Flow::Normal)
+            }
+            Stmt::Assert {
+                expr,
+                message,
+                line,
+            } => {
+                let ok = self.eval(expr)?.is_truthy();
+                if ok {
+                    Ok(Flow::Normal)
+                } else {
+                    let detail = match message {
+                        Some(m) => self.eval(m)?.render(),
+                        None => format!("assertion failed: line {}", line),
+                    };
+                    Err(AzraError::runtime_at(detail, *line))
+                }
+            }
+            Stmt::AssertEqual {
+                left,
+                right,
+                negate,
+                message,
+                line,
+            } => {
+                let a = self.eval(left)?;
+                let b = self.eval(right)?;
+                let equal = a.equals(&b);
+                let ok = if *negate { !equal } else { equal };
+                if ok {
+                    Ok(Flow::Normal)
+                } else {
+                    let detail = match message {
+                        Some(m) => self.eval(m)?.render(),
+                        None => format!(
+                            "assertion failed: {} {} {}",
+                            a.render(),
+                            if *negate { "equals" } else { "not_equals" },
+                            b.render()
+                        ),
+                    };
+                    Err(AzraError::runtime_at(detail, *line))
+                }
             }
         }
     }

@@ -1,0 +1,19 @@
+note: std/random — convenience wrappers around RNG built-ins
+note: use "std/random"
+
+define rand_int with from, to:
+    give back random number from from to to
+
+define rand_float:
+    give back random decimal
+
+define chance with percent:
+    set roll to random number from 1 to 100
+    if roll less_than= percent:
+        give back true
+    give back false
+
+define pick with values:
+    set n to length of values
+    set index to random number from 1 to n
+    give back item index of values

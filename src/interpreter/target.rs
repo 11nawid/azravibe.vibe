@@ -9,7 +9,11 @@ use crate::value::Value;
 
 impl Interpreter {
     /// Read the current value of an assignment target.
-    pub(super) fn eval_target(&mut self, target: &Target, _line: usize) -> Result<Value, AzraError> {
+    pub(super) fn eval_target(
+        &mut self,
+        target: &Target,
+        _line: usize,
+    ) -> Result<Value, AzraError> {
         match target {
             Target::Path { path, line } => self.eval_path(path, *line),
             Target::Key { key, map, line } => {
@@ -54,11 +58,11 @@ impl Interpreter {
             Target::First { list, line } => {
                 let container = self.eval_target(list, *line)?;
                 match &container {
-                    Value::List(items) => items
-                        .borrow()
-                        .first()
-                        .cloned()
-                        .ok_or_else(|| AzraError::runtime_at("first item of an empty list", *line)),
+                    Value::List(items) => {
+                        items.borrow().first().cloned().ok_or_else(|| {
+                            AzraError::runtime_at("first item of an empty list", *line)
+                        })
+                    }
                     other => Err(AzraError::runtime_at(
                         format!("`first item of` expects a list, got {}", other.type_name()),
                         *line,
@@ -68,11 +72,11 @@ impl Interpreter {
             Target::Last { list, line } => {
                 let container = self.eval_target(list, *line)?;
                 match &container {
-                    Value::List(items) => items
-                        .borrow()
-                        .last()
-                        .cloned()
-                        .ok_or_else(|| AzraError::runtime_at("last item of an empty list", *line)),
+                    Value::List(items) => {
+                        items.borrow().last().cloned().ok_or_else(|| {
+                            AzraError::runtime_at("last item of an empty list", *line)
+                        })
+                    }
                     other => Err(AzraError::runtime_at(
                         format!("`last item of` expects a list, got {}", other.type_name()),
                         *line,
@@ -164,10 +168,7 @@ impl Interpreter {
                     Value::List(items) => {
                         let mut items = items.borrow_mut();
                         if items.is_empty() {
-                            return Err(AzraError::runtime_at(
-                                "last item of an empty list",
-                                *line,
-                            ));
+                            return Err(AzraError::runtime_at("last item of an empty list", *line));
                         }
                         let last = items.len() - 1;
                         items[last] = value;
@@ -213,7 +214,7 @@ impl Interpreter {
                 return Err(AzraError::runtime_at(
                     format!("undefined variable `{}`", path[0]),
                     line,
-                ))
+                ));
             }
         };
         for seg in &path[1..] {
@@ -256,7 +257,7 @@ impl Interpreter {
                             other.type_name()
                         ),
                         line,
-                    ))
+                    ));
                 }
             };
         }
@@ -290,10 +291,7 @@ pub(super) fn read_property(obj: &Value, name: &str, line: usize) -> Result<Valu
                 None => {
                     let type_name = data.borrow().type_name.clone();
                     Err(AzraError::runtime_at(
-                        format!(
-                            "object of type `{}` has no property `{}`",
-                            type_name, name
-                        ),
+                        format!("object of type `{}` has no property `{}`", type_name, name),
                         line,
                     ))
                 }

@@ -37,7 +37,13 @@ pub fn cmd_repl() -> i32 {
         );
         println!(
             "  {}{}║           {}v{}{}                            {}║{}",
-            BOLD, CYAN, YELLOW, env!("CARGO_PKG_VERSION"), CYAN, BOLD, RESET
+            BOLD,
+            CYAN,
+            YELLOW,
+            env!("CARGO_PKG_VERSION"),
+            CYAN,
+            BOLD,
+            RESET
         );
         println!(
             "  {}{}╚══════════════════════════════════════════╝{}",
@@ -81,7 +87,11 @@ pub fn cmd_repl() -> i32 {
                 print!("{}  ...  {}", BLUE, RESET);
             }
         } else {
-            let prompt = if buffer.is_empty() { "azra> " } else { "  ...  " };
+            let prompt = if buffer.is_empty() {
+                "azra> "
+            } else {
+                "  ...  "
+            };
             print!("{}", prompt);
         }
         let _ = std::io::stdout().flush();
@@ -92,10 +102,7 @@ pub fn cmd_repl() -> i32 {
             Ok(0) => {
                 // EOF (Ctrl+D / Ctrl+Z)
                 if use_color {
-                    println!(
-                        "\n{}{}Goodbye from Azra! 👋{}",
-                        BOLD, CYAN, RESET
-                    );
+                    println!("\n{}{}Goodbye from Azra! 👋{}", BOLD, CYAN, RESET);
                 } else {
                     println!();
                 }
@@ -113,10 +120,7 @@ pub fn cmd_repl() -> i32 {
         let lower = trimmed.trim().to_ascii_lowercase();
         if lower == "leave azra" || lower == "exit" || lower == "quit" {
             if use_color {
-                println!(
-                    "\n{}{}Goodbye from Azra! 👋{}",
-                    BOLD, CYAN, RESET
-                );
+                println!("\n{}{}Goodbye from Azra! 👋{}", BOLD, CYAN, RESET);
             }
             break;
         }
@@ -126,10 +130,7 @@ pub fn cmd_repl() -> i32 {
             match trimmed {
                 ":quit" | ":exit" => {
                     if use_color {
-                        println!(
-                            "\n{}{}Goodbye from Azra! 👋{}",
-                            BOLD, CYAN, RESET
-                        );
+                        println!("\n{}{}Goodbye from Azra! 👋{}", BOLD, CYAN, RESET);
                     }
                     break;
                 }
@@ -143,10 +144,7 @@ pub fn cmd_repl() -> i32 {
                 ":reset" => {
                     engine = AzraEngine::new();
                     if use_color {
-                        println!(
-                            "{}{}engine reset ✓{}",
-                            BOLD, GREEN, RESET
-                        );
+                        println!("{}{}engine reset ✓{}", BOLD, GREEN, RESET);
                     } else {
                         println!("engine reset.");
                     }
@@ -215,10 +213,7 @@ fn print_vars(engine: &AzraEngine, use_color: bool) {
         for name in names {
             if let Some(v) = engine.get_variable(&name) {
                 if use_color {
-                    println!(
-                        "  {}{}{} {} {}",
-                        CYAN, name, RESET, DIM, RESET
-                    );
+                    println!("  {}{}{} {} {}", CYAN, name, RESET, DIM, RESET);
                     println!("    = {}{}{}", YELLOW, v.render(), RESET);
                 } else {
                     println!("{} = {}", name, v.render());
@@ -232,17 +227,14 @@ fn print_vars(engine: &AzraEngine, use_color: bool) {
 fn print_repl_help(use_color: bool) {
     if use_color {
         println!();
-        println!("  {}{}Azra Interactive Interpreter — Help{}", BOLD, CYAN, RESET);
+        println!(
+            "  {}{}Azra Interactive Interpreter — Help{}",
+            BOLD, CYAN, RESET
+        );
         println!("  {}{}", DIM, "─".repeat(40));
         println!("{}", RESET);
-        println!(
-            "  {}Commands:{}",
-            BOLD, RESET
-        );
-        println!(
-            "    {}:help{}    show this help",
-            GREEN, RESET
-        );
+        println!("  {}Commands:{}", BOLD, RESET);
+        println!("    {}:help{}    show this help", GREEN, RESET);
         println!(
             "    {}:vars{}    list current global variables",
             GREEN, RESET
@@ -256,27 +248,15 @@ fn print_repl_help(use_color: bool) {
             GREEN, RESET
         );
         println!();
-        println!(
-            "  {}Exit the interpreter:{}",
-            BOLD, RESET
-        );
+        println!("  {}Exit the interpreter:{}", BOLD, RESET);
         println!(
             "    {}leave azra{}   exit and return to your terminal",
             MAGENTA, RESET
         );
-        println!(
-            "    {}:quit{}         same as leave azra",
-            MAGENTA, RESET
-        );
-        println!(
-            "    {}Ctrl+D{}        same as leave azra",
-            MAGENTA, RESET
-        );
+        println!("    {}:quit{}         same as leave azra", MAGENTA, RESET);
+        println!("    {}Ctrl+D{}        same as leave azra", MAGENTA, RESET);
         println!();
-        println!(
-            "  {}Writing code:{}",
-            BOLD, RESET
-        );
+        println!("  {}Writing code:{}", BOLD, RESET);
         println!(
             "    {}Type any Azra statement and press Enter.{}",
             DIM, RESET
@@ -285,35 +265,14 @@ fn print_repl_help(use_color: bool) {
             "    {}A line ending with `:` starts a block —{}",
             DIM, RESET
         );
-        println!(
-            "    {}keep typing with 4-space indentation.{}",
-            DIM, RESET
-        );
+        println!("    {}keep typing with 4-space indentation.{}", DIM, RESET);
         println!();
-        println!(
-            "  {}Examples:{}",
-            BOLD, RESET
-        );
-        println!(
-            "    {}say \"hello world\"{}",
-            YELLOW, RESET
-        );
-        println!(
-            "    {}repeat 3 times:{}",
-            YELLOW, RESET
-        );
-        println!(
-            "    {}    say \"tick\"{}",
-            YELLOW, RESET
-        );
-        println!(
-            "    {}define greet with name:{}",
-            YELLOW, RESET
-        );
-        println!(
-            "    {}    say \"hi\", name{}",
-            YELLOW, RESET
-        );
+        println!("  {}Examples:{}", BOLD, RESET);
+        println!("    {}say \"hello world\"{}", YELLOW, RESET);
+        println!("    {}repeat 3 times:{}", YELLOW, RESET);
+        println!("    {}    say \"tick\"{}", YELLOW, RESET);
+        println!("    {}define greet with name:{}", YELLOW, RESET);
+        println!("    {}    say \"hi\", name{}", YELLOW, RESET);
         println!();
     } else {
         println!(

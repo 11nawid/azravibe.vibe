@@ -1,0 +1,15 @@
+note: std/json — encoding helpers
+note: use "std/json"
+
+define encode with value:
+    give back to json value
+
+define decode with text:
+    give back parse json text
+
+define is_json with text:
+    try:
+        set parsed to parse json text
+        give back true
+    if error as err:
+        give back false

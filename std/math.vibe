@@ -1,0 +1,40 @@
+note: std/math — small helpers on top of the language's math built-ins
+note: use "std/math"
+
+define clamp01 with x:
+    give back clamp x between 0 and 1
+
+define square with x:
+    give back x * x
+
+define cube with x:
+    set x2 to x * x
+    give back x2 * x
+
+define to_degrees with radians:
+    give back radians to degrees of radians
+
+define to_radians with degrees:
+    give back degrees to radians of degrees
+
+define hypot3 with x, y, z:
+    set qx to x * x
+    set qy to y * y
+    set qz to z * z
+    set sum to qx + qy + qz
+    give back sqrt sum
+
+define average with values:
+    set count to length of values
+    set sum to 0
+    for each value in values:
+        set sum to sum + value
+    give back sum / count
+
+define smoothstep with edge0, edge1, x:
+    set span to edge1 - edge0
+    set t to x - edge0
+    set scaled to t / span
+    set clamped to clamp scaled between 0 and 1
+    set c2 to clamped * clamped
+    give back c2 * 3 - clamped * 2

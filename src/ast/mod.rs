@@ -27,7 +27,10 @@ pub enum OutputLevel {
 /// `set item 1 of items to "x"`      → `Item { index: 1, list: Path(["items"]) }`
 #[derive(Debug, Clone)]
 pub enum Target {
-    Path { path: Path, line: usize },
+    Path {
+        path: Path,
+        line: usize,
+    },
     /// `key <expr> of <target>` / `<map>'s <key>`
     Key {
         key: Expr,

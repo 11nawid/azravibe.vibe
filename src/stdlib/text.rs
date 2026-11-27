@@ -5,23 +5,25 @@ use crate::ast::Builtin;
 use crate::error::AzraError;
 use crate::value::Value;
 
-pub(super) fn eval_text(
-    name: Builtin,
-    args: &[Value],
-    line: usize,
-) -> Result<Value, AzraError> {
+pub(super) fn eval_text(name: Builtin, args: &[Value], line: usize) -> Result<Value, AzraError> {
     match name {
         Builtin::Uppercase => {
             expect_args(name, args, 1, line)?;
-            Ok(Value::Str(args[0].as_str("uppercase of", line)?.to_uppercase()))
+            Ok(Value::Str(
+                args[0].as_str("uppercase of", line)?.to_uppercase(),
+            ))
         }
         Builtin::Lowercase => {
             expect_args(name, args, 1, line)?;
-            Ok(Value::Str(args[0].as_str("lowercase of", line)?.to_lowercase()))
+            Ok(Value::Str(
+                args[0].as_str("lowercase of", line)?.to_lowercase(),
+            ))
         }
         Builtin::Trim => {
             expect_args(name, args, 1, line)?;
-            Ok(Value::Str(args[0].as_str("trim of", line)?.trim().to_string()))
+            Ok(Value::Str(
+                args[0].as_str("trim of", line)?.trim().to_string(),
+            ))
         }
         Builtin::Split => {
             expect_args(name, args, 2, line)?;
@@ -30,7 +32,9 @@ pub(super) fn eval_text(
             let parts = if sep.is_empty() {
                 text.chars().map(|c| Value::Str(c.to_string())).collect()
             } else {
-                text.split(&sep).map(|p| Value::Str(p.to_string())).collect()
+                text.split(&sep)
+                    .map(|p| Value::Str(p.to_string()))
+                    .collect()
             };
             Ok(Value::list(parts))
         }
@@ -55,7 +59,10 @@ pub(super) fn eval_text(
             let replacement = args[1].as_str("replacement", line)?;
             let text = args[2].as_str("text", line)?;
             if needle.is_empty() {
-                return Err(AzraError::runtime_at("cannot replace an empty string", line));
+                return Err(AzraError::runtime_at(
+                    "cannot replace an empty string",
+                    line,
+                ));
             }
             Ok(Value::Str(text.replace(&needle, &replacement)))
         }

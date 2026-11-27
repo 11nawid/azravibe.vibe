@@ -16,6 +16,15 @@ USAGE:
     azra check <script.vibe>
     azra repl
     azra eval <code>
+    azra test [file-or-directory]            run `test \"...\":` blocks
+    azra fmt [--check] <file.vibe>           format a source file
+    azra init [name]                       create azra.toml + main.vibe
+    azra pkg add <name[@version]>          add a dependency
+    azra pkg remove <name>                 remove a dependency
+    azra pkg install                       install packages + write azra.lock
+    azra pkg tree                          show the locked dependency tree
+    azra pkg publish <dir>                 publish a local package
+    azra pkg list                          list registry packages
     azra --help
     azra --version
 
@@ -67,6 +76,10 @@ fn cli_main(args: &[String]) -> i32 {
         Some("check") => cmd_check(&args[1..]),
         Some("repl") => cmd_repl(),
         Some("eval") => cmd_eval(&args[1..]),
+        Some("test") => cmd_test(&args[1..]),
+        Some("fmt") => cmd_fmt(&args[1..]),
+        Some("init") => cmd_init(&args[1..]),
+        Some("pkg") => cmd_pkg(&args[1..]),
         Some("--help") | Some("-h") | Some("help") => {
             print!("{}", USAGE);
             0
@@ -236,4 +249,162 @@ fn cmd_eval(args: &[String]) -> i32 {
     }
     flush_output(&mut engine);
     0
+}
+
+fn collect_vibe_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_vibe_files(&path, out);
+        } else if path
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("vibe"))
+        {
+            out.push(path);
+        }
+    }
+}
+
+/// `azra test [file-or-directory]` — run all `test "name":` blocks.
+fn cmd_test(args: &[String]) -> i32 {
+    let target = args.first().map(String::as_str).unwrap_or("tests");
+    let path = std::path::Path::new(target);
+    let mut files = Vec::new();
+    if path.is_file() {
+        files.push(path.to_path_buf());
+    } else if path.is_dir() {
+        collect_vibe_files(path, &mut files);
+    } else {
+        eprintln!("error: no such file or directory: {target}");
+        return 2;
+    }
+    files.retain(|p| std::fs::read_to_string(p).is_ok_and(|text| text.contains("test \"")));
+    files.sort();
+    if files.is_empty() {
+        println!("no .vibe test files found under {target}");
+        return 0;
+    }
+
+    let mut passed = 0usize;
+    let mut failed = 0usize;
+    for file in files {
+        let mut engine = cli_engine();
+        if let Err(err) = engine.eval_file(&file) {
+            println!("FAIL {} (load error): {}", file.display(), err);
+            failed += 1;
+            continue;
+        }
+        let results = engine.run_tests();
+        for line in engine.take_output() {
+            println!("  | {}", line.text);
+        }
+        if results.is_empty() {
+            println!("SKIP {} (no `test \"...\":` blocks)", file.display());
+        }
+        for result in results {
+            if result.passed {
+                println!("PASS {} :: {}", file.display(), result.name);
+                passed += 1;
+            } else {
+                println!(
+                    "FAIL {} :: {}: {}",
+                    file.display(),
+                    result.name,
+                    result.message
+                );
+                failed += 1;
+            }
+        }
+    }
+    println!("\n{passed} passed, {failed} failed");
+    if failed == 0 { 0 } else { 1 }
+}
+
+/// `azra fmt [--check] <file.vibe>`
+fn cmd_fmt(args: &[String]) -> i32 {
+    let check = args.iter().any(|a| a == "--check");
+    let Some(file) = args.iter().find(|a| !a.starts_with("--")) else {
+        eprintln!("error: `azra fmt [--check] <file.vibe>` requires a file");
+        return 2;
+    };
+    let path = std::path::Path::new(file);
+    let Ok(source) = std::fs::read_to_string(path) else {
+        eprintln!("error: cannot read {file}");
+        return 1;
+    };
+    let formatted = azra::format::format_source(&source);
+    if check {
+        if source == formatted {
+            println!("ok: {file}");
+            0
+        } else {
+            println!("needs formatting: {file}");
+            1
+        }
+    } else {
+        match std::fs::write(path, formatted) {
+            Ok(()) => {
+                println!("formatted: {file}");
+                0
+            }
+            Err(e) => {
+                eprintln!("error: cannot write {file}: {e}");
+                1
+            }
+        }
+    }
+}
+
+fn cmd_init(args: &[String]) -> i32 {
+    let name = args.first().cloned().unwrap_or_else(|| {
+        std::env::current_dir()
+            .ok()
+            .and_then(|p| p.file_name().map(|n| n.to_string_lossy().to_string()))
+            .unwrap_or_else(|| "my-azra-project".to_string())
+    });
+    match azra::pkg::init(std::path::Path::new("."), &name) {
+        Ok(msg) => {
+            println!("{msg}");
+            0
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
+    }
+}
+
+fn cmd_pkg(args: &[String]) -> i32 {
+    let project = std::path::Path::new(".");
+    let result = match args.first().map(String::as_str) {
+        Some("add") => match args.get(1) {
+            Some(spec) => azra::pkg::add(project, spec),
+            None => Err("`azra pkg add <name[@version]>` requires a name".to_string()),
+        },
+        Some("remove") => match args.get(1) {
+            Some(name) => azra::pkg::remove(project, name),
+            None => Err("`azra pkg remove <name>` requires a name".to_string()),
+        },
+        Some("install") => azra::pkg::install(project),
+        Some("tree") => azra::pkg::tree(project),
+        Some("publish") => match args.get(1) {
+            Some(dir) => azra::pkg::publish(std::path::Path::new(dir)),
+            None => Err("`azra pkg publish <dir>` requires a directory".to_string()),
+        },
+        Some("list") => azra::pkg::registry_list(),
+        _ => Err("usage: azra pkg add|remove|install|tree|publish|list [args]".to_string()),
+    };
+    match result {
+        Ok(msg) => {
+            println!("{msg}");
+            0
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
+    }
 }

@@ -1,9 +1,9 @@
 //! Statement dispatch and simple / single-line statements.
 
-use super::{Parser, BUILTIN_WORDS, STATEMENT_KEYWORDS};
+use super::{BUILTIN_WORDS, Parser, STATEMENT_KEYWORDS};
 use crate::ast::{Expr, OutputLevel, Stmt, Target};
 use crate::error::AzraError;
-use crate::token::{StrPart, TokenKind};
+use crate::token::{StrPart, TokenKind, render_str_parts};
 
 pub(super) enum ListStmt {
     Sort,
@@ -20,6 +20,8 @@ impl Parser {
     pub(super) fn parse_stmt(&mut self) -> Result<Stmt, AzraError> {
         match self.peek_kind().clone() {
             TokenKind::Word(word) => match word.as_str() {
+                "test" => self.parse_test(),
+                "assert" => self.parse_assert(),
                 "set" => self.parse_set(),
                 "make" => self.parse_make(),
                 "add" => self.parse_add(),
@@ -69,19 +71,82 @@ impl Parser {
                     self.end_statement()?;
                     Ok(Stmt::Continue { line })
                 }
-                "otherwise" => Err(self.error_here(
-                    "stray `otherwise` without a matching `if`",
-                )),
+                "otherwise" => Err(self.error_here("stray `otherwise` without a matching `if`")),
                 _ if STATEMENT_KEYWORDS.contains(&word.as_str()) => Err(self.error_here(format!(
                     "unexpected keyword `{}` at the start of a statement",
                     word
                 ))),
                 _ => self.parse_call_stmt(),
             },
-            other => Err(self.error_here(format!(
-                "expected a statement, found `{}`",
-                other
-            ))),
+            other => Err(self.error_here(format!("expected a statement, found `{}`", other))),
+        }
+    }
+
+    /// `test "name":` followed by an indented body of assertions.
+    fn parse_test(&mut self) -> Result<Stmt, AzraError> {
+        let line = self.advance().line;
+        let name = match self.peek_kind().clone() {
+            TokenKind::Str(parts) if parts.iter().all(|p| matches!(p, StrPart::Text(_))) => {
+                self.advance();
+                render_str_parts(&parts)
+            }
+            other => {
+                return Err(self.error_here(format!(
+                    "expected a test name string after `test`, found `{}`",
+                    other
+                )));
+            }
+        };
+        self.expect_colon_block("after the `test` name")?;
+        let body = self.parse_block("an indented block after `test \"name\":`")?;
+        Ok(Stmt::Test { name, body, line })
+    }
+
+    /// `assert condition`, `assert condition, "message"`, or
+    /// `assert equals a, b` / `assert not_equals a, b`.
+    fn parse_assert(&mut self) -> Result<Stmt, AzraError> {
+        let line = self.advance().line;
+        let comparison = self.check_word("equals") || self.check_word("not_equals");
+        let negate = if self.check_word("not_equals") {
+            self.advance();
+            true
+        } else if self.check_word("equals") {
+            self.advance();
+            false
+        } else {
+            false
+        };
+        if comparison {
+            let left = self.parse_expr()?;
+            self.expect_comma()?;
+            let right = self.parse_expr()?;
+            let message = self.parse_optional_message()?;
+            self.end_statement()?;
+            Ok(Stmt::AssertEqual {
+                left,
+                right,
+                negate,
+                message,
+                line,
+            })
+        } else {
+            let expr = self.parse_expr()?;
+            let message = self.parse_optional_message()?;
+            self.end_statement()?;
+            Ok(Stmt::Assert {
+                expr,
+                message,
+                line,
+            })
+        }
+    }
+
+    fn parse_optional_message(&mut self) -> Result<Option<Expr>, AzraError> {
+        if self.check(&TokenKind::Comma) {
+            self.advance();
+            Ok(Some(self.parse_expr()?))
+        } else {
+            Ok(None)
         }
     }
 
@@ -95,7 +160,11 @@ impl Parser {
             return Err(self.error_here("expected a value after `to`"));
         }
         self.end_statement()?;
-        Ok(Stmt::Set { target, value, line })
+        Ok(Stmt::Set {
+            target,
+            value,
+            line,
+        })
     }
 
     fn parse_make(&mut self) -> Result<Stmt, AzraError> {
@@ -119,7 +188,11 @@ impl Parser {
         self.expect_word("to", "in `add <value> to <target>`")?;
         let target = self.parse_target()?;
         self.end_statement()?;
-        Ok(Stmt::Add { value, target, line })
+        Ok(Stmt::Add {
+            value,
+            target,
+            line,
+        })
     }
 
     fn parse_remove(&mut self) -> Result<Stmt, AzraError> {
@@ -168,7 +241,11 @@ impl Parser {
         self.expect_word("from", "in `remove <value> from <target>`")?;
         let target = self.parse_target()?;
         self.end_statement()?;
-        Ok(Stmt::Remove { value, target, line })
+        Ok(Stmt::Remove {
+            value,
+            target,
+            line,
+        })
     }
 
     fn parse_subtract(&mut self) -> Result<Stmt, AzraError> {
@@ -178,7 +255,11 @@ impl Parser {
         self.expect_word("from", "in `subtract <value> from <target>`")?;
         let target = self.parse_target()?;
         self.end_statement()?;
-        Ok(Stmt::Subtract { value, target, line })
+        Ok(Stmt::Subtract {
+            value,
+            target,
+            line,
+        })
     }
 
     fn parse_multiply(&mut self) -> Result<Stmt, AzraError> {
@@ -188,7 +269,11 @@ impl Parser {
         self.expect_word("by", "in `multiply <target> by <value>`")?;
         let value = self.parse_expr()?;
         self.end_statement()?;
-        Ok(Stmt::Multiply { target, value, line })
+        Ok(Stmt::Multiply {
+            target,
+            value,
+            line,
+        })
     }
 
     fn parse_divide(&mut self) -> Result<Stmt, AzraError> {
@@ -198,7 +283,11 @@ impl Parser {
         self.expect_word("by", "in `divide <target> by <value>`")?;
         let value = self.parse_expr()?;
         self.end_statement()?;
-        Ok(Stmt::Divide { target, value, line })
+        Ok(Stmt::Divide {
+            target,
+            value,
+            line,
+        })
     }
 
     fn parse_list_stmt(&mut self, kind: ListStmt) -> Result<Stmt, AzraError> {

@@ -2,7 +2,7 @@
 
 mod common;
 
-use azra::{lexer, AzraEngine, AzraError, Num, OutputLevel, TokenKind, Value};
+use azra::{AzraEngine, AzraError, Num, OutputLevel, TokenKind, Value, lexer};
 use common::{err, ok, run};
 
 // --------------------------------------------------------------- core syntax
@@ -39,7 +39,9 @@ fn warn_and_error_print_prefixed_lines() {
 #[test]
 fn output_levels_and_streams() {
     let mut engine = AzraEngine::new();
-    engine.eval_str("say \"a\"\nwarn \"b\"\nerror \"c\"\n").unwrap();
+    engine
+        .eval_str("say \"a\"\nwarn \"b\"\nerror \"c\"\n")
+        .unwrap();
     let lines = engine.take_output();
     assert_eq!(lines.len(), 3);
     assert_eq!(lines[0].level, OutputLevel::Say);
@@ -279,9 +281,7 @@ fn function_call_statement() {
 
 #[test]
 fn function_updates_outer_scope() {
-    let out = ok(
-        "set counter to 0\ndefine bump:\n    add 1 to counter\nbump\nbump\nsay counter\n",
-    );
+    let out = ok("set counter to 0\ndefine bump:\n    add 1 to counter\nbump\nbump\nsay counter\n");
     assert_eq!(out, vec!["2"]);
 }
 
@@ -300,7 +300,11 @@ fn function_alias_variable() {
 #[test]
 fn give_back_outside_function_is_an_error() {
     let e = err("give back 5\n");
-    assert!(e.to_string().contains("outside of a function"), "got: {}", e);
+    assert!(
+        e.to_string().contains("outside of a function"),
+        "got: {}",
+        e
+    );
 }
 
 #[test]
@@ -357,7 +361,12 @@ fn when_handlers_register_and_trigger() {
 
     match engine.get_variable("player").unwrap() {
         Value::Object(obj) => {
-            assert!(obj.borrow().get("health").unwrap().equals(&Value::Number(Num::Int(0))));
+            assert!(
+                obj.borrow()
+                    .get("health")
+                    .unwrap()
+                    .equals(&Value::Number(Num::Int(0)))
+            );
         }
         other => panic!("expected player object, got {:?}", other),
     }

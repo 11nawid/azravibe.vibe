@@ -124,10 +124,7 @@ pub enum Stmt {
         line: usize,
     },
     /// `give back <expr>`
-    Return {
-        value: Option<Expr>,
-        line: usize,
-    },
+    Return { value: Option<Expr>, line: usize },
     /// `when <event phrase> [with p1, p2]: ...` — engine event handler
     When {
         phrase: String,
@@ -173,9 +170,25 @@ pub enum Stmt {
     /// `wait <seconds> [seconds]`
     Wait { duration: Expr, line: usize },
     /// `write <data> to file <path>`
-    WriteFile {
-        data: Expr,
-        path: Expr,
+    WriteFile { data: Expr, path: Expr, line: usize },
+    /// `test "name": ...` — a registered test case (run by `azra test`)
+    Test {
+        name: String,
+        body: Vec<Stmt>,
+        line: usize,
+    },
+    /// `assert <condition>` / `assert <condition>, "message"`
+    Assert {
+        expr: Expr,
+        message: Option<Expr>,
+        line: usize,
+    },
+    /// `assert equals <a>, <b>` / `assert not_equals <a>, <b>`
+    AssertEqual {
+        left: Expr,
+        right: Expr,
+        negate: bool,
+        message: Option<Expr>,
         line: usize,
     },
 }

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Azra Playground — azravibe.com/vibe</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Azra Playground</h1>
+      <p>Zero-bracket, plain-English scripting — runs entirely in your browser via WebAssembly.</p>
+    </div>
+    <nav>
+      <a href="https://azravibe.com/vibe">Home</a>
+      <a href="https://github.com/11nawid/azravibe.vibe">GitHub</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="toolbar">
+      <label>Example
+        <select id="example-select"></select>
+      </label>
+      <button id="run-button" class="primary">▶ Run <span class="hint">Ctrl+Enter</span></button>
+      <button id="share-button">🔗 Share</button>
+      <button id="clear-button">Clear</button>
+      <span id="status">Loading WebAssembly…</span>
+    </section>
+
+    <section class="panes">
+      <div class="pane">
+        <h2>Source <small>main.vibe</small></h2>
+        <div id="editor-container">
+          <textarea id="code" spellcheck="false" aria-label="Azra source code"></textarea>
+        </div>
+      </div>
+      <div class="pane">
+        <h2>Output <small id="exit-status"></small></h2>
+        <pre id="output">Waiting for the interpreter…</pre>
+      </div>
+    </section>
+
+    <footer>
+      <p>Azra is open source (MIT). Learn more at <a href="https://azravibe.com/vibe">azravibe.com/vibe</a>.</p>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

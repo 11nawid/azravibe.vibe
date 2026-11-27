@@ -25,7 +25,11 @@ fn nan_comparisons_are_rejected() {
 #[test]
 fn clamp_with_nan_bound_is_an_error_not_a_panic() {
     let e = err("set n to -8 power 0.5\nsay clamp 5 between n and 10\n");
-    assert!(e.to_string().contains("clamp bounds must not be NaN"), "got: {}", e);
+    assert!(
+        e.to_string().contains("clamp bounds must not be NaN"),
+        "got: {}",
+        e
+    );
 }
 
 #[test]
@@ -62,5 +66,9 @@ fn non_finite_timer_interval_is_rejected() {
 fn very_long_expression_chains_are_rejected_instead_of_overflowing() {
     let src = format!("say {}\n", vec!["1"; 1_000].join(" + "));
     let e = err(&src);
-    assert!(e.to_string().contains("expression chain too long"), "got: {}", e);
+    assert!(
+        e.to_string().contains("expression chain too long"),
+        "got: {}",
+        e
+    );
 }

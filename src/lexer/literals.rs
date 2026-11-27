@@ -224,7 +224,11 @@ impl Lexer {
 }
 
 /// Validate and split the `{a.b.c}` interpolation body into a path.
-fn parse_interpolation_path(body: &str, line: usize, column: usize) -> Result<Vec<String>, AzraError> {
+fn parse_interpolation_path(
+    body: &str,
+    line: usize,
+    column: usize,
+) -> Result<Vec<String>, AzraError> {
     let body = body.trim();
     if body.is_empty() {
         return Err(AzraError::syntax_at(

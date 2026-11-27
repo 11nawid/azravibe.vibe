@@ -1,6 +1,6 @@
 //! Math, trigonometry, vector, and random built-ins.
 
-use super::{as_int, as_vec3, expect_args, num, BuiltinCtx};
+use super::{BuiltinCtx, as_int, as_vec3, expect_args, num};
 use crate::ast::Builtin;
 use crate::error::AzraError;
 use crate::token::Num;
@@ -103,7 +103,7 @@ pub(super) fn eval_math(
                     return Err(AzraError::runtime_at(
                         format!("`{}` needs two numbers", name.as_str()),
                         line,
-                    ))
+                    ));
                 }
             };
             // Preserve int-ness when both inputs were integers.
@@ -170,7 +170,10 @@ pub(super) fn eval_math(
             let x = args[0].as_number("tan", line)?.as_f64();
             let v = x.tan();
             if !v.is_finite() {
-                return Err(AzraError::runtime_at("`tan` is undefined at this angle", line));
+                return Err(AzraError::runtime_at(
+                    "`tan` is undefined at this angle",
+                    line,
+                ));
             }
             Ok(num(Num::Float(v)))
         }

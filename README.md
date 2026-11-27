@@ -1,5 +1,7 @@
 # Azra (`.vibe`)
 
+**Website: https://azravibe.com/vibe** · **Playground: https://azravibe.com/vibe** · **Source: https://github.com/11nawid/azravibe.vibe**
+
 **Azra** is the English-language, general-purpose & game-scripting language of the
 **Azravibe** ecosystem. Azra scripts run through a standalone interpreter (this
 repository) either from the command line or embedded inside the *Azravibe Studio*
@@ -131,6 +133,64 @@ cargo run -- repl
 Inside the REPL: `:help`, `:vars`, `:reset`, `:clear`, `:quit` / `:exit`,
 and `leave azra` to exit. Multi-line blocks are entered with 4-space indentation.
 
+### Packages & standard library
+
+```bash
+azra init my-game                       # create azra.toml + main.vibe
+azra pkg publish ./my-math-lib           # publish to your local registry
+azra pkg add my-math-lib@1.0.0           # add a dependency
+azra pkg install                        # install into .azra/packages + azra.lock
+azra pkg tree                           # show the locked dependency tree
+azra pkg list                           # list registry packages
+```
+
+`use "std/math"`, `use "std/collections"`, `use "std/string"`,
+`use "std/vec3"`, `use "std/random"`, `use "std/io"`, `use "std/json"` and
+`use "std/testing"` load curated modules shipped with the interpreter.
+Installed packages are resolved with `use "package-name/module"`.
+
+### Testing Azra code
+
+Write tests directly in `.vibe` files:
+
+```vibe
+test "addition works":
+    assert equals 2 + 2, 4
+    assert "azra" contains "az", "substring check"
+
+test "vectors":
+    set d to dot of vec3 1, 0, 0 and vec3 0, 1, 0
+    assert equals d, 0
+```
+
+Run them with `azra test tests/` (or pass a single file). Assertions support
+`assert CONDITION`, `assert equals A, B` and `assert not_equals A, B`, with an
+optional message. See `std/testing.vibe` for `check`, `check_equal` and
+`check_close` helpers.
+
+### Editor tooling
+
+`cargo build --release --bin azra-lsp` builds a dependency-free language server
+(JSON-RPC over stdio) with diagnostics, completion, hover, go-to-definition and
+formatting. Ready-to-use clients live in `editors/vscode/` and
+`editors/neovim/`.
+
+### Formatting
+
+`azra fmt main.vibe` rewrites blocks to exact 4-space indentation;
+`azra fmt --check main.vibe` only reports whether formatting is needed.
+
+### Browser playground
+
+`playground/` contains a Monaco-based web IDE that runs Azra through
+WebAssembly with shareable URLs. Build and serve it with:
+
+```bash
+cargo build --release --target wasm32-unknown-unknown --lib
+cp target/wasm32-unknown-unknown/release/azra.wasm playground/azra.wasm
+cd playground && python -m http.server 8000
+```
+
 ### Standalone engine verbs
 
 Game scripts can call engine actions directly — in standalone CLI mode they
@@ -186,7 +246,20 @@ disable I/O when running untrusted scripts.
 | `examples/`             | `.vibe` sample scripts                                   |
 | `tests/`                | Integration, feature, error, CLI and regression suites   |
 | `tests/vibe-test/`      | Runnable `.vibe` math/algorithm stress suites            |
+| `std/`                  | Standard library modules written in Azra                 |
+| `playground/`           | Browser IDE with a WebAssembly interpreter build         |
+| `editors/`              | VS Code and Neovim language-server clients               |
+| `.github/`              | Issues, PR templates and continuous integration          |
+
+## Open source & contributing
+
+Azra is public, MIT-licensed and developed at
+https://github.com/11nawid/azravibe.vibe. Everyone is welcome to use, learn
+from and report issues. See [CONTRIBUTING.md](CONTRIBUTING.md) for the current
+contributor policy, commit rules and development workflow, and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community expectations.
+The project homepage is https://azravibe.com/vibe.
 
 ## License
 
-MIT (see repository metadata).
+MIT — see [LICENSE](LICENSE).

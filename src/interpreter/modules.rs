@@ -87,7 +87,11 @@ impl Interpreter {
     }
 
     /// Bind module exports into the importing scope.
-    fn bind_exports(&mut self, exports: &[(String, Value)], alias: &Option<String>) -> Result<(), AzraError> {
+    fn bind_exports(
+        &mut self,
+        exports: &[(String, Value)],
+        alias: &Option<String>,
+    ) -> Result<(), AzraError> {
         match alias {
             Some(name) => {
                 let mut obj = ObjectData::new("module");
@@ -116,12 +120,66 @@ pub fn resolve_module_path(base_dir: Option<&Path>, spec: &str) -> PathBuf {
         path.set_extension("vibe");
     }
     if path.is_absolute() {
-        path
-    } else if let Some(base) = base_dir {
-        base.join(path)
-    } else {
-        path
+        return path;
     }
+
+    // 1. Modules shipped with the interpreter (`use "std/math"`).
+    let std_relative = if spec.starts_with("std/") {
+        let mut p = PathBuf::from(&spec["std/".len()..]);
+        if p.extension().is_none() {
+            p.set_extension("vibe");
+        }
+        p
+    } else {
+        path.clone()
+    };
+    let std_path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("std")
+        .join(std_relative);
+    if std_path.exists() {
+        return std_path;
+    }
+
+    let Some(base) = base_dir else {
+        return path;
+    };
+
+    // 2. A file relative to the importing script.
+    let direct = base.join(&path);
+    if direct.exists() {
+        return direct;
+    }
+
+    // 3. Installed packages: walk up to find `.azra/packages`, then look for
+    //    `<package>@<version>/<path>` or `<path>` inside any installed package.
+    let mut dir = Some(base);
+    while let Some(current) = dir {
+        let root = current.join(".azra").join("packages");
+        if root.is_dir() {
+            for pkg in std::fs::read_dir(&root).into_iter().flatten().flatten() {
+                let candidate = pkg.path().join(&path);
+                if candidate.exists() {
+                    return candidate;
+                }
+            }
+            // `use "math/core"` → first installed `math@<version>` package.
+            let mut parts = path.components();
+            if let Some(first) = parts.next() {
+                let prefix = format!("{}@", first.as_os_str().to_string_lossy());
+                let rest: PathBuf = parts.collect();
+                for pkg in std::fs::read_dir(&root).into_iter().flatten().flatten() {
+                    if pkg.file_name().to_string_lossy().starts_with(&prefix) {
+                        let candidate = pkg.path().join(rest.as_os_str());
+                        if candidate.exists() {
+                            return candidate;
+                        }
+                    }
+                }
+            }
+        }
+        dir = current.parent();
+    }
+    direct
 }
 
 fn file_name(path: &Path) -> String {

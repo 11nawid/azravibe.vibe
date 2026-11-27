@@ -15,10 +15,9 @@ impl Parser {
         let w = match &tok.kind {
             TokenKind::Word(w) => w.clone(),
             other => {
-                return Err(self.error_here(format!(
-                    "expected a built-in expression, found `{}`",
-                    other
-                )))
+                return Err(
+                    self.error_here(format!("expected a built-in expression, found `{}`", other))
+                );
             }
         };
         let line = tok.line;
@@ -127,7 +126,11 @@ impl Parser {
             // Mathematical constants are zero-argument built-ins.
             "pi" | "e" => {
                 self.advance();
-                let name = if w == "pi" { Builtin::Pi } else { Builtin::Euler };
+                let name = if w == "pi" {
+                    Builtin::Pi
+                } else {
+                    Builtin::Euler
+                };
                 (name, Vec::new())
             }
             "atan2" => {
@@ -200,7 +203,11 @@ impl Parser {
                     self.expect_comma()?;
                 }
                 let b = self.parse_postfix()?;
-                let name = if w == "dot" { Builtin::Dot } else { Builtin::Cross };
+                let name = if w == "dot" {
+                    Builtin::Dot
+                } else {
+                    Builtin::Cross
+                };
                 (name, vec![a, b])
             }
             "magnitude" => {
@@ -223,7 +230,11 @@ impl Parser {
                 let a = self.parse_additive()?;
                 self.expect_comma()?;
                 let b = self.parse_additive()?;
-                let name = if w == "min" { Builtin::Min } else { Builtin::Max };
+                let name = if w == "min" {
+                    Builtin::Min
+                } else {
+                    Builtin::Max
+                };
                 (name, vec![a, b])
             }
             "clamp" => {
@@ -246,9 +257,7 @@ impl Parser {
                 } else if self.eat_word("decimal") {
                     (Builtin::RandomDecimal, Vec::new())
                 } else {
-                    return Err(self.error_here(
-                        "expected `number` or `decimal` after `random`",
-                    ));
+                    return Err(self.error_here("expected `number` or `decimal` after `random`"));
                 }
             }
             "uppercase" | "lowercase" | "trim" => {
@@ -286,10 +295,7 @@ impl Parser {
                 let replacement = self.parse_additive()?;
                 self.expect_word("in", "in `replace <a> with <b> in <text>`")?;
                 let text = self.parse_additive()?;
-                (
-                    Builtin::Replace,
-                    vec![needle, replacement, text],
-                )
+                (Builtin::Replace, vec![needle, replacement, text])
             }
             "current" => {
                 self.advance();
@@ -341,10 +347,7 @@ impl Parser {
                 }
             }
             other => {
-                return Err(self.error_here(format!(
-                    "`{}` is not a built-in expression",
-                    other
-                )))
+                return Err(self.error_here(format!("`{}` is not a built-in expression", other)));
             }
         };
         Ok(Expr::Builtin { name, args, line })

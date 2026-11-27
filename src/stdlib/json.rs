@@ -3,7 +3,7 @@
 
 use crate::error::AzraError;
 use crate::token::Num;
-use crate::value::{format_float, Value};
+use crate::value::{Value, format_float};
 
 const MAX_JSON_DEPTH: usize = 128;
 
@@ -77,7 +77,10 @@ impl JsonParser<'_> {
 
     fn parse_object(&mut self) -> Result<Value, AzraError> {
         if self.depth >= MAX_JSON_DEPTH {
-            return Err(self.err(format!("JSON nesting exceeds max depth of {}", MAX_JSON_DEPTH)));
+            return Err(self.err(format!(
+                "JSON nesting exceeds max depth of {}",
+                MAX_JSON_DEPTH
+            )));
         }
         self.depth += 1;
         let res = self.parse_object_inner();
@@ -123,7 +126,10 @@ impl JsonParser<'_> {
 
     fn parse_array(&mut self) -> Result<Value, AzraError> {
         if self.depth >= MAX_JSON_DEPTH {
-            return Err(self.err(format!("JSON nesting exceeds max depth of {}", MAX_JSON_DEPTH)));
+            return Err(self.err(format!(
+                "JSON nesting exceeds max depth of {}",
+                MAX_JSON_DEPTH
+            )));
         }
         self.depth += 1;
         let res = self.parse_array_inner();
@@ -265,10 +271,7 @@ impl JsonParser<'_> {
         } else {
             text.parse::<i64>()
                 .map(|i| Value::Number(Num::Int(i)))
-                .or_else(|_| {
-                    text.parse::<f64>()
-                        .map(|f| Value::Number(Num::Float(f)))
-                })
+                .or_else(|_| text.parse::<f64>().map(|f| Value::Number(Num::Float(f))))
                 .map_err(|_| self.err("bad number"))
         }
     }

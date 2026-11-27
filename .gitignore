@@ -1,6 +1,9 @@
 # Rust build artifacts
 /target
 
+# Installed Azra packages (azra.lock is committed; contents are not)
+/.azra/
+
 # OS files
 .DS_Store
 Thumbs.db

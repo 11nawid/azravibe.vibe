@@ -46,9 +46,7 @@ pub use self::modules::resolve_module_path;
 const MAX_LOOP_ITERATIONS: u64 = 10_000_000;
 
 /// Mock engine verbs understood in standalone CLI mode.
-const ENGINE_VERBS: &[&str] = &[
-    "play", "destroy", "jump", "spawn", "move", "rotate", "wait",
-];
+const ENGINE_VERBS: &[&str] = &["play", "destroy", "jump", "spawn", "move", "rotate", "wait"];
 
 use self::helpers::normalize_phrase;
 
@@ -102,6 +100,21 @@ struct Timer {
 
 type HostFn = Box<dyn Fn(&[Value]) -> Result<Value, AzraError>>;
 
+/// A `test "name": ...` block collected while a script is evaluated.
+pub struct TestDef {
+    pub name: String,
+    pub body: Vec<Stmt>,
+    pub line: usize,
+}
+
+/// Outcome of running one registered test.
+#[derive(Debug, Clone, PartialEq)]
+pub struct TestResult {
+    pub name: String,
+    pub passed: bool,
+    pub message: String,
+}
+
 /// Execution effect of a statement list.
 enum Flow {
     Normal,
@@ -141,6 +154,10 @@ pub struct Interpreter {
     current_dir: Option<PathBuf>,
     /// Instructions executed since the last public entry point.
     instructions: usize,
+    /// Tests collected from `test "name":` blocks.
+    tests: Vec<TestDef>,
+    /// Results of the most recent `run_tests()` call.
+    test_results: Vec<TestResult>,
 }
 
 impl Interpreter {
@@ -187,6 +204,8 @@ impl Interpreter {
             module_stack: Vec::new(),
             current_dir: None,
             instructions: 0,
+            tests: Vec::new(),
+            test_results: Vec::new(),
         }
     }
 
@@ -197,14 +216,50 @@ impl Interpreter {
         self.begin_tick_budget();
         self.scope = self.globals.clone();
         match self.exec_block(program)? {
-            Flow::Return(_) => Err(AzraError::runtime(
-                "`give back` outside of a function",
-            )),
+            Flow::Return(_) => Err(AzraError::runtime("`give back` outside of a function")),
             Flow::Break | Flow::Continue => Err(AzraError::runtime(
                 "`stop loop` / `skip next` outside of a loop",
             )),
             Flow::Normal => Ok(()),
         }
+    }
+
+    /// Run every `test "name":` block collected during evaluation. Each test
+    /// gets a child scope of the globals, so failures cannot corrupt the host.
+    pub fn run_tests(&mut self) -> Vec<TestResult> {
+        let defs = std::mem::take(&mut self.tests);
+        let saved = self.scope.clone();
+        self.begin_tick_budget();
+        let mut results = Vec::new();
+        for def in defs {
+            self.scope = Scope::new(&saved);
+            let result = match self.exec_block(&def.body) {
+                Ok(Flow::Normal) => TestResult {
+                    name: def.name,
+                    passed: true,
+                    message: "ok".to_string(),
+                },
+                Ok(_) => TestResult {
+                    name: def.name,
+                    passed: false,
+                    message: "unexpected `give back` / loop control in a test".to_string(),
+                },
+                Err(err) => TestResult {
+                    name: def.name,
+                    passed: false,
+                    message: err.to_string(),
+                },
+            };
+            results.push(result);
+        }
+        self.scope = saved;
+        self.test_results = results.clone();
+        results
+    }
+
+    /// Results of the most recent [`Interpreter::run_tests`] call.
+    pub fn test_results(&self) -> Vec<TestResult> {
+        self.test_results.clone()
     }
 
     /// Register a native host function callable from Azra scripts as
@@ -276,11 +331,7 @@ impl Interpreter {
         self.trigger_event_inner(phrase, args)
     }
 
-    fn trigger_event_inner(
-        &mut self,
-        phrase: &str,
-        args: &[Value],
-    ) -> Result<(), AzraError> {
+    fn trigger_event_inner(&mut self, phrase: &str, args: &[Value]) -> Result<(), AzraError> {
         let normalized = normalize_phrase(phrase);
         let matching: Vec<usize> = self
             .handlers
@@ -319,14 +370,12 @@ impl Interpreter {
             match flow? {
                 Flow::Normal => {}
                 Flow::Return(_) => {
-                    return Err(AzraError::runtime(
-                        "`give back` outside of a function",
-                    ))
+                    return Err(AzraError::runtime("`give back` outside of a function"));
                 }
                 Flow::Break | Flow::Continue => {
                     return Err(AzraError::runtime(
                         "`stop loop` / `skip next` outside of a loop",
-                    ))
+                    ));
                 }
             }
         }
@@ -355,10 +404,8 @@ impl Interpreter {
         self.begin_tick_budget();
         self.in_tick = true;
         self.now += delta_time;
-        let update = self.trigger_event_optional(
-            "game updates",
-            &[Value::Number(Num::Float(delta_time))],
-        );
+        let update =
+            self.trigger_event_optional("game updates", &[Value::Number(Num::Float(delta_time))]);
         let result = match update {
             Ok(()) => self.fire_due_timers(),
             Err(e) => Err(e),
@@ -370,11 +417,7 @@ impl Interpreter {
     /// Like [`Interpreter::trigger_event_with_args`] but a missing handler
     /// is not an error — used for the engine lifecycle events so plain
     /// scripts can run without `when game starts:` / `game updates:`.
-    fn trigger_event_optional(
-        &mut self,
-        phrase: &str,
-        args: &[Value],
-    ) -> Result<(), AzraError> {
+    fn trigger_event_optional(&mut self, phrase: &str, args: &[Value]) -> Result<(), AzraError> {
         let normalized = normalize_phrase(phrase);
         let has_handler = self.handlers.iter().any(|h| h.normalized == normalized);
         if !has_handler {

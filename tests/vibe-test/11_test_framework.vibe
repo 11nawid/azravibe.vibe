@@ -1,0 +1,52 @@
+note: 11_test_framework.vibe — demonstrates `test` blocks and `assert`
+use "std/math"
+use "std/collections"
+use "std/string"
+use "std/vec3"
+use "std/testing"
+
+test "math helpers":
+    set squared to square with 9
+    assert equals squared, 81
+    set clamped to clamp01 with 2.5
+    assert equals clamped, 1
+    set degrees to to_degrees with pi
+    assert equals degrees, 180
+    set root to hypot3 with 3, 4, 0
+    assert equals root, 5
+
+test "collections helpers":
+    set nums to range with 5
+    assert equals length of nums, 5
+    set found to index_of with nums, 3
+    assert equals found, 3
+    check_equal with found, 3, "index_of should be 1-based"
+    set evens to filter_list with nums, is_even
+    assert equals length of evens, 3
+    set total to reduce_list with nums, 0, add_numbers
+    assert equals total, 10
+
+test "string helpers":
+    set repeated to repeat_text with "ab", 3
+    assert equals repeated, "ababab"
+    assert ends_with with "hello world", "world"
+    set padded to pad_left with "7", 3, "0"
+    assert equals padded, "007"
+
+test "vector helpers":
+    set v1 to vec3 1, 0, 0
+    set v2 to vec3 0, 1, 0
+    set dot_result to dot of v1 and v2
+    assert equals dot_result, 0
+    set angle to vec_angle_degrees with v1, v2
+    assert equals angle, 90
+    set scaled to vec_scale with v1, 3
+    assert equals scaled, vec3 3, 0, 0
+
+define is_even with n:
+    if n modulo 2 equals 0:
+        give back true
+    give back false
+
+define add_numbers with a, b:
+    give back a + b

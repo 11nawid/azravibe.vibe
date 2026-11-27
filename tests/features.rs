@@ -44,13 +44,7 @@ fn list_builtins_and_mutations() {
     );
     assert_eq!(
         out,
-        vec![
-            "[10, 20, 30]",
-            "30 20 10",
-            "[99, 10]",
-            "true",
-            "0"
-        ]
+        vec!["[10, 20, 30]", "30 20 10", "[99, 10]", "true", "0"]
     );
 }
 
@@ -176,9 +170,7 @@ fn file_io_json_and_sandbox_strict() {
 
     // Strict sandbox blocks I/O and caps instructions.
     let mut strict = AzraEngine::with_sandbox(SandboxConfig::strict());
-    let io_err = strict
-        .eval_str("say parse json \"\\{\\}\"\n")
-        .unwrap_err();
+    let io_err = strict.eval_str("say parse json \"\\{\\}\"\n").unwrap_err();
     assert!(
         io_err.to_string().contains("disabled by the sandbox"),
         "got: {}",
@@ -189,7 +181,9 @@ fn file_io_json_and_sandbox_strict() {
         .eval_str("while true:\n    set x to 1\n")
         .unwrap_err();
     assert!(
-        budget_err.to_string().contains("instruction budget exceeded"),
+        budget_err
+            .to_string()
+            .contains("instruction budget exceeded"),
         "got: {}",
         budget_err
     );

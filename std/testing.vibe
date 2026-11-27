@@ -1,0 +1,20 @@
+note: std/testing — helpers for `azra test` suites
+note: use "std/testing"
+
+define check with condition, message:
+    if condition equals false:
+        fail with message
+    give back true
+
+define check_equal with actual, expected, message:
+    if actual not_equals expected:
+        fail with message
+    give back true
+
+define check_close with actual, expected, tolerance, message:
+    set diff to actual - expected
+    if diff less_than 0:
+        set diff to 0 - diff
+    if diff greater_than tolerance:
+        fail with message
+    give back true

@@ -1,5 +1,6 @@
 //! Tiny xorshift64* generator — deterministic, no dependencies.
 
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
@@ -8,12 +9,21 @@ pub struct Rng {
 }
 
 impl Rng {
+    #[cfg(not(target_arch = "wasm32"))]
     pub fn from_clock() -> Rng {
         let seed = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map(|d| d.as_nanos() as u64)
             .unwrap_or(0x9E37_79B9_7F4A_7C15);
         Rng { state: seed | 1 }
+    }
+
+    /// WebAssembly has no wall clock; use a fixed non-zero seed so the
+    /// playground stays deterministic. Hosts can supply their own seed with
+    /// `with_seed` (or register a JS-backed random host function).
+    #[cfg(target_arch = "wasm32")]
+    pub fn from_clock() -> Rng {
+        Rng::with_seed(0x9E37_79B9_7F4A_7C15)
     }
 
     pub fn with_seed(seed: u64) -> Rng {

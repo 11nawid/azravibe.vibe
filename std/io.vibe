@@ -1,0 +1,20 @@
+note: std/io — file helpers (sandbox permission required)
+note: use "std/io"
+
+define write_text with path, text:
+    write text to file path
+    give back true
+
+define read_text with path:
+    give back read file path
+
+define file_exists with path:
+    give back file exists path
+
+define append_text with path, text:
+    set previous to ""
+    if file exists path:
+        set previous to read file path
+    set combined to previous + text
+    write combined to file path
+    give back combined

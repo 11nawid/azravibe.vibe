@@ -1,0 +1,55 @@
+note: std/collections — list utilities written in Azra itself
+note: use "std/collections"
+
+define range with count:
+    set out to empty list
+    set i to 0
+    while i less_than count:
+        add i to out
+        set i to i + 1
+    give back out
+
+define map_list with values, func:
+    set out to empty list
+    for each value in values:
+        set mapped to func with value
+        add mapped to out
+    give back out
+
+define filter_list with values, predicate:
+    set out to empty list
+    for each value in values:
+        set keep to predicate with value
+        if keep equals true:
+            add value to out
+    give back out
+
+define reduce_list with values, initial, func:
+    set acc to initial
+    for each value in values:
+        set next to func with acc, value
+        set acc to next
+    give back acc
+
+define index_of with values, wanted:
+    set i to 1
+    while i less_than= length of values:
+        if item i of values equals wanted:
+            give back i - 1
+        set i to i + 1
+    give back 0 - 1
+
+define count_of with values, wanted:
+    set found to 0
+    for each value in values:
+        if value equals wanted:
+            set found to found + 1
+    give back found
+
+define take with values, n:
+    set out to empty list
+    set i to 1
+    while i less_than= n and i less_than= length of values:
+        add item i of values to out
+        set i to i + 1
+    give back out

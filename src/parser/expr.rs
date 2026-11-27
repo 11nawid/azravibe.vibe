@@ -1,6 +1,6 @@
 //! Expression parsing with operator precedence.
 
-use super::{member_path, str_expr, Parser, BUILTIN_WORDS};
+use super::{BUILTIN_WORDS, Parser, member_path, str_expr};
 use crate::ast::{BinOp, Builtin, Expr};
 use crate::error::AzraError;
 use crate::token::{Token, TokenKind};
@@ -330,10 +330,7 @@ impl Parser {
                 }
                 _ => self.parse_var_or_call(tok),
             },
-            other => Err(self.error_here(format!(
-                "expected a value, found `{}`",
-                other
-            ))),
+            other => Err(self.error_here(format!("expected a value, found `{}`", other))),
         }
     }
 

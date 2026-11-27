@@ -8,7 +8,10 @@ use crate::token::Num;
 pub enum InterpPart {
     Text(String),
     /// `{player.health}` — evaluated and rendered at runtime.
-    Path { path: Path, line: usize },
+    Path {
+        path: Path,
+        line: usize,
+    },
 }
 
 /// Built-in expression forms (`round 4.6`, `length of items`, ...).
@@ -187,7 +190,10 @@ pub enum Expr {
     Bool(bool),
     Null,
     /// Variable reference
-    Var { name: String, line: usize },
+    Var {
+        name: String,
+        line: usize,
+    },
     /// `obj.prop`
     Member {
         object: Box<Expr>,
@@ -212,9 +218,15 @@ pub enum Expr {
         line: usize,
     },
     /// `not expr`
-    Not { expr: Box<Expr>, line: usize },
+    Not {
+        expr: Box<Expr>,
+        line: usize,
+    },
     /// `-expr`
-    Negate { expr: Box<Expr>, line: usize },
+    Negate {
+        expr: Box<Expr>,
+        line: usize,
+    },
     Binary {
         op: BinOp,
         left: Box<Expr>,

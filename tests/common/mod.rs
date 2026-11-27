@@ -7,11 +7,7 @@ use azra::{AzraEngine, AzraError};
 pub fn run(src: &str) -> (Result<(), AzraError>, Vec<String>) {
     let mut engine = AzraEngine::new();
     let result = engine.eval_str(src);
-    let out = engine
-        .take_output()
-        .into_iter()
-        .map(|l| l.text)
-        .collect();
+    let out = engine.take_output().into_iter().map(|l| l.text).collect();
     (result, out)
 }
 

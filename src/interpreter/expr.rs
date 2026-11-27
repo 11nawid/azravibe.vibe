@@ -1,11 +1,11 @@
 //! Expression evaluation: variables, members, calls, interpolation,
 //! built-in forms and binary operators.
 
+use super::Interpreter;
 use super::helpers::{
     compare_values, num_add, num_div, num_mod, num_mul, num_neg, num_pow, num_sub,
 };
 use super::target::read_property;
-use super::Interpreter;
 use crate::ast::*;
 use crate::error::AzraError;
 use crate::stdlib::{self, BuiltinCtx};
@@ -149,9 +149,7 @@ impl Interpreter {
                     return Ok(Value::Str(format!("{}{}", l.render(), r.render())));
                 }
                 match (&l, &r) {
-                    (Value::Number(a), Value::Number(b)) => {
-                        Ok(Value::Number(num_add(a, b, line)?))
-                    }
+                    (Value::Number(a), Value::Number(b)) => Ok(Value::Number(num_add(a, b, line)?)),
                     (Value::List(a), Value::List(b)) => {
                         let mut items = a.borrow().clone();
                         items.extend(b.borrow().iter().cloned());
@@ -271,10 +269,7 @@ impl Interpreter {
                     Value::Map(m) => Ok(Value::Bool(m.borrow().get(&key).is_some())),
                     Value::Object(o) => Ok(Value::Bool(o.borrow().get(&key).is_some())),
                     other => Err(AzraError::runtime_at(
-                        format!(
-                            "`has key` needs a map or object, got {}",
-                            other.type_name()
-                        ),
+                        format!("`has key` needs a map or object, got {}", other.type_name()),
                         line,
                     )),
                 }

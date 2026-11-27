@@ -1,0 +1,58 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Azra",
+  "scopeName": "source.vibe",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#builtins" },
+    { "include": "#operators" },
+    { "include": "#identifiers" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.note.vibe",
+          "match": "(?:(?<=^)|(?<=\\s))(note:|#).*$"
+        },
+        {
+          "name": "comment.block.vibe",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.vibe",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        { "name": "constant.character.escape.vibe", "match": "\\\\." },
+        { "name": "meta.interpolation.vibe", "match": "\\{[a-zA-Z_][a-zA-Z0-9_.]*\\}" }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.vibe",
+      "match": "\\b[0-9]+(\\.[0-9]+)?\\b"
+    },
+    "keywords": {
+      "name": "keyword.control.vibe",
+      "match": "\\b(?:set|make|add|remove|subtract|multiply|divide|say|warn|error|if|otherwise|repeat|for|each|in|while|define|with|give|back|when|use|try|fail|sort|reverse|clear|wait|every|after|stop|loop|skip|next|break|continue|test|assert|equals|not_equals|less_than|greater_than|and|or|not|is|contains|starts|has|key|of|by|from|to|times|as|power|modulo)\\b"
+    },
+    "builtins": {
+      "name": "support.function.builtin.vibe",
+      "match": "\\b(?:pi|e|sin|cos|tan|asin|acos|atan|atan2|log|log10|exp|lerp|sqrt|abs|round|floor|ceil|min|max|clamp|random|length|vec3|color|dot|cross|magnitude|normalize|distance|angle|degrees|radians|item|first|last|keys|empty|read|write|file|parse|json|current|format|uppercase|lowercase|trim|split|join|replace)\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.vibe",
+      "match": "[+\\-*/.,:<>=]"
+    },
+    "identifiers": {
+      "name": "variable.other.vibe",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    }
+  }
+}

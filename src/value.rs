@@ -70,7 +70,10 @@ impl MapData {
     }
 
     pub fn keys(&self) -> Vec<Value> {
-        self.entries.iter().map(|(k, _)| Value::Str(k.clone())).collect()
+        self.entries
+            .iter()
+            .map(|(k, _)| Value::Str(k.clone()))
+            .collect()
     }
 }
 
@@ -270,7 +273,8 @@ impl Value {
                 let b = b.borrow();
                 a.entries.len() == b.entries.len()
                     && a.entries.iter().all(|(k, v)| {
-                        b.get(k).is_some_and(|other| v.equals_depth(other, depth + 1))
+                        b.get(k)
+                            .is_some_and(|other| v.equals_depth(other, depth + 1))
                     })
             }
             (Value::Object(a), Value::Object(b)) => Rc::ptr_eq(a, b),
@@ -298,8 +302,7 @@ impl Value {
             Value::Null => "null".to_string(),
             Value::List(items) => {
                 let items = items.borrow();
-                let parts: Vec<String> =
-                    items.iter().map(|v| v.render_depth(depth + 1)).collect();
+                let parts: Vec<String> = items.iter().map(|v| v.render_depth(depth + 1)).collect();
                 format!("[{}]", parts.join(", "))
             }
             Value::Map(entries) => {

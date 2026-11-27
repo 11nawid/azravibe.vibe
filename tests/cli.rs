@@ -93,12 +93,7 @@ fn cli_run_trigger_and_unknown_trigger_behavior() {
     assert!(stdout.contains("Game Over!"));
 
     let bad = Command::new(azra_bin())
-        .args([
-            "run",
-            "examples/hello.vibe",
-            "--trigger",
-            "missing event",
-        ])
+        .args(["run", "examples/hello.vibe", "--trigger", "missing event"])
         .output()
         .unwrap();
     assert!(!bad.status.success());

@@ -2,7 +2,7 @@
 //! functions registered by the embedder, method calls (`weapons.fire`) and
 //! the mock engine verbs.
 
-use super::{Flow, Interpreter, OutputLevel, OutputLine, ENGINE_VERBS};
+use super::{ENGINE_VERBS, Flow, Interpreter, OutputLevel, OutputLine};
 use crate::ast::Expr;
 use crate::env::Scope;
 use crate::error::AzraError;

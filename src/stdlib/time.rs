@@ -7,11 +7,7 @@ use crate::token::Num;
 use crate::value::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub(super) fn eval_time(
-    name: Builtin,
-    args: &[Value],
-    line: usize,
-) -> Result<Value, AzraError> {
+pub(super) fn eval_time(name: Builtin, args: &[Value], line: usize) -> Result<Value, AzraError> {
     match name {
         Builtin::CurrentTime => {
             if !args.is_empty() {
@@ -37,7 +33,7 @@ pub(super) fn eval_time(
                     return Err(AzraError::runtime_at(
                         "`format time` takes at most 1 argument",
                         line,
-                    ))
+                    ));
                 }
             };
             Ok(Value::Str(format_utc(secs)))
@@ -52,7 +48,10 @@ pub fn format_utc(secs: i64) -> String {
     let rem = secs.rem_euclid(86_400);
     let (h, m, s) = (rem / 3600, (rem % 3600) / 60, rem % 60);
     let (year, month, day) = civil_from_days(days);
-    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", year, month, day, h, m, s)
+    format!(
+        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}",
+        year, month, day, h, m, s
+    )
 }
 
 /// Howard Hinnant's `civil_from_days` (proleptic Gregorian calendar).

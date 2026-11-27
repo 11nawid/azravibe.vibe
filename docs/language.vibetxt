@@ -306,4 +306,36 @@ Milestone 3 (planned): Azravibe Studio & Azravibe Player
                           close binary forms or a star is ejected. It reports
                           a maximum relative energy drift near 8e-10.
 
+
+7. TESTING, PACKAGES AND STANDARD LIBRARY
+--------------------------------------------------------------------------------
+- Test declarations: `test "name":` followed by an indented body. Test blocks
+  are registered while a file loads and executed by `azra test <file-or-dir>`.
+- Assertions: `assert CONDITION`, `assert CONDITION, "message"`,
+  `assert equals A, B` and `assert not_equals A, B` (all accept an optional
+  final message expression). A failed assertion is a catchable runtime error.
+  `std/testing` adds `check`, `check_equal` and `check_close` helpers.
+- Project manifest `azra.toml` has `[package]` (name, version, description,
+  entry) and `[dependencies]`. A dependency is either `"1.2"` (local registry,
+  ^1.2 semantics) or `{ path = "../local", version = "0.1.0" }`.
+- `azra init [name]`, `azra pkg publish <dir>`, `azra pkg add`,
+  `azra pkg remove`, `azra pkg install`, `azra pkg tree` and `azra pkg list`
+  manage packages. Installation writes `azra.lock` and copies packages into
+  `.azra/packages/`.
+- `use "std/math"`, `std/collections`, `std/string`, `std/vec3`,
+  `std/random`, `std/io`, `std/json`, `std/testing` load bundled standard
+  library modules. Installed packages load with `use "package-name/module"`.
+
+
+8. DEVELOPER TOOLING
+--------------------------------------------------------------------------------
+- `azra fmt [--check] <file.vibe>` normalizes indentation to 4 spaces, expands
+  tabs and strips trailing whitespace.
+- `azra-lsp` is a dependency-free language server (JSON-RPC over stdio) with
+  diagnostics, completion, hover, go-to-definition and document formatting.
+  Editor clients: `editors/vscode/` and `editors/neovim/`.
+- `playground/` runs a Monaco editor plus the interpreter compiled to
+  WebAssembly (`src/wasm.rs`), with shareable URLs; all execution is local.
+- Project website and hosted playground: https://azravibe.com/vibe
+- Source and contributions: https://github.com/11nawid/azravibe.vibe
 ================================================================================

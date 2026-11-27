@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Build
+        run: cargo build --all-targets
+      - name: Format check
+        run: cargo fmt --check
+      - name: Test
+        run: cargo test
+      - name: Check CLI scripts
+        run: |
+          cargo run --quiet -- check examples/hello.vibe
+          cargo run --quiet -- check examples/game_demo.vibe
+          for f in tests/vibe-test/*.vibe; do cargo run --quiet -- check "$f"; done
+
+  wasm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Build WebAssembly playground runtime
+        run: cargo build --release --target wasm32-unknown-unknown --lib

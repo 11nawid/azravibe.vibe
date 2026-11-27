@@ -18,21 +18,92 @@ use crate::token::{StrPart, Token, TokenKind};
 /// Words that can never start a statement (operators and structural glue).
 /// They produce a clear parse error instead of "undefined function".
 pub(super) const STATEMENT_KEYWORDS: &[&str] = &[
-    "and", "or", "not", "equals", "not_equals", "less_than", "greater_than", "is", "contains",
-    "starts", "has", "of", "from", "by", "with", "in", "times", "as", "each", "between", "true",
-    "false", "null", "nothing", "otherwise", "back", "seconds",
+    "and",
+    "or",
+    "not",
+    "equals",
+    "not_equals",
+    "less_than",
+    "greater_than",
+    "is",
+    "contains",
+    "starts",
+    "has",
+    "of",
+    "from",
+    "by",
+    "with",
+    "in",
+    "times",
+    "as",
+    "each",
+    "between",
+    "true",
+    "false",
+    "null",
+    "nothing",
+    "otherwise",
+    "back",
+    "seconds",
+    "test",
+    "assert",
 ];
 
 /// Words that open a built-in expression form (`round 4.6`, `length of x`, ...).
 /// In expression position a failed attempt falls back to a variable read.
 pub(super) const BUILTIN_WORDS: &[&str] = &[
-    "vec3", "color", "item", "last", "first", "length", "keys", "key", "distance", "normalize",
-    "round", "floor", "ceil", "abs", "sqrt", "sin", "cos", "min", "max", "clamp", "random",
-    "uppercase", "lowercase", "trim", "split", "join", "replace", "current", "format", "read",
-    "file", "parse", "to", "empty",
+    "vec3",
+    "color",
+    "item",
+    "last",
+    "first",
+    "length",
+    "keys",
+    "key",
+    "distance",
+    "normalize",
+    "round",
+    "floor",
+    "ceil",
+    "abs",
+    "sqrt",
+    "sin",
+    "cos",
+    "min",
+    "max",
+    "clamp",
+    "random",
+    "uppercase",
+    "lowercase",
+    "trim",
+    "split",
+    "join",
+    "replace",
+    "current",
+    "format",
+    "read",
+    "file",
+    "parse",
+    "to",
+    "empty",
     // Advanced mathematics / 3D geometry.
-    "tan", "asin", "acos", "atan", "atan2", "pi", "e", "log", "log10", "exp", "lerp",
-    "degrees", "radians", "dot", "cross", "magnitude", "angle",
+    "tan",
+    "asin",
+    "acos",
+    "atan",
+    "atan2",
+    "pi",
+    "e",
+    "log",
+    "log10",
+    "exp",
+    "lerp",
+    "degrees",
+    "radians",
+    "dot",
+    "cross",
+    "magnitude",
+    "angle",
 ];
 
 const MAX_PARSE_DEPTH: usize = 128;
@@ -145,10 +216,7 @@ impl Parser {
             self.advance();
             Ok(())
         } else {
-            Err(self.error_here(format!(
-                "expected `,` , found `{}`",
-                self.peek_kind()
-            )))
+            Err(self.error_here(format!("expected `,` , found `{}`", self.peek_kind())))
         }
     }
 
@@ -192,10 +260,7 @@ impl Parser {
                 Ok(())
             }
             TokenKind::Eof => Ok(()),
-            other => Err(self.error_here(format!(
-                "expected end of line, found `{}`",
-                other
-            ))),
+            other => Err(self.error_here(format!("expected end of line, found `{}`", other))),
         }
     }
 
@@ -260,5 +325,8 @@ pub(super) fn str_expr(parts: &[StrPart], line: usize) -> Expr {
             },
         })
         .collect();
-    Expr::Interp { parts: interp, line }
+    Expr::Interp {
+        parts: interp,
+        line,
+    }
 }

@@ -58,10 +58,7 @@ impl Interpreter {
             .eval(from)?
             .as_number("`repeat ... from`", line)?
             .as_f64();
-        let to = self
-            .eval(to)?
-            .as_number("`repeat ... to`", line)?
-            .as_f64();
+        let to = self.eval(to)?.as_number("`repeat ... to`", line)?.as_f64();
         let step = match step {
             Some(expr) => {
                 let s = self
@@ -139,10 +136,7 @@ impl Interpreter {
             Value::List(items) => items.borrow().clone(),
             other => {
                 return Err(AzraError::runtime_at(
-                    format!(
-                        "`for each` expects a list, got {}",
-                        other.type_name()
-                    ),
+                    format!("`for each` expects a list, got {}", other.type_name()),
                     line,
                 ));
             }

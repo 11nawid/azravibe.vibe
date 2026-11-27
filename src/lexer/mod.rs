@@ -198,7 +198,9 @@ impl Lexer {
         // Single-line comment starting with '#'.
         if self.peek() == Some('#') {
             while let Some(ch) = self.peek() {
-                if ch == '\n' { break; }
+                if ch == '\n' {
+                    break;
+                }
                 self.bump();
             }
             self.line_has_tokens = false;
@@ -207,7 +209,9 @@ impl Lexer {
         // Single-line comment starting with "note:".
         if self.starts_with_comment() {
             while let Some(ch) = self.peek() {
-                if ch == '\n' { break; }
+                if ch == '\n' {
+                    break;
+                }
                 self.bump();
             }
             self.line_has_tokens = false;
@@ -244,7 +248,9 @@ impl Lexer {
         // Inline comment "note:" when not at line start.
         if self.starts_with_comment() && !self.at_line_start {
             while let Some(ch) = self.peek() {
-                if ch == '\n' { break; }
+                if ch == '\n' {
+                    break;
+                }
                 self.bump();
             }
             self.line_has_tokens = false;
@@ -266,7 +272,13 @@ impl Lexer {
             ',' => self.single(TokenKind::Comma, line, column),
             ':' => self.single(TokenKind::Colon, line, column),
             '.' => self.single(TokenKind::Dot, line, column),
-            '\'' if self.pos > 0 && matches!(self.chars.get(self.pos - 1), Some('"' | '\'')) && self.peek_at(1) == Some('s') && self.peek_at(2).is_none_or(|ch| ch.is_whitespace() || ch == '"') => {
+            '\'' if self.pos > 0
+                && matches!(self.chars.get(self.pos - 1), Some('"' | '\''))
+                && self.peek_at(1) == Some('s')
+                && self
+                    .peek_at(2)
+                    .is_none_or(|ch| ch.is_whitespace() || ch == '"') =>
+            {
                 self.bump(); // '\''
                 self.bump(); // s
                 self.push(TokenKind::Possessive, line, column);

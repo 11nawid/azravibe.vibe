@@ -95,7 +95,7 @@ pub fn eval_builtin(
                             other.type_name()
                         ),
                         line,
-                    ))
+                    ));
                 }
             };
             Ok(num(Num::Int(len)))
@@ -200,7 +200,10 @@ pub fn eval_builtin(
         }
         Builtin::EmptyMap => {
             if !args.is_empty() {
-                return Err(AzraError::runtime_at("`empty map` takes no arguments", line));
+                return Err(AzraError::runtime_at(
+                    "`empty map` takes no arguments",
+                    line,
+                ));
             }
             Ok(Value::map(Vec::new()))
         }

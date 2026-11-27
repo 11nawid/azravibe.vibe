@@ -1,10 +1,10 @@
 //! Control-flow, function, event, timer, and indented block parsing.
 
-use super::stmt::TimerStmt;
 use super::Parser;
+use super::stmt::TimerStmt;
 use crate::ast::{Branch, Stmt};
 use crate::error::AzraError;
-use crate::token::{render_str_parts, TokenKind};
+use crate::token::{TokenKind, render_str_parts};
 
 impl Parser {
     pub(super) fn parse_if(&mut self) -> Result<Stmt, AzraError> {
@@ -148,9 +148,9 @@ impl Parser {
             match self.peek_kind().clone() {
                 TokenKind::Colon => break,
                 TokenKind::Eof | TokenKind::Newline => {
-                    return Err(self.error_here(
-                        "expected `:` after the event phrase in `when <event>:`",
-                    ))
+                    return Err(
+                        self.error_here("expected `:` after the event phrase in `when <event>:`")
+                    );
                 }
                 TokenKind::Word(w) => {
                     parts.push(w);
@@ -205,10 +205,9 @@ impl Parser {
                     self.advance();
                 }
                 other => {
-                    return Err(self.error_here(format!(
-                        "unexpected `{}` in a `when` event phrase",
-                        other
-                    )))
+                    return Err(
+                        self.error_here(format!("unexpected `{}` in a `when` event phrase", other))
+                    );
                 }
             }
         }
@@ -257,10 +256,9 @@ impl Parser {
         self.expect_colon_block("after `try`")?;
         let body = self.parse_block("an indented block after `try:`")?;
         // `if error as err:` handler
-        if !(self.check_word("if") && matches!(self.kind_at(1), TokenKind::Word(w) if w == "error")) {
-            return Err(self.error_here(
-                "expected `if error as <name>:` after the `try` block",
-            ));
+        if !(self.check_word("if") && matches!(self.kind_at(1), TokenKind::Word(w) if w == "error"))
+        {
+            return Err(self.error_here("expected `if error as <name>:` after the `try` block"));
         }
         self.advance(); // if
         self.advance(); // error
@@ -300,7 +298,7 @@ impl Parser {
     // ---------------------------------------------------------------- blocks
 
     /// `:` + optional trailing period + end of line.
-    fn expect_colon_block(&mut self, what: &str) -> Result<(), AzraError> {
+    pub(super) fn expect_colon_block(&mut self, what: &str) -> Result<(), AzraError> {
         if !self.check(&TokenKind::Colon) {
             return Err(self.error_here(format!(
                 "expected `:` {}, found `{}`",
@@ -316,16 +314,17 @@ impl Parser {
             self.advance();
             Ok(())
         } else {
-            Err(self.error_here(format!(
-                "expected end of line after `:` {}",
-                what
-            )))
+            Err(self.error_here(format!("expected end of line after `:` {}", what)))
         }
     }
 
-    fn parse_block(&mut self, what: &str) -> Result<Vec<Stmt>, AzraError> {
+    pub(super) fn parse_block(&mut self, what: &str) -> Result<Vec<Stmt>, AzraError> {
         if !self.check(&TokenKind::Indent) {
-            return Err(self.error_here(format!("expected {}, found `{}`", what, self.peek_kind())));
+            return Err(self.error_here(format!(
+                "expected {}, found `{}`",
+                what,
+                self.peek_kind()
+            )));
         }
         self.with_depth(|p| {
             p.advance();

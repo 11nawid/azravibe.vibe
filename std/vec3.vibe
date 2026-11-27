@@ -1,0 +1,33 @@
+note: std/vec3 — 3D vector helpers
+note: use "std/vec3"
+
+define vec_add with a, b:
+    set x to a.x + b.x
+    set y to a.y + b.y
+    set z to a.z + b.z
+    give back vec3 x, y, z
+
+define vec_sub with a, b:
+    set x to a.x - b.x
+    set y to a.y - b.y
+    set z to a.z - b.z
+    give back vec3 x, y, z
+
+define vec_scale with v, factor:
+    set x to v.x * factor
+    set y to v.y * factor
+    set z to v.z * factor
+    give back vec3 x, y, z
+
+define vec_lerp with a, b, t:
+    give back lerp a to b by t
+
+define vec_angle_degrees with a, b:
+    set angle to angle between a and b
+    give back radians to degrees of angle
+
+define vec_sum with values:
+    set total to vec3 0, 0, 0
+    for each v in values:
+        set total to vec_add with total, v
+    give back total

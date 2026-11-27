@@ -69,7 +69,10 @@ fn math_features_script() {
     near(&out[18], 90.0);
     close_vec(vec3(&out[19]), [0.6, 0.8, 0.0]);
     close_vec(vec3(&out[21]), [0.5, 0.5, 0.0]);
-    assert_eq!(&out[22..], &["5", "-5", "-4", "7", "4", "1024", "3", "3", "3.5"]);
+    assert_eq!(
+        &out[22..],
+        &["5", "-5", "-4", "7", "4", "1024", "3", "3", "3.5"]
+    );
 }
 
 #[test]
@@ -179,6 +182,9 @@ fn combined_math_stress_script() {
         "roots: 3 2",
         "overflow: integer overflow in addition",
     ] {
-        assert!(joined.contains(expected), "missing `{expected}` in:\n{joined}");
+        assert!(
+            joined.contains(expected),
+            "missing `{expected}` in:\n{joined}"
+        );
     }
 }

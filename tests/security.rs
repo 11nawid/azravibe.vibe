@@ -2,7 +2,7 @@
 
 mod common;
 
-use azra::{parser, AzraEngine, SandboxConfig};
+use azra::{AzraEngine, SandboxConfig, parser};
 use common::err;
 
 #[test]
@@ -33,11 +33,7 @@ fn deeply_nested_json_is_rejected_without_stack_overflow() {
     let e = engine
         .eval_str(&format!("say parse json \"{}\"\n", deep))
         .unwrap_err();
-    assert!(
-        e.to_string().contains("max depth"),
-        "got: {}",
-        e
-    );
+    assert!(e.to_string().contains("max depth"), "got: {}", e);
 }
 
 #[test]
@@ -112,11 +108,7 @@ fn strict_sandbox_blocks_all_io_sleep_and_try_bypass() {
             "define boom:\n    give back boom\ntry:\n    say boom\nif error as err:\n    say \"escaped\"\n",
         )
         .unwrap_err();
-    assert!(
-        e.to_string().contains("call stack overflow"),
-        "got: {}",
-        e
-    );
+    assert!(e.to_string().contains("call stack overflow"), "got: {}", e);
 
     // 4. `wait` does not sleep the OS thread in strict sandbox (advances clock only).
     let mut engine = AzraEngine::with_sandbox(SandboxConfig::strict());

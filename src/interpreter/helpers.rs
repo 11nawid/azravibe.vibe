@@ -4,7 +4,7 @@
 use crate::ast::Stmt;
 use crate::error::AzraError;
 use crate::token::Num;
-use crate::value::{format_float, Value};
+use crate::value::{Value, format_float};
 
 use super::MAX_LOOP_ITERATIONS;
 
@@ -42,7 +42,10 @@ pub(super) fn stmt_line(stmt: &Stmt) -> usize {
         | Stmt::Every { line, .. }
         | Stmt::After { line, .. }
         | Stmt::Wait { line, .. }
-        | Stmt::WriteFile { line, .. } => *line,
+        | Stmt::WriteFile { line, .. }
+        | Stmt::Test { line, .. }
+        | Stmt::Assert { line, .. }
+        | Stmt::AssertEqual { line, .. } => *line,
     }
 }
 
@@ -95,7 +98,10 @@ pub(super) fn repeat_count(value: &Value, line: usize) -> Result<u64, AzraError>
                 ))
             } else if f.fract() != 0.0 {
                 Err(AzraError::runtime_at(
-                    format!("repeat count must be a whole number, got {}", format_float(*f)),
+                    format!(
+                        "repeat count must be a whole number, got {}",
+                        format_float(*f)
+                    ),
                     line,
                 ))
             } else if *f > MAX_LOOP_ITERATIONS as f64 {

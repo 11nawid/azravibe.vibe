@@ -2,7 +2,7 @@
 
 mod common;
 
-use azra::{lexer, parser, AzraEngine};
+use azra::{AzraEngine, lexer, parser};
 use common::err;
 
 #[test]
@@ -17,7 +17,11 @@ fn syntax_error_reports_line_numbers() {
 fn undefined_variable_error() {
     let e = err("say missing_var\n");
     let msg = e.to_string();
-    assert!(msg.contains("undefined variable `missing_var`"), "got: {}", msg);
+    assert!(
+        msg.contains("undefined variable `missing_var`"),
+        "got: {}",
+        msg
+    );
     assert!(msg.contains("line 1"), "got: {}", msg);
 }
 

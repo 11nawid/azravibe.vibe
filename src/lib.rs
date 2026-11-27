@@ -12,23 +12,50 @@
 pub mod ast;
 pub mod env;
 pub mod error;
+pub mod format;
 pub mod interpreter;
 pub mod lexer;
+pub mod manifest;
 pub mod parser;
+pub mod pkg;
 pub mod sandbox;
 pub mod stdlib;
 pub mod token;
 pub mod value;
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
 
 pub use ast::OutputLevel;
 pub use error::{AzraError, ErrorKind};
-pub use interpreter::{OutputLine, OutputStream};
+pub use interpreter::{OutputLine, OutputStream, TestResult};
 pub use sandbox::SandboxConfig;
 pub use token::{Num, Token, TokenKind};
 pub use value::{ObjectData, Value};
 
 use interpreter::Interpreter;
 use std::path::{Path, PathBuf};
+
+/// Run a source string and return its buffered output as a single string.
+/// Used by the WebAssembly playground and by embedding hosts that only need
+/// text. Errors include any output produced before the failure.
+pub fn run_source(source: &str) -> Result<String, String> {
+    let mut engine = AzraEngine::new();
+    let result = engine.eval_str(source);
+    let output = engine
+        .take_output()
+        .into_iter()
+        .map(|line| line.text)
+        .collect::<Vec<_>>()
+        .join("\n");
+    match result {
+        Ok(()) => Ok(output),
+        Err(err) => Err(if output.is_empty() {
+            err.to_string()
+        } else {
+            format!("{output}\n{err}")
+        }),
+    }
+}
 
 /// The embedding handle for the Azra virtual machine.
 ///
@@ -72,13 +99,24 @@ impl AzraEngine {
         Ok(())
     }
 
+    /// Run every `test "name":` block collected by [`AzraEngine::eval_str`].
+    /// Each test runs in a fresh child scope; results are also cached on the
+    /// engine and available through [`AzraEngine::test_results`].
+    pub fn run_tests(&mut self) -> Vec<TestResult> {
+        self.interp.run_tests()
+    }
+
+    /// Results of the most recent [`AzraEngine::run_tests`] call.
+    pub fn test_results(&self) -> Vec<TestResult> {
+        self.interp.test_results()
+    }
+
     /// Read a `.vibe` file and execute it (also sets the directory used to
     /// resolve `use "..."` imports inside the file).
     pub fn eval_file(&mut self, path: impl AsRef<Path>) -> Result<(), AzraError> {
         let path = path.as_ref();
-        let source = std::fs::read_to_string(path).map_err(|e| {
-            AzraError::io(format!("cannot read `{}`: {}", path.display(), e))
-        })?;
+        let source = std::fs::read_to_string(path)
+            .map_err(|e| AzraError::io(format!("cannot read `{}`: {}", path.display(), e)))?;
         self.interp
             .set_current_dir(path.parent().map(|p| p.to_path_buf()));
         self.eval_str(&source)
@@ -129,7 +167,11 @@ impl AzraEngine {
 
     /// Fire a registered `when <event>:` handler with arguments bound to
     /// the handler's `with` parameters.
-    pub fn trigger_event_with_args(&mut self, phrase: &str, args: &[Value]) -> Result<(), AzraError> {
+    pub fn trigger_event_with_args(
+        &mut self,
+        phrase: &str,
+        args: &[Value],
+    ) -> Result<(), AzraError> {
         self.interp.trigger_event_with_args(phrase, args)
     }
 
@@ -177,9 +219,8 @@ fn check_file_recursive(path: &Path, seen: &mut Vec<PathBuf>) -> Result<(), Azra
     }
     seen.push(canonical.clone());
 
-    let source = std::fs::read_to_string(path).map_err(|e| {
-        AzraError::io(format!("cannot read `{}`: {}", path.display(), e))
-    })?;
+    let source = std::fs::read_to_string(path)
+        .map_err(|e| AzraError::io(format!("cannot read `{}`: {}", path.display(), e)))?;
     let source = source.strip_prefix('\u{feff}').unwrap_or(&source);
     let tokens = lexer::tokenize(source)?;
     let program = parser::parse(&tokens)?;
@@ -224,9 +265,7 @@ fn collect_imports_into(program: &[ast::Stmt], specs: &mut Vec<String>) {
             | Stmt::When { body, .. }
             | Stmt::Every { body, .. }
             | Stmt::After { body, .. } => collect_imports_into(body, specs),
-            Stmt::Try {
-                body, handler, ..
-            } => {
+            Stmt::Try { body, handler, .. } => {
                 collect_imports_into(body, specs);
                 collect_imports_into(handler, specs);
             }

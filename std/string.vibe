@@ -1,0 +1,47 @@
+note: std/string — text helpers built from the string built-ins
+note: use "std/string"
+
+define repeat_text with text, times:
+    set out to ""
+    set i to 0
+    while i less_than times:
+        set out to out + text
+        set i to i + 1
+    give back out
+
+define pad_left with text, width, fill:
+    set have to length of text
+    set missing to width - have
+    if missing less_than= 0:
+        give back text
+    set padding to repeat_text with fill, missing
+    give back padding + text
+
+define pad_right with text, width, fill:
+    set have to length of text
+    set missing to width - have
+    if missing less_than= 0:
+        give back text
+    set padding to repeat_text with fill, missing
+    give back text + padding
+
+define ends_with with text, suffix:
+    set chars to split text by ""
+    set tail to split suffix by ""
+    set offset to length of chars - length of tail
+    if offset less_than 0:
+        give back false
+    set i to 1
+    while i less_than= length of tail:
+        set a to item offset + i of chars
+        set b to item i of tail
+        if a not_equals b:
+            give back false
+        set i to i + 1
+    give back true
+
+define starts_with_text with text, prefix:
+    give back text starts with prefix
+
+define clean with text:
+    give back trim of text

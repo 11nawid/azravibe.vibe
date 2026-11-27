@@ -39,7 +39,10 @@ impl Interpreter {
             }
             other => {
                 return Err(AzraError::runtime_at(
-                    format!("`add` expects a number or a list, got {}", other.type_name()),
+                    format!(
+                        "`add` expects a number or a list, got {}",
+                        other.type_name()
+                    ),
                     line,
                 ));
             }
@@ -187,10 +190,7 @@ impl Interpreter {
             Value::Map(m) => m.borrow_mut().entries.clear(),
             other => {
                 return Err(AzraError::runtime_at(
-                    format!(
-                        "`clear` expects a list or map, got {}",
-                        other.type_name()
-                    ),
+                    format!("`clear` expects a list or map, got {}", other.type_name()),
                     line,
                 ));
             }
@@ -206,9 +206,9 @@ impl Interpreter {
                 // NaN has no defined position in an ordering, and a
                 // comparator that calls NaN "equal" to everything produces
                 // an arbitrary (or panicking) sort.
-                let all_numbers = items.iter().all(|v| {
-                    matches!(v, Value::Number(n) if n.as_f64().is_finite())
-                });
+                let all_numbers = items
+                    .iter()
+                    .all(|v| matches!(v, Value::Number(n) if n.as_f64().is_finite()));
                 let all_strings = items.iter().all(|v| matches!(v, Value::Str(_)));
                 if all_numbers {
                     items.sort_by(|a, b| {
