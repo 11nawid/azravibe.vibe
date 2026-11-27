@@ -27,7 +27,17 @@ pub fn attach(out_path: &Path, script: &str) -> Result<(), String> {
     bytes.extend_from_slice(MARKER);
     bytes.extend_from_slice(&(script.len() as u64).to_le_bytes());
     bytes.extend_from_slice(script.as_bytes());
-    write_file(out_path, &bytes)
+    write_file(out_path, &bytes)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = std::fs::metadata(out_path)
+            .map_err(|e| e.to_string())?
+            .permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(out_path, permissions).map_err(|e| e.to_string())?;
+    }
+    Ok(())
 }
 
 /// Read the embedded script from the running executable, if any.
