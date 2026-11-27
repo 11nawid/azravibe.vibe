@@ -17,6 +17,9 @@ Semantic Versioning where practical (pre-1.0 versions may break syntax).
 - `azra-lsp` language server with diagnostics, completion, hover,
   go-to-definition and formatting, plus VS Code and Neovim clients.
 - WebAssembly bridge and browser playground in `playground/`.
+- REPL: `:clear` now clears the terminal screen as well as the input buffer;
+  `:cls` and `:screen` are aliases, and bare `clear`/`help` etc. show a hint
+  about the required leading colon.
 - `azra update`: self-update from the latest one-file release, with automatic
   PATH and VS Code re-setup after replacement.
 - Bytecode VM mode (`azra run --vm`), HTTPS host functions via curl, `azra setup-path`

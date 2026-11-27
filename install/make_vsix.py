@@ -11,7 +11,7 @@ OUT = os.path.join(HERE, "azra-vibe.vsix")
 MANIFEST = """<?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011">
   <Metadata>
-    <Identity Language="en-US" Id="azra-vibe" Version="0.0.8" Publisher="azravibe" />
+    <Identity Language="en-US" Id="azra-vibe" Version="0.0.9" Publisher="azravibe" />
     <DisplayName>Azra (.vibe) Language Support</DisplayName>
     <Description>Syntax highlighting and language server support for Azra.</Description>
     <Tags>azra,vibe,programming-language</Tags>

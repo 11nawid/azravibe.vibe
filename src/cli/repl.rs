@@ -4,6 +4,7 @@
 use super::output::flush_output;
 use azra::AzraEngine;
 use std::io::{BufRead, IsTerminal, Write};
+use std::process::Command;
 
 // ── ANSI escape codes ──────────────────────────────────────────────────────
 const RESET: &str = "\x1b[0m";
@@ -55,8 +56,8 @@ pub fn cmd_repl() -> i32 {
             DIM, RESET
         );
         println!(
-            "  {}Commands:  {}:help{}  {}:vars{}  {}:reset{}  {}:clear{}",
-            DIM, GREEN, DIM, GREEN, DIM, GREEN, DIM, GREEN, RESET
+            "  {}Commands:  {}:help{}  {}:vars{}  {}:reset{}  {}:clear{} / {}:cls{}",
+            DIM, GREEN, DIM, GREEN, DIM, GREEN, DIM, GREEN, DIM, GREEN, RESET
         );
         println!(
             "  {}Exit:      {}leave azra{}  or  {}:quit{}  or  {}Ctrl+D{}",
@@ -125,6 +126,21 @@ pub fn cmd_repl() -> i32 {
             break;
         }
 
+        // Friendly hint for common commands typed without the leading colon.
+        if buffer.is_empty()
+            && matches!(
+                trimmed,
+                "clear" | "cls" | "clean" | "help" | "vars" | "reset"
+            )
+        {
+            let suggestion = if trimmed == "clean" { "clear" } else { trimmed };
+            eprintln!(
+                "hint: REPL commands start with ':'. Try ':{}' (see ':help').",
+                suggestion
+            );
+            continue;
+        }
+
         // ── REPL colon-commands ─────────────────────────────────────────────
         if trimmed.starts_with(':') && buffer.is_empty() {
             match trimmed {
@@ -135,9 +151,10 @@ pub fn cmd_repl() -> i32 {
                     break;
                 }
                 ":help" => print_repl_help(use_color),
-                ":clear" => {
+                ":clear" | ":cls" | ":screen" => {
+                    clear_screen();
                     if use_color {
-                        println!("{}buffer cleared.{}", DIM, RESET);
+                        println!("{}screen and buffer cleared.{}", DIM, RESET);
                     }
                 }
                 ":vars" => print_vars(&engine, use_color),
@@ -223,6 +240,21 @@ fn print_vars(engine: &AzraEngine, use_color: bool) {
     }
 }
 
+/// Clear the terminal screen (works with classic Windows consoles too).
+fn clear_screen() {
+    let status = if cfg!(windows) {
+        Command::new("cmd").args(["/C", "cls"]).status()
+    } else {
+        Command::new("clear").status()
+    };
+    if status.map(|s| s.success()).unwrap_or(false) {
+        return;
+    }
+    // ANSI fallback for terminals where `cls`/`clear` is unavailable.
+    print!("\x1b[2J\x1b[H");
+    let _ = std::io::stdout().flush();
+}
+
 // ── :help ───────────────────────────────────────────────────────────────────
 fn print_repl_help(use_color: bool) {
     if use_color {
@@ -244,7 +276,7 @@ fn print_repl_help(use_color: bool) {
             GREEN, RESET
         );
         println!(
-            "    {}:clear{}   discard the current multi-line buffer",
+            "    {}:clear{}   clear the screen and the current multi-line buffer (:cls)",
             GREEN, RESET
         );
         println!();
@@ -280,7 +312,7 @@ fn print_repl_help(use_color: bool) {
     :help    show this help
     :vars    list the current global variables
     :reset   reset the engine (clear variables, handlers and timers)
-    :clear   discard the current multi-line buffer
+    :clear   clear the terminal screen and the current multi-line buffer (:cls / :screen)
 
 Exit:
     leave azra   exit and return to your terminal
