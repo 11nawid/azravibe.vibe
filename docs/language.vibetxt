@@ -404,4 +404,18 @@ ative/azra_net.cpp) and
   `std/httpclient`, `std/security`.
 - The project roadmap targets 500 frameworks, delivered in fully tested rounds.
   Progress is recorded in `CHANGELOG.md`.
+
+13. NATIVE GUI AND ROUND 3
+--------------------------------------------------------------------------------
+- Native Windows GUI: `native/azra_gui.cpp` implements real Win32 windows,
+  labels, buttons and edit boxes with a C ABI. `azra gui-native <app.vibe>`
+  creates the window, registers host functions `gui_label`, `gui_button`,
+  `gui_edit`, `gui_set_text`, `gui_get_text` and `gui_message`, then
+  pumps events into `when gui event with event:`. The event map contains
+  `type` (1 = click, 3 = close), `id` and `text`. No browser is used.
+- `std/nativegui` wraps the host functions; `examples/native_gui.vibe` is a
+  complete native Windows GUI app. Non-Windows builds get harmless stubs.
+- Round 3 modules: `std/stat`, `std/pagination`, `std/cookie`,
+  `std/tween`, `std/geo`, `std/matrix`, `std/graph`, `std/astar`,
+  `std/physics`, `std/nativegui`.
 ================================================================================

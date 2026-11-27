@@ -1,0 +1,27 @@
+note: std/tween — easing functions for animations
+note: use "std/tween"
+
+define linear with t:
+    give back t
+
+define ease_in with t:
+    give back t * t
+
+define ease_out with t:
+    set flipped to 1 - t
+    give back 1 - flipped * flipped
+
+define ease_in_out with t:
+    if t less_than 0.5:
+        give back 2 * t * t
+    set flipped to 1 - t
+    give back 1 - 2 * flipped * flipped
+
+define between with from, to, t:
+    set span to to - from
+    give back from + span * t
+
+define bounce with t:
+    set x to t * t * 8
+    set y to x modulo 2
+    give back y

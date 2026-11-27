@@ -1,0 +1,32 @@
+note: std/nativegui — native Win32 window controls (no browser)
+note: run an app with `azra gui-native app.vibe`
+note: use "std/nativegui"
+
+define label with text, x, y, width, height:
+    give back gui_label with text, x, y, width, height
+
+define button with text, x, y, width, height:
+    give back gui_button with text, x, y, width, height
+
+define input with text, x, y, width, height:
+    give back gui_edit with text, x, y, width, height
+
+define set_text with id, text:
+    gui_set_text with id, text
+    give back true
+
+define get_text with id:
+    give back gui_get_text with id
+
+define message with text, title:
+    gui_message with text, title
+    give back true
+
+define event_kind with event:
+    give back key "type" of event
+
+define event_id with event:
+    give back key "id" of event
+
+define event_text with event:
+    give back key "text" of event

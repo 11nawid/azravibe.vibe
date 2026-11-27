@@ -12,6 +12,8 @@ fn main() {
     println!("cargo::rustc-check-cfg=cfg(azra_native_cpp)");
     println!("cargo:rerun-if-changed=native/azra_net.cpp");
     println!("cargo:rerun-if-changed=native/azra_net.h");
+    println!("cargo:rerun-if-changed=native/azra_gui.cpp");
+    println!("cargo:rerun-if-changed=native/azra_gui.h");
     if env::var("CARGO_CFG_TARGET_ARCH").as_deref() == Ok("wasm32") {
         return;
     }
@@ -24,6 +26,7 @@ fn main() {
             println!("cargo:rustc-link-lib=static=azra_net");
             if cfg!(windows) {
                 println!("cargo:rustc-link-lib=ws2_32");
+                println!("cargo:rustc-link-lib=user32");
             } else {
                 println!("cargo:rustc-link-lib=stdc++");
                 println!("cargo:rustc-link-lib=pthread");
@@ -119,15 +122,21 @@ fn build_msvc(out: &Path) -> Result<PathBuf, String> {
         .join(";");
 
     let obj = out.join("azra_net.obj");
-    let compile = Command::new(&cl)
-        .args(["/nologo", "/EHsc", "/O2", "/MD", "/c"])
-        .arg("native/azra_net.cpp")
-        .arg(format!("/Fo{}", obj.display()))
-        .env("INCLUDE", &include_env)
-        .status()
-        .map_err(|e| e.to_string())?;
-    if !compile.success() {
-        return Err("cl.exe failed".to_string());
+    let gui_obj = out.join("azra_gui.obj");
+    for (source, object) in [
+        ("native/azra_net.cpp", &obj),
+        ("native/azra_gui.cpp", &gui_obj),
+    ] {
+        let compile = Command::new(&cl)
+            .args(["/nologo", "/EHsc", "/O2", "/MD", "/c"])
+            .arg(source)
+            .arg(format!("/Fo{}", object.display()))
+            .env("INCLUDE", &include_env)
+            .status()
+            .map_err(|e| e.to_string())?;
+        if !compile.success() {
+            return Err(format!("cl.exe failed on {source}"));
+        }
     }
 
     let lib_path = out.join("azra_net.lib");
@@ -135,6 +144,7 @@ fn build_msvc(out: &Path) -> Result<PathBuf, String> {
         .arg("/nologo")
         .arg(format!("/OUT:{}", lib_path.display()))
         .arg(&obj)
+        .arg(&gui_obj)
         .env("LIB", &lib_env)
         .status()
         .map_err(|e| e.to_string())?;
@@ -146,19 +156,26 @@ fn build_msvc(out: &Path) -> Result<PathBuf, String> {
 
 fn build_gcc(out: &Path) -> Result<PathBuf, String> {
     let obj = out.join("azra_net.o");
+    let gui_obj = out.join("azra_gui.o");
     let lib_path = out.join("libazra_net.a");
-    let compile = Command::new("g++")
-        .args(["-std=c++17", "-O2", "-c", "native/azra_net.cpp"])
-        .arg(format!("-o{}", obj.display()))
-        .status()
-        .map_err(|e| e.to_string())?;
-    if !compile.success() {
-        return Err("g++ failed".to_string());
+    for (source, object) in [
+        ("native/azra_net.cpp", &obj),
+        ("native/azra_gui.cpp", &gui_obj),
+    ] {
+        let compile = Command::new("g++")
+            .args(["-std=c++17", "-O2", "-c", source])
+            .arg(format!("-o{}", object.display()))
+            .status()
+            .map_err(|e| e.to_string())?;
+        if !compile.success() {
+            return Err(format!("g++ failed on {source}"));
+        }
     }
     let archive = Command::new("ar")
         .arg("rcs")
         .arg(&lib_path)
         .arg(&obj)
+        .arg(&gui_obj)
         .status()
         .map_err(|e| e.to_string())?;
     if !archive.success() {

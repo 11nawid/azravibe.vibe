@@ -97,6 +97,7 @@ cargo test                                 # full test suite
 | `azra test [path]` | Run in-language `test "name":` blocks |
 | `azra fmt [--check]` | 4-space formatter |
 | `azra serve app.vibe --port 8080` | HTTP backend framework |
+| `azra gui-native app.vibe` | Native Win32 GUI (no browser) |
 | `azra gui app.vibe --port 8080` | Browser GUI + auto-open |
 | `azra build app.vibe --out app.exe` | Standalone executable |
 | `azra-lsp` | Language server (VS Code / Neovim clients included) |
@@ -151,12 +152,16 @@ when http request with req:
 
 ```bash
 azra serve examples/server.vibe --port 8080
-azra gui examples/gui.vibe --port 8080
+azra gui-native examples/native_gui.vibe --title "Azra GUI"   # native Win32, no browser
+azra gui examples/gui.vibe --port 8080                        # optional browser GUI
 azra build examples/hello.vibe --name myapp --out myapp.exe
 ```
 
-The HTTP core is C++ (`native/azra_net.cpp`) bridged to Rust; the GUI is served HTML;
-`azra build` compiles a tiny Rust crate that embeds the `.vibe` script into one executable.
+The HTTP core is C++ (`native/azra_net.cpp`) and the **native GUI** core is C++
+(`native/azra_gui.cpp`), both bridged to Rust. `std/nativegui` creates Win32
+labels, buttons and edit boxes, and `when gui event with event:` handles clicks
+without any browser. `azra build` compiles a tiny Rust crate that embeds the
+`.vibe` script into one executable.
 
 ## 🗺 Roadmap
 
@@ -167,7 +172,8 @@ The long-term goal is **500 complete frameworks/libraries**. Progress is tracked
 - [x] C++ HTTP server/client, backend framework, JSON table store
 - [x] Round 1: config, logging, templates, auth, ORM, jobs, CLI, metrics, i18n, uploads, plugins, validation, GUI, exe builder
 - [x] Round 2: sessions, middleware, rate limiting, cache, workers, mail, reports, charts, search, scheduling, state machines, event bus, REST client, security
-- [ ] Rounds 3–N: 500 frameworks total — coming continuously
+- [x] Round 3: native Win32 GUI, statistics, pagination, cookies, tweening, geometry, matrices, graphs, pathfinding, physics
+- [ ] Rounds 4–N: 500 frameworks total — coming continuously
 
 ## 🤝 Support the developer
 

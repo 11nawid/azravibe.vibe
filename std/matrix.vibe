@@ -1,0 +1,58 @@
+note: std/matrix — 3x3 matrices as flat 9-element lists
+note: use "std/matrix"
+
+define at with matrix, row, column:
+    set previous to row - 1
+    set index to previous * 3 + column
+    give back item index of matrix
+
+define identity:
+    set out to 1, 0, 0, 0, 1, 0, 0, 0, 1
+    give back out
+
+define multiply with a, b:
+    set out to empty list
+    set i to 1
+    while i less_than= 3:
+        set j to 1
+        while j less_than= 3:
+            set sum to 0
+            set k to 1
+            while k less_than= 3:
+                set left to at with a, i, k
+                set right to at with b, k, j
+                set sum to sum + left * right
+                set k to k + 1
+            add sum to out
+            set j to j + 1
+        set i to i + 1
+    give back out
+
+define transpose with matrix:
+    set out to empty list
+    set i to 1
+    while i less_than= 3:
+        set j to 1
+        while j less_than= 3:
+            add at with matrix, j, i to out
+            set j to j + 1
+        set i to i + 1
+    give back out
+
+define determinant with matrix:
+    set a to at with matrix, 1, 1
+    set b to at with matrix, 1, 2
+    set c to at with matrix, 1, 3
+    set d to at with matrix, 2, 1
+    set center to at with matrix, 2, 2
+    set f to at with matrix, 2, 3
+    set g to at with matrix, 3, 1
+    set h to at with matrix, 3, 2
+    set i to at with matrix, 3, 3
+    set t1 to a * center * i
+    set t2 to b * f * g
+    set t3 to c * d * h
+    set t4 to c * center * g
+    set t5 to b * d * i
+    set t6 to a * f * h
+    give back t1 + t2 + t3 - t4 - t5 - t6

@@ -1,0 +1,49 @@
+note: std/astar — grid pathfinding (breadth-first, obstacle-aware)
+note: use "std/astar"
+
+define key_of with x, y:
+    give back x + "," + y
+
+define add_neighbor with queue, came, x, y, blocked:
+    set key to key_of with x, y
+    if blocked contains key:
+        give back false
+    set known to key key of came
+    if known not_equals null:
+        give back false
+    set node to empty map
+    set key "x" of node to x
+    set key "y" of node to y
+    add node to queue
+    set key key of came to true
+    give back true
+
+define find_path with width, height, sx, sy, gx, gy, blocked:
+    set queue to empty list
+    set came to empty map
+    set start to empty map
+    set key "x" of start to sx
+    set key "y" of start to sy
+    add start to queue
+    set start_key to key_of with sx, sy
+    set key start_key of came to true
+    set dxs to 1, 0 - 1, 0, 0
+    set dys to 0, 0, 1, 0 - 1
+    set i to 1
+    while i less_than= length of queue:
+        set node to item i of queue
+        set cx to key "x" of node
+        set cy to key "y" of node
+        if cx equals gx and cy equals gy:
+            give back came
+        set n to 1
+        while n less_than= 4:
+            set nx to cx + item n of dxs
+            set ny to cy + item n of dys
+            set in_x to nx greater_than= 0 and nx less_than width
+            set in_y to ny greater_than= 0 and ny less_than height
+            if in_x equals true and in_y equals true:
+                set added to add_neighbor with queue, came, nx, ny, blocked
+            set n to n + 1
+        set i to i + 1
+    give back came

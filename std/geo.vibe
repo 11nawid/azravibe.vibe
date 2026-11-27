@@ -1,0 +1,59 @@
+note: std/geo — 2D geometry helpers
+note: use "std/geo"
+
+define distance2 with x1, y1, x2, y2:
+    set dx to x2 - x1
+    set dy to y2 - y1
+    set sum to dx * dx + dy * dy
+    give back sqrt sum
+
+define inside_polygon with x, y, points:
+    set inside to false
+    set i to 1
+    set j to length of points
+    while i less_than= length of points:
+        set a to item i of points
+        set b to item j of points
+        set ay to key "y" of a
+        set by to key "y" of b
+        set above_a to ay greater_than y
+        set above_b to by greater_than y
+        if above_a not_equals above_b:
+            set ax to key "x" of a
+            set bx to key "x" of b
+            set slope to y - ay
+            set span to by - ay
+            set span_x to bx - ax
+            set cross to ax + slope * span_x / span
+            if x less_than cross:
+                if inside equals false:
+                    set inside to true
+                otherwise:
+                    set inside to false
+        set j to i
+        set i to i + 1
+    give back inside
+
+define bounds with points:
+    set box to empty map
+    set first to item 1 of points
+    set min_x to key "x" of first
+    set max_x to min_x
+    set min_y to key "y" of first
+    set max_y to min_y
+    for each point in points:
+        set px to key "x" of point
+        set py to key "y" of point
+        if px less_than min_x:
+            set min_x to px
+        if px greater_than max_x:
+            set max_x to px
+        if py less_than min_y:
+            set min_y to py
+        if py greater_than max_y:
+            set max_y to py
+    set key "min_x" of box to min_x
+    set key "max_x" of box to max_x
+    set key "min_y" of box to min_y
+    set key "max_y" of box to max_y
+    give back box

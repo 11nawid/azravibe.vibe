@@ -19,6 +19,7 @@ USAGE:
     azra eval <code>
     azra serve <app.vibe> [--port 8080]      run an HTTP server app
     azra gui <app.vibe> [--port 8080]        serve a GUI app and open a browser
+    azra gui-native <app.vibe> [--title T]   native Win32 window (no browser)
     azra build <app.vibe> [--name N] [--out P]  build a standalone executable
     azra test [file-or-directory]            run `test \"...\":` blocks
     azra fmt [--check] <file.vibe>           format a source file
@@ -82,6 +83,7 @@ fn cli_main(args: &[String]) -> i32 {
         Some("eval") => cmd_eval(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
         Some("gui") => cmd_gui(&args[1..]),
+        Some("gui-native") => cmd_gui_native(&args[1..]),
         Some("build") => cmd_build(&args[1..]),
         Some("test") => cmd_test(&args[1..]),
         Some("fmt") => cmd_fmt(&args[1..]),
@@ -319,6 +321,65 @@ fn app_and_port(args: &[String]) -> Result<(String, u16), i32> {
         eprintln!("error: an app file is required");
         2
     })
+}
+
+/// `azra gui-native <app.vibe>` — real Win32 window driven by Azra.
+#[cfg(not(target_arch = "wasm32"))]
+fn cmd_gui_native(args: &[String]) -> i32 {
+    let mut file = None;
+    let mut title = "Azra App".to_string();
+    let mut width = 480i32;
+    let mut height = 320i32;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--title" => {
+                i += 1;
+                title = args.get(i).cloned().unwrap_or(title);
+            }
+            "--width" => {
+                i += 1;
+                width = args.get(i).and_then(|s| s.parse().ok()).unwrap_or(width);
+            }
+            "--height" => {
+                i += 1;
+                height = args.get(i).and_then(|s| s.parse().ok()).unwrap_or(height);
+            }
+            arg if arg.starts_with('-') => {
+                eprintln!("error: unknown option `{arg}`");
+                return 2;
+            }
+            arg if file.is_none() => file = Some(arg.to_string()),
+            arg => {
+                eprintln!("error: unexpected argument `{arg}`");
+                return 2;
+            }
+        }
+        i += 1;
+    }
+    let Some(file) = file else {
+        eprintln!("error: `azra gui-native` requires an app file");
+        return 2;
+    };
+    match azra::gui_app::NativeApp::new(std::path::Path::new(&file), &title, width, height) {
+        Ok(mut app) => match app.run() {
+            Ok(()) => 0,
+            Err(e) => {
+                eprintln!("error: {e}");
+                1
+            }
+        },
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn cmd_gui_native(_args: &[String]) -> i32 {
+    eprintln!("error: `azra gui-native` is unavailable in WebAssembly builds");
+    2
 }
 
 /// `azra gui <app.vibe> [--port 8080]` — serve a GUI app and open the browser.

@@ -1,0 +1,27 @@
+note: std/physics — simple 2D kinematics helpers
+note: use "std/physics"
+
+define step with x, y, vx, vy, ax, ay, dt:
+    set nx to x + vx * dt
+    set ny to y + vy * dt
+    set nvx to vx + ax * dt
+    set nvy to vy + ay * dt
+    set state to empty map
+    set key "x" of state to nx
+    set key "y" of state to ny
+    set key "vx" of state to nvx
+    set key "vy" of state to nvy
+    give back state
+
+define kinetic with mass, vx, vy:
+    set squared to vx * vx + vy * vy
+    give back 0.5 * mass * squared
+
+define momentum with mass, vx, vy:
+    set speed to sqrt vx * vx + vy * vy
+    give back mass * speed
+
+define gravity_force with m1, m2, distance:
+    set d2 to distance * distance
+    set product to m1 * m2
+    give back product * 1.0 / d2

@@ -1,0 +1,23 @@
+note: std/cookie — HTTP cookie parsing and serialization
+note: use "std/cookie"
+
+define parse with header:
+    set out to empty map
+    set pairs to split header by ";"
+    for each pair in pairs:
+        set kv to split pair by "="
+        if length of kv greater_than 1:
+            set name to trim of item 1 of kv
+            set value to trim of item 2 of kv
+            set key name of out to value
+    give back out
+
+define serialize with name, value:
+    give back name + "=" + value + "; Path=/; SameSite=Lax"
+
+define get with header, name:
+    set jar to parse with header
+    set value to key name of jar
+    if value equals null:
+        give back ""
+    give back value

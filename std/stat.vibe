@@ -1,0 +1,41 @@
+note: std/stat — descriptive statistics over number lists
+note: use "std/stat"
+
+define mean with values:
+    set total to 0
+    for each value in values:
+        set total to total + value
+    give back total * 1.0 / length of values
+
+define sorted with values:
+    set out to empty list
+    for each value in values:
+        add value to out
+    sort out
+    give back out
+
+define median with values:
+    set ordered to sorted with values
+    set n to length of ordered
+    set middle to n / 2
+    if n modulo 2 equals 1:
+        give back item middle + 1 of ordered
+    set a to item middle of ordered
+    set b to item middle + 1 of ordered
+    set sum to a + b
+    give back sum / 2
+
+define variance with values:
+    set avg to mean with values
+    set total to 0
+    for each value in values:
+        set delta to value - avg
+        set total to total + delta * delta
+    give back total * 1.0 / length of values
+
+define deviation with values:
+    give back sqrt variance with values
+
+define range with values:
+    set ordered to sorted with values
+    give back item length of ordered of ordered - item 1 of ordered

@@ -15,12 +15,16 @@ pub mod builder;
 pub mod env;
 pub mod error;
 pub mod format;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod gui_app;
 pub mod host;
 pub mod interpreter;
 pub mod lexer;
 pub mod manifest;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod native_gui;
 pub mod parser;
 pub mod pkg;
 pub mod sandbox;

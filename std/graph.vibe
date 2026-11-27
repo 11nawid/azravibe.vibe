@@ -1,0 +1,44 @@
+note: std/graph — adjacency-list graph traversal
+note: use "std/graph"
+
+define neighbors with graph, node:
+    set found to key node of graph
+    if found equals null:
+        give back empty list
+    give back found
+
+define bfs with graph, start, target:
+    set queue to empty list
+    add start to queue
+    set visited to empty map
+    set key start of visited to true
+    set i to 1
+    while i less_than= length of queue:
+        set node to item i of queue
+        if node equals target:
+            give back true
+        set adjacent to neighbors with graph, node
+        for each next in adjacent:
+            set seen to key next of visited
+            if seen equals null:
+                set key next of visited to true
+                add next to queue
+        set i to i + 1
+    give back false
+
+define reachable with graph, start:
+    set out to empty list
+    set visited to empty map
+    set key start of visited to true
+    add start to out
+    set i to 1
+    while i less_than= length of out:
+        set node to item i of out
+        set adjacent to neighbors with graph, node
+        for each next in adjacent:
+            set seen to key next of visited
+            if seen equals null:
+                set key next of visited to true
+                add next to out
+        set i to i + 1
+    give back out

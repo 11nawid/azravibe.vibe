@@ -1,0 +1,103 @@
+note: 22_frameworks_round3.vibe — Round 3 library checks
+use "std/stat"
+use "std/pagination"
+use "std/cookie"
+use "std/tween"
+use "std/geo"
+use "std/matrix"
+use "std/graph"
+use "std/astar"
+use "std/physics"
+use "std/testing"
+
+test "statistics framework":
+    set values to 2, 4, 6
+    set avg to mean with values
+    assert equals avg, 4
+    set middle to median with values
+    assert equals middle, 4
+    set spread to range with values
+    assert equals spread, 4
+    set spread_value to deviation with values
+    check_close with spread_value, 1.632993161855452, 0.0001, "stddev"
+
+test "pagination framework":
+    set values to 1, 2, 3, 4, 5
+    set pages to page_count with values, 2
+    assert equals pages, 3
+    set second to page_of with values, 2, 2
+    assert equals length of second, 2
+    assert equals item 1 of second, 3
+
+test "cookie framework":
+    set jar to parse with "a=1; b=2"
+    assert equals key "a" of jar, "1"
+    set cookie to get with "a=1; b=2", "b"
+    assert equals cookie, "2"
+    set baked to serialize with "sid", "abc"
+    assert baked contains "sid=abc"
+
+test "tween framework":
+    set lin to linear with 0.5
+    assert equals lin, 0.5
+    set ease to ease_in with 0.5
+    assert equals ease, 0.25
+    set out to ease_out with 0.5
+    assert equals out, 0.75
+    set mixed to between with 0, 10, 0.25
+    assert equals mixed, 2.5
+
+test "geometry framework":
+    set distance to distance2 with 0, 0, 3, 4
+    assert equals distance, 5
+    set first to empty map
+    set key "x" of first to 0
+    set key "y" of first to 0
+    set second to empty map
+    set key "x" of second to 4
+    set key "y" of second to 0
+    set third to empty map
+    set key "x" of third to 0
+    set key "y" of third to 3
+    set points to first, second, third
+    set box to bounds with points
+    assert equals key "max_x" of box, 4
+    assert equals key "max_y" of box, 3
+    assert inside_polygon with 1, 1, points
+
+test "matrix framework":
+    set unit to identity
+    set det to determinant with unit
+    assert equals det, 1
+    set product to multiply with unit, unit
+    assert equals item 1 of product, 1
+    assert equals item 5 of product, 1
+    set flipped to transpose with product
+    assert equals item 5 of flipped, 1
+
+test "graph framework":
+    set edges to empty map
+    set adjacent to "b", "c"
+    set key "a" of edges to adjacent
+    set tail to empty list
+    add "c" to tail
+    set key "b" of edges to tail
+    set found to bfs with edges, "a", "c"
+    assert found
+    set reached to reachable with edges, "a"
+    assert equals length of reached, 3
+
+test "pathfinding framework":
+    set blocked to "1,1"
+    set came to find_path with 3, 3, 0, 0, 2, 2, blocked
+    set destination to key "2,2" of came
+    assert destination equals true
+
+test "physics framework":
+    set state to step with 0, 0, 1, 2, 0, 0, 1
+    assert equals key "x" of state, 1
+    assert equals key "y" of state, 2
+    set energy to kinetic with 2, 3, 4
+    assert equals energy, 25
+    set force to gravity_force with 2, 3, 2
+    assert equals force, 1.5

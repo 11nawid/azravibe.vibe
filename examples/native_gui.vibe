@@ -1,0 +1,22 @@
+note: native_gui.vibe — a real Windows GUI app with no browser
+note: run with `azra gui-native examples/native_gui.vibe --title "Azra GUI"`
+use "std/nativegui"
+
+set prompt to label with "Enter your name:", 20, 20, 220, 24
+set name_box to input with "", 20, 50, 220, 26
+set greet_button to button with "Greet", 20, 95, 110, 32
+set quit_button to button with "Message", 145, 95, 95, 32
+set output to label with "", 20, 145, 300, 26
+
+when gui event with event:
+    set kind to event_kind with event
+    if kind equals 1:
+        set id to event_id with event
+        if id equals greet_button:
+            set name to get_text with name_box
+            set greeting to "Hello, " + name + "!"
+            set_text with output, greeting
+        otherwise if id equals quit_button:
+            message with "Native Azra GUI works!", "Azra"
+    otherwise if kind equals 3:
+        say "window closed"

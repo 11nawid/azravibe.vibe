@@ -1,0 +1,31 @@
+note: std/pagination — slice lists into pages
+note: use "std/pagination"
+
+define page_count with values, size:
+    set total to length of values
+    if size less_than= 0:
+        give back 0
+    if total modulo size equals 0:
+        give back total / size
+    give back total / size + 1
+
+define page_of with values, size, number:
+    set previous to number - 1
+    set start to previous * size + 1
+    if start greater_than length of values:
+        give back empty list
+    set out to empty list
+    set i to start
+    set finish to number * size
+    while i less_than= finish and i less_than= length of values:
+        add item i of values to out
+        set i to i + 1
+    give back out
+
+define page_info with values, size, number:
+    set info to empty map
+    set key "total" of info to length of values
+    set key "pages" of info to page_count with values, size
+    set key "number" of info to number
+    set key "items" of info to page_of with values, size, number
+    give back info

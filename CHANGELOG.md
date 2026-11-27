@@ -17,6 +17,9 @@ Semantic Versioning where practical (pre-1.0 versions may break syntax).
 - `azra-lsp` language server with diagnostics, completion, hover,
   go-to-definition and formatting, plus VS Code and Neovim clients.
 - WebAssembly bridge and browser playground in `playground/`.
+- Round 3: native Win32 GUI core (`azra gui-native`, `std/nativegui`) with no
+  browser, plus stat, pagination, cookie, tween, geo, matrix, graph, astar and
+  physics modules and their self-hosted test suite.
 - Round 2 application frameworks: `std/session`, `middleware`, `ratelimit`,
   `cache`, `worker`, `mail`, `report`, `chart`, `search`, `schedule`, `state`,
   `eventbus`, `httpclient`, `security`; restyled README with logo, badges,
