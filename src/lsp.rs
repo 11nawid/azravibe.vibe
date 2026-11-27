@@ -255,7 +255,7 @@ struct Document {
     text: String,
 }
 
-fn main() {
+pub fn run() {
     let stdin = io::stdin();
     let mut input = stdin.lock();
     let mut documents: BTreeMap<String, Document> = BTreeMap::new();
@@ -486,7 +486,7 @@ fn main() {
                     .and_then(Json::str)
                     .unwrap_or("");
                 let text = documents.get(uri).map(|d| d.text.as_str()).unwrap_or("");
-                let formatted = azra::format::format_source(text);
+                let formatted = crate::format::format_source(text);
                 let lines = text.lines().count().max(1);
                 let edit = obj(vec![
                     (
@@ -522,10 +522,10 @@ fn main() {
 }
 
 fn publish_diagnostics(doc: &Document) {
-    let tokens = azra::lexer::tokenize(&doc.text);
+    let tokens = crate::lexer::tokenize(&doc.text);
     let error = match &tokens {
         Err(err) => Some(err.clone()),
-        Ok(tokens) => azra::parser::parse(tokens).err(),
+        Ok(tokens) => crate::parser::parse(tokens).err(),
     };
     let diagnostics = match error {
         Some(err) => {

@@ -7,12 +7,12 @@ let client;
 function activate(context) {
   const configured = vscode.workspace
     .getConfiguration('azra')
-    .get('languageServer', 'azra-lsp');
+    .get('executable', 'azra');
 
   client = new LanguageClient(
     'azra',
     'Azra Language Server',
-    { command: configured, args: [] },
+    { command: configured, args: ['lsp'] },
     {
       documentSelector: [{ scheme: 'file', language: 'vibe' }],
       synchronize: { fileEvents: vscode.workspace.createFileSystemWatcher('**/*.vibe') },

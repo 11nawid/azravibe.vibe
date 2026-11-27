@@ -14,6 +14,7 @@ pub mod ast;
 pub mod builder;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod embedded;
+pub mod embedded_vsix;
 pub mod env;
 pub mod error;
 pub mod format;
@@ -22,6 +23,7 @@ pub mod gui_app;
 pub mod host;
 pub mod interpreter;
 pub mod lexer;
+pub mod lsp;
 pub mod manifest;
 #[cfg(not(target_arch = "wasm32"))]
 pub mod native;

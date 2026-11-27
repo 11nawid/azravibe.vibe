@@ -434,8 +434,10 @@ ative/azra_net.cpp) and
 - One-command installers live in `install/`:
   Windows: `irm https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/install.ps1 | iex`
   Linux/macOS: `curl -fsSL https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/install.sh | sh`
-- Installers add `azra` and `azra-lsp` to PATH and install the VS Code
-  extension (`install/azra-vibe.vsix`) when VS Code is present.
+- Each release contains exactly one executable: `azra.exe` on Windows and
+  `azra` on Linux/macOS. The language server is the `azra lsp` subcommand and
+  the VS Code extension is embedded in the exe, installed by
+  `azra setup-vscode`. No extra files or compilers are needed.
 - All `std/*.vibe` modules are embedded into the executable at compile time
   (`src/stdlib_embed.rs`), so `use "std/math"` works from any directory
   without source files next to the exe.

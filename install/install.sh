@@ -18,7 +18,7 @@ echo "Downloading Azra..."
 curl -fsSL "$URL" -o "$TMP/azra.tar.gz"
 mkdir -p "$DEST"
 tar -xzf "$TMP/azra.tar.gz" -C "$DEST"
-chmod +x "$DEST/azra" "$DEST/azra-lsp" 2>/dev/null || true
+chmod +x "$DEST/azra" 2>/dev/null || true
 
 case ":$PATH:" in
   *":$DEST:"*) ;;
@@ -34,14 +34,10 @@ esac
 "$DEST/azra" --version || true
 
 if command -v code >/dev/null 2>&1; then
-  VSIX="$DEST/azra-vibe.vsix"
-  if [ -f "$VSIX" ]; then
-    echo "Installing the Azra VS Code extension..."
-    code --install-extension "$VSIX" --force >/dev/null 2>&1 || true
-    echo "VS Code extension installed."
-  fi
+  echo "Installing the Azra VS Code extension..."
+  "$DEST/azra" setup-vscode || true
 else
-  echo "VS Code CLI not found; highlighting can be set up later from editors/vscode."
+  echo "VS Code CLI not found; run 'azra setup-vscode' later to enable highlighting."
 fi
 
 rm -rf "$TMP"

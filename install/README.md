@@ -1,7 +1,9 @@
 # Install Azra
 
-One command, no Rust/cargo/Visual Studio needed. The interpreter ships with
-the entire standard library embedded, plus the VS Code extension.
+One command, no Rust/cargo/Visual Studio needed. Each release contains exactly
+**one executable**: `azra.exe` on Windows, `azra` on Linux/macOS. It includes the
+language server (`azra lsp`) and the VS Code extension (`azra setup-vscode`), so
+there are no extra files to download or configure.
 
 ## Windows
 
@@ -26,9 +28,9 @@ VS Code extension if `code` is on PATH. Restart your shell afterwards.
 
 ## What you get
 
-- `azra` — run `/ check / eval / repl / test / fmt / serve / gui / gui-native / build / pkg`
-- `azra-lsp` — language server used by the editor extensions
-- `azra-vibe.vsix` — VS Code syntax highlighting + LSP client (installed automatically)
+- `azra` — run / check / eval / repl / test / fmt / serve / gui / gui-native / build / pkg / lsp / setup-vscode
+- `azra lsp` — language server (stdio JSON-RPC) built into the same exe
+- `azra setup-vscode` — installs the embedded VS Code highlighting extension automatically
 - Embedded `std/` modules — `use "std/math"` works from any folder, no files needed
 - `azra build app.vibe --out app.exe` — the resulting exe is self-contained and
   carries the Azra icon; it needs no installed interpreter

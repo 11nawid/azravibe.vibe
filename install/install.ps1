@@ -28,14 +28,10 @@ Write-Host "Installed: $exe" -ForegroundColor Green
 # Set up VS Code highlighting automatically when VS Code is available.
 $code = Get-Command code -ErrorAction SilentlyContinue
 if ($code) {
-    $vsix = Join-Path $installDir "azra-vibe.vsix"
-    if (Test-Path $vsix) {
-        Write-Host "Installing the Azra VS Code extension..." -ForegroundColor Cyan
-        & code --install-extension $vsix --force | Out-Null
-        Write-Host "VS Code extension installed." -ForegroundColor Green
-    }
+    Write-Host "Installing the Azra VS Code extension..." -ForegroundColor Cyan
+    & $exe setup-vscode
 } else {
-    Write-Host "VS Code CLI not found; .vibe highlighting can be set up later from editors/vscode." -ForegroundColor Yellow
+    Write-Host "VS Code CLI not found; run `azra setup-vscode` later to enable .vibe highlighting." -ForegroundColor Yellow
 }
 
 Write-Host "Done! Open a new terminal and run: azra run app.vibe" -ForegroundColor Green

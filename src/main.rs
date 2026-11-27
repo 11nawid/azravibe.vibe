@@ -30,6 +30,8 @@ USAGE:
     azra pkg tree                          show the locked dependency tree
     azra pkg publish <dir>                 publish a local package
     azra pkg list                          list registry packages
+    azra lsp                                   language server (stdio JSON-RPC)
+    azra setup-vscode                          install editor support
     azra --help
     azra --version
 
@@ -94,6 +96,20 @@ fn cli_main(args: &[String]) -> i32 {
         Some("check") => cmd_check(&args[1..]),
         Some("repl") => cmd_repl(),
         Some("eval") => cmd_eval(&args[1..]),
+        Some("lsp") => {
+            azra::lsp::run();
+            0
+        }
+        Some("setup-vscode") => match azra::embedded_vsix::install() {
+            Ok(message) => {
+                println!("{message}");
+                0
+            }
+            Err(error) => {
+                eprintln!("error: {error}");
+                1
+            }
+        },
         Some("serve") => cmd_serve(&args[1..]),
         Some("gui") => cmd_gui(&args[1..]),
         Some("gui-native") => cmd_gui_native(&args[1..]),

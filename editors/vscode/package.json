@@ -41,10 +41,10 @@
     "configuration": {
       "title": "Azra",
       "properties": {
-        "azra.languageServer": {
+        "azra.executable": {
           "type": "string",
-          "default": "azra-lsp",
-          "description": "Path to the azra-lsp executable (build it with `cargo build --release`)."
+          "default": "azra",
+          "description": "Path to the Azra executable (the `lsp` subcommand provides the language server)."
         }
       }
     }

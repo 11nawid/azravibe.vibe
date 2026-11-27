@@ -4,7 +4,8 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::process::{Child, Command, Stdio};
 
 fn server() -> Child {
-    Command::new(env!("CARGO_BIN_EXE_azra-lsp"))
+    Command::new(env!("CARGO_BIN_EXE_azra"))
+        .arg("lsp")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
