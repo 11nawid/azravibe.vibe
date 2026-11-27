@@ -3,12 +3,17 @@
 $ErrorActionPreference = "Stop"
 
 $repo = "11nawid/azravibe.vibe"
-$asset = "azra-windows-x86_64.zip"
-$url = "https://github.com/$repo/releases/latest/download/$asset"
 $installDir = Join-Path $env:LOCALAPPDATA "Azra\bin"
 $zip = Join-Path $env:TEMP "azra-install.zip"
 
-Write-Host "Downloading Azra..." -ForegroundColor Cyan
+Write-Host "Finding the latest Azra release..." -ForegroundColor Cyan
+$release = Invoke-RestMethod -Uri "https://api.github.com/repos/$repo/releases/latest" -UseBasicParsing
+$assetInfo = $release.assets | Where-Object { $_.name -like "azra-windows-x86_64*.zip" } | Select-Object -First 1
+if ($null -eq $assetInfo) {
+    throw "No Windows asset found in the latest release."
+}
+$url = $assetInfo.browser_download_url
+Write-Host "Downloading $($assetInfo.name)..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing
 
 New-Item -ItemType Directory -Force -Path $installDir | Out-Null

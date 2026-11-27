@@ -10,9 +10,17 @@ case "$(uname -s)" in
   *) echo "Unsupported platform: $(uname -s)" >&2; exit 1 ;;
 esac
 
-URL="https://github.com/$REPO/releases/latest/download/$ASSET"
 DEST="$HOME/.azra/bin"
 TMP="$(mktemp -d)"
+
+echo "Finding the latest Azra release..."
+PATTERN="azra-$(uname -s | tr '[:upper:]' '[:lower:]' | sed 's/darwin/macos/')-x86_64"
+case "$(uname -s)" in Linux) PATTERN="azra-linux-x86_64" ;; Darwin) PATTERN="azra-macos-x86_64" ;; esac
+API="https://api.github.com/repos/$REPO/releases/latest"
+URL=$(curl -fsSL "$API" | grep -o "\"browser_download_url\": \"[^\"]*${PATTERN}[^\"]*tar.gz\"" | head -n 1 | cut -d '"' -f 4 || true)
+if [ -z "$URL" ]; then
+  URL="https://github.com/$REPO/releases/latest/download/$ASSET"
+fi
 
 echo "Downloading Azra..."
 curl -fsSL "$URL" -o "$TMP/azra.tar.gz"
