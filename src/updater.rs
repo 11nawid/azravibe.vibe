@@ -1,6 +1,6 @@
 //! `azra update` — download the latest release and replace the running exe.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 fn asset_name() -> &'static str {
     if cfg!(windows) {
