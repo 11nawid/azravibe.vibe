@@ -6,6 +6,7 @@ mod cli;
 use azra::AzraEngine;
 use cli::output::flush_output;
 use cli::repl::cmd_repl;
+use std::path::PathBuf;
 
 const USAGE: &str = "\
 Azra (.vibe) interpreter — Azravibe ecosystem
@@ -17,6 +18,8 @@ USAGE:
     azra repl
     azra eval <code>
     azra serve <app.vibe> [--port 8080]      run an HTTP server app
+    azra gui <app.vibe> [--port 8080]        serve a GUI app and open a browser
+    azra build <app.vibe> [--name N] [--out P]  build a standalone executable
     azra test [file-or-directory]            run `test \"...\":` blocks
     azra fmt [--check] <file.vibe>           format a source file
     azra init [name]                       create azra.toml + main.vibe
@@ -78,6 +81,8 @@ fn cli_main(args: &[String]) -> i32 {
         Some("repl") => cmd_repl(),
         Some("eval") => cmd_eval(&args[1..]),
         Some("serve") => cmd_serve(&args[1..]),
+        Some("gui") => cmd_gui(&args[1..]),
+        Some("build") => cmd_build(&args[1..]),
         Some("test") => cmd_test(&args[1..]),
         Some("fmt") => cmd_fmt(&args[1..]),
         Some("init") => cmd_init(&args[1..]),
@@ -107,10 +112,12 @@ fn cli_main(args: &[String]) -> i32 {
 /// Engine used by `run` / `eval`: permissive like the library default, with a
 /// higher call-depth cap for recursive algorithms (the CLI has a large stack).
 fn cli_engine() -> AzraEngine {
-    AzraEngine::with_sandbox(azra::SandboxConfig {
+    let mut engine = AzraEngine::with_sandbox(azra::SandboxConfig {
         max_call_depth: 512,
         ..azra::SandboxConfig::permissive()
-    })
+    });
+    azra::host::register_common(&mut engine);
+    engine
 }
 
 /// `azra run <file> [--ticks n] [--trigger phrase]...`
@@ -268,6 +275,145 @@ fn collect_vibe_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) 
             out.push(path);
         }
     }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn app_and_port(args: &[String]) -> Result<(String, u16), i32> {
+    let mut file = None;
+    let mut port = 8080u16;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--port" => {
+                i += 1;
+                port = match args.get(i).and_then(|s| s.parse().ok()) {
+                    Some(p) => p,
+                    None => {
+                        eprintln!("error: `--port` needs a number");
+                        return Err(2);
+                    }
+                };
+            }
+            arg if arg.starts_with("--port=") => {
+                port = match arg[7..].parse() {
+                    Ok(p) => p,
+                    Err(_) => {
+                        eprintln!("error: `--port` needs a number");
+                        return Err(2);
+                    }
+                };
+            }
+            arg if arg.starts_with('-') => {
+                eprintln!("error: unknown option `{arg}`");
+                return Err(2);
+            }
+            arg if file.is_none() => file = Some(arg.to_string()),
+            arg => {
+                eprintln!("error: unexpected argument `{arg}`");
+                return Err(2);
+            }
+        }
+        i += 1;
+    }
+    file.map(|f| (f, port)).ok_or_else(|| {
+        eprintln!("error: an app file is required");
+        2
+    })
+}
+
+/// `azra gui <app.vibe> [--port 8080]` — serve a GUI app and open the browser.
+#[cfg(not(target_arch = "wasm32"))]
+fn cmd_gui(args: &[String]) -> i32 {
+    let (file, port) = match app_and_port(args) {
+        Ok(value) => value,
+        Err(code) => return code,
+    };
+    match azra::server::ServerApp::new(std::path::Path::new(&file), port) {
+        Ok(mut app) => {
+            let url = format!("http://127.0.0.1:{port}/");
+            match azra::host::open_url(&url) {
+                Ok(true) => println!("Opened {url} in your browser"),
+                Ok(false) => println!("Open {url} in your browser"),
+                Err(e) => println!("Open {url} in your browser ({e})"),
+            }
+            match app.run() {
+                Ok(()) => 0,
+                Err(e) => {
+                    eprintln!("error: {e}");
+                    1
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn cmd_gui(_args: &[String]) -> i32 {
+    eprintln!("error: `azra gui` is unavailable in WebAssembly builds");
+    2
+}
+
+/// `azra build <app.vibe> [--name N] [--out P]`
+#[cfg(not(target_arch = "wasm32"))]
+fn cmd_build(args: &[String]) -> i32 {
+    let mut file = None;
+    let mut name = "app".to_string();
+    let mut out = None;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--name" => {
+                i += 1;
+                name = args.get(i).cloned().unwrap_or_else(|| "app".to_string());
+            }
+            "--out" => {
+                i += 1;
+                out = args.get(i).map(PathBuf::from);
+            }
+            arg if arg.starts_with('-') => {
+                eprintln!("error: unknown option `{arg}`");
+                return 2;
+            }
+            arg if file.is_none() => file = Some(arg.to_string()),
+            arg => {
+                eprintln!("error: unexpected argument `{arg}`");
+                return 2;
+            }
+        }
+        i += 1;
+    }
+    let Some(file) = file else {
+        eprintln!("error: `azra build` requires an app file");
+        return 2;
+    };
+    let source = PathBuf::from(&file);
+    let dest = out.unwrap_or_else(|| {
+        PathBuf::from(format!(
+            "{}.{}",
+            source.file_stem().unwrap_or_default().to_string_lossy(),
+            if cfg!(windows) { "exe" } else { "bin" }
+        ))
+    });
+    match azra::builder::build_exe(&source, &name, &dest) {
+        Ok(path) => {
+            println!("built: {}", path.display());
+            0
+        }
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn cmd_build(_args: &[String]) -> i32 {
+    eprintln!("error: `azra build` is unavailable in WebAssembly builds");
+    2
 }
 
 /// `azra serve <app.vibe> [--port 8080]` — run an HTTP server app.

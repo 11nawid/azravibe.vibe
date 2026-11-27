@@ -1,0 +1,58 @@
+note: std/gui — browser-based GUI toolkit built on the Azra HTTP framework
+note: use "std/gui"
+
+set gui_title to "Azra App"
+
+define set_title with title:
+    set gui_title to title
+    give back title
+
+define css:
+    set a to "body\{font-family:system-ui,sans-serif;max-width:900px;margin:3rem auto;padding:0 1rem;color:#e2e8f0;background:#0f172a\}"
+    set b to "h1\{color:#a5b4fc\}a.button,.button\{display:inline-block;background:#4f46e5;color:white;padding:.6rem 1rem;border-radius:.5rem;text-decoration:none;margin:.25rem\}"
+    set c to "table\{border-collapse:collapse;width:100%\}td,th\{border:1px solid #334155;padding:.5rem;text-align:left\}"
+    set d to "input,button\{font:inherit;padding:.5rem;margin:.25rem;background:#1e293b;color:#e2e8f0;border:1px solid #475569;border-radius:.4rem\}"
+    set ab to a + b
+    set cd to c + d
+    give back ab + cd
+
+define page with title, body:
+    set html to "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>" + title + "</title><style>"
+    set html to html + css + "</style></head><body>" + body + "</body></html>"
+    give back html
+
+define heading with level, text:
+    give back "<h" + level + ">" + text + "</h" + level + ">"
+
+define paragraph with text:
+    give back "<p>" + text + "</p>"
+
+define button with label, href:
+    give back "<a class=\"button\" href=\"" + href + "\">" + label + "</a>"
+
+define text_input with name, label:
+    give back "<label>" + label + "<input name=\"" + name + "\"></label>"
+
+define form with action, inner:
+    give back "<form method=\"get\" action=\"" + action + "\">" + inner + "<button type=\"submit\">Send</button></form>"
+
+define table with rows:
+    if length of rows equals 0:
+        give back "<p>No rows</p>"
+    set columns to keys of item 1 of rows
+    set html to "<table><tr>"
+    for each column in columns:
+        set html to html + "<th>" + column + "</th>"
+    set html to html + "</tr>"
+    for each row in rows:
+        set html to html + "<tr>"
+        for each column in columns:
+            set value to key column of row
+            set html to html + "<td>" + value + "</td>"
+        set html to html + "</tr>"
+    set html to html + "</table>"
+    give back html
+
+define open with url:
+    open_browser with url
+    give back true

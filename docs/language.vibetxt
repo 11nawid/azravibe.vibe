@@ -361,4 +361,35 @@ ative/azra_net.cpp) and
   ind_row, ilter_rows, update_row, delete_row.
 - Scripts remain sandboxed: the host owns sockets/files, and scripts only see
   the values handed to them by the host functions.
+
+10. APPLICATION FRAMEWORKS (ROUND 1)
+--------------------------------------------------------------------------------
+- Configuration: `std/config` (JSON files, defaults, environment overlay).
+- Logging: `std/log` (levels, structured fields, optional file output).
+- Templates: `std/template` (`{{name}}` replacement from maps).
+- Auth/crypto: `std/auth` (HMAC-SHA256 tokens, password hashing) backed by
+  host functions `sha256`, `hmac_sha256`, `base64url_encode/decode`.
+- Data: `std/orm` (schema validation over `std/db`) and `std/query`
+  (`where`, `select`, `order_by`, counts over lists of maps).
+- Jobs: `std/queue` (persistent JSON queue with ack and retry).
+- CLI apps: `std/cli` (flag/positional parsing) with host functions
+  `cli_args`, `arg_at`, `env_get`.
+- Observability: `std/metrics` (counters, timers, snapshots).
+- Internationalisation: `std/i18n` (translation catalogs).
+- Uploads: `std/upload` (multipart/form-data parsing).
+- Plugins: `std/plugin` (named hook registry with handlers).
+- Validation: `std/validate` (required, email, length, one_of, number).
+- Utilities: `now_ms`, `uuid`, `url_encode/decode`, `file_append`,
+  `open_browser`.
+
+11. GUI AND STANDALONE EXECUTABLES
+--------------------------------------------------------------------------------
+- `std/gui` builds HTML pages (`page`, `heading`, `paragraph`,
+  `button`, `form`, `text_input`, `table`, `css`). The browser is the
+  GUI; `azra gui <app.vibe> [--port 8080]` serves it and opens a browser.
+- `azra build <app.vibe> [--name N] [--out P]` generates a Rust crate that
+  embeds the script via `include_str!`, depends on the Azra crate by path,
+  compiles with `cargo build --release` and copies out a single executable.
+- Generated apps receive the common host functions through
+  `azra::run_source_with_hosts`.
 ================================================================================

@@ -1,0 +1,43 @@
+note: std/log — leveled, structured logging with optional file output
+note: use "std/log"
+
+set log_level to "info"
+set log_file to ""
+
+define set_log_level with level:
+    set log_level to level
+    give back log_level
+
+define set_log_file with path:
+    set log_file to path
+    give back path
+
+define log with level, message, fields:
+    set text to "[" + level + "] " + message
+    for each name in keys of fields:
+        set value to key name of fields
+        set text to text + " " + name + "=" + value
+    if level equals "error":
+        error text
+    otherwise if level equals "warn":
+        warn text
+    otherwise if level equals "debug":
+        if log_level equals "debug":
+            say text
+    otherwise:
+        say text
+    if length of log_file greater_than 0:
+        file_append with log_file, text + "\n"
+    give back text
+
+define log_info with message:
+    give back log with "info", message, empty map
+
+define log_warn with message:
+    give back log with "warn", message, empty map
+
+define log_error with message:
+    give back log with "error", message, empty map
+
+define log_debug with message:
+    give back log with "debug", message, empty map

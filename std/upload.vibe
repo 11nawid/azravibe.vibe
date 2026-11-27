@@ -1,0 +1,44 @@
+note: std/upload — multipart/form-data parsing for HTTP handlers
+note: use "std/upload"
+
+use "std/http"
+
+define parse_multipart with request:
+    set content_type to header with request, "content-type"
+    set pieces to split content_type by "boundary="
+    if length of pieces less_than 2:
+        give back empty list
+    set boundary to "--" + item 2 of pieces
+    set chunks to split request.body by boundary
+    set out to empty list
+    for each chunk in chunks:
+        set part to trim of chunk
+        if part equals "--" or part equals "":
+            skip next
+        set halves to split part by "\r\n\r\n"
+        if length of halves greater_than 1:
+            set headers to item 1 of halves
+            set content to trim of item 2 of halves
+            set file to empty map
+            set names to split headers by "name=\""
+            set field to ""
+            if length of names greater_than 1:
+                set tail to split item 2 of names by "\""
+                set field to item 1 of tail
+            set filenames to split headers by "filename=\""
+            set filename to ""
+            if length of filenames greater_than 1:
+                set tail2 to split item 2 of filenames by "\""
+                set filename to item 1 of tail2
+            set key "field" of file to field
+            set key "filename" of file to filename
+            set key "content" of file to content
+            add file to out
+    give back out
+
+define save_upload with upload, directory:
+    if length of key "filename" of upload equals 0:
+        give back false
+    set path to directory + "/" + key "filename" of upload
+    write key "content" of upload to file path
+    give back path

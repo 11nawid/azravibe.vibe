@@ -1,0 +1,29 @@
+note: gui.vibe — a browser GUI served by Azra
+note: run with `azra gui examples/gui.vibe --port 8080`
+use "std/gui"
+use "std/http"
+
+set title to set_title with "Azra GUI Demo"
+set rows to "id", "name"
+set item1 to empty map
+set key "id" of item1 to 1
+set key "name" of item1 to "Azra"
+set people to item1
+
+when http request with req:
+    if req.path equals "/" or req.path equals "":
+        set body to heading with 1, "Hello from Azra"
+        set body to body + paragraph with "This GUI is a .vibe script served by the Azra HTTP framework."
+        set body to body + table with people
+        set body to body + form with "/greet", text_input with "name", "Your name: "
+        set body to body + button with "JSON API", "/api"
+        send_html with req, 200, page with title, body
+    otherwise if req.path equals "/greet":
+        set who to query_param with req, "name"
+        set body to heading with 1, "Hello, " + who + "!"
+        set body to body + button with "Back", "/"
+        send_html with req, 200, page with title, body
+    otherwise if req.path equals "/api":
+        send_text with req, 200, "Azra GUI API is alive"
+    otherwise:
+        send_text with req, 404, "Not found"

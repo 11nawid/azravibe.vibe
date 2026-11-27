@@ -191,6 +191,44 @@ cp target/wasm32-unknown-unknown/release/azra.wasm playground/azra.wasm
 cd playground && python -m http.server 8000
 ```
 
+### Application frameworks (Round 1)
+
+Curated modules in `std/`: `config`, `log`, `template`, `auth`, `orm`,
+`queue`, `cli`, `metrics`, `i18n`, `upload`, `plugin`, `validate`, `gui`,
+plus the earlier `http`, `query`, `db`, `math`, `collections`, `string`,
+`vec3`, `random`, `io`, `json` and `testing`. Host functions shared by the
+CLI, REPL, server and generated apps include `sha256`, `hmac_sha256`,
+`base64_encode`/`decode`, `url_encode`/`decode`, `env_get`, `cli_args`,
+`arg_at`, `now_ms`, `uuid`, `file_append` and `open_browser`.
+
+Run the complete framework suite with:
+
+```bash
+azra test tests/vibe-test/20_frameworks.vibe
+```
+
+### GUI apps
+
+`std/gui` generates HTML pages, headings, tables, forms and buttons; the
+browser is the GUI. `azra gui app.vibe --port 8080` serves the app and opens
+it in the default browser. See `examples/gui.vibe`.
+
+```vibe
+use "std/gui"
+set html to page with "Demo", heading with 1, "Hello from Azra"
+```
+
+### Standalone executables
+
+```bash
+azra build app.vibe --name myapp --out myapp.exe
+```
+
+This generates a small Rust crate that embeds the `.vibe` script and the
+Azra runtime, compiles it in release mode and writes a single executable.
+The generated app gets all common host functions through
+`azra::run_source_with_hosts`.
+
 ### HTTP server framework
 
 A C++ HTTP core (`native/azra_net.cpp`) is linked through a Rust FFI bridge;

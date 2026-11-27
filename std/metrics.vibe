@@ -1,0 +1,37 @@
+note: std/metrics — in-process counters and timers
+note: use "std/metrics"
+
+set metrics to empty map
+
+define increment with name:
+    set current to key name of metrics
+    if current equals null:
+        set current to 0
+    set current to current + 1
+    set key name of metrics to current
+    give back current
+
+define add_to with name, amount:
+    set current to key name of metrics
+    if current equals null:
+        set current to 0
+    set current to current + amount
+    set key name of metrics to current
+    give back current
+
+define value_of with name:
+    set current to key name of metrics
+    if current equals null:
+        give back 0
+    give back current
+
+define record with name, milliseconds:
+    set key name of metrics to milliseconds
+    give back milliseconds
+
+define snapshot:
+    give back metrics
+
+define reset_metrics:
+    set metrics to empty map
+    give back true

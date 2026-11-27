@@ -1,0 +1,27 @@
+note: std/i18n — translation catalogs loaded from JSON
+note: use "std/i18n"
+
+define load with path:
+    if file exists path:
+        give back parse json read file path
+    give back empty map
+
+define translate with catalog, language, key, fallback:
+    set table to key language of catalog
+    if table equals null:
+        give back fallback
+    set text to key key of table
+    if text equals null:
+        give back fallback
+    give back text
+
+define add_translation with catalog, language, key, text:
+    set table to key language of catalog
+    if table equals null:
+        set table to empty map
+    set key key of table to text
+    set key language of catalog to table
+    give back catalog
+
+define languages with catalog:
+    give back keys of catalog

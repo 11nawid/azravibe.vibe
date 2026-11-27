@@ -10,9 +10,12 @@
 //! ```
 
 pub mod ast;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod builder;
 pub mod env;
 pub mod error;
 pub mod format;
+pub mod host;
 pub mod interpreter;
 pub mod lexer;
 pub mod manifest;
@@ -38,6 +41,29 @@ pub use value::{ObjectData, Value};
 
 use interpreter::Interpreter;
 use std::path::{Path, PathBuf};
+
+/// Like [`run_source`], but also registers the common host function library
+/// (crypto, encoding, CLI args, environment, browser opener, ...). This is
+/// what generated standalone executables call.
+pub fn run_source_with_hosts(source: &str) -> Result<String, String> {
+    let mut engine = AzraEngine::new();
+    host::register_common(&mut engine);
+    let result = engine.eval_str(source);
+    let output = engine
+        .take_output()
+        .into_iter()
+        .map(|line| line.text)
+        .collect::<Vec<_>>()
+        .join("\n");
+    match result {
+        Ok(()) => Ok(output),
+        Err(err) => Err(if output.is_empty() {
+            err.to_string()
+        } else {
+            format!("{output}\n{err}")
+        }),
+    }
+}
 
 /// Run a source string and return its buffered output as a single string.
 /// Used by the WebAssembly playground and by embedding hosts that only need

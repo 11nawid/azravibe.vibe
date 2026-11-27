@@ -1,0 +1,23 @@
+note: std/template — {{name}} templating with map values
+note: use "std/template"
+
+define render with template, values:
+    set result to template
+    for each name in keys of values:
+        set needle to "\{\{" + name + "\}\}"
+        set value to key name of values
+        set result to replace needle with value in result
+    give back result
+
+define render_file with path, values:
+    give back render with read file path, values
+
+define partial with template, start, end:
+    set marker to "\{\{#" + start + "\}\}"
+    set closing to "\{\{/" + end + "\}\}"
+    set parts to split template by marker
+    if length of parts less_than 2:
+        give back ""
+    set body to item 2 of parts
+    set tail to split body by closing
+    give back item 1 of tail

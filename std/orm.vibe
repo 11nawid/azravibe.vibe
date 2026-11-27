@@ -1,0 +1,43 @@
+note: std/orm — schema validation on top of the JSON table store
+note: use "std/orm"
+
+use "std/db"
+
+define schema with name, fields:
+    set result to empty map
+    set key "name" of result to name
+    set key "fields" of result to fields
+    give back result
+
+define validate with definition, row:
+    for each field in key "fields" of definition:
+        set value to key field of row
+        if value equals null:
+            fail with "missing required field: " + field
+    give back true
+
+define create with path, definition, row:
+    set checked to validate with definition, row
+    set rows to open_table with path
+    set rows to insert_row with rows, row
+    save_table with path, rows
+    give back row
+
+define all with path:
+    give back open_table with path
+
+define find with path, definition, field, wanted:
+    set rows to open_table with path
+    give back find_row with rows, field, wanted
+
+define update with path, definition, field, wanted, changes:
+    set rows to open_table with path
+    set rows to update_row with rows, field, wanted, changes
+    save_table with path, rows
+    give back rows
+
+define remove with path, field, wanted:
+    set rows to open_table with path
+    set rows to delete_row with rows, field, wanted
+    save_table with path, rows
+    give back rows

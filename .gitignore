@@ -4,6 +4,9 @@
 # Installed Azra packages (azra.lock is committed; contents are not)
 /.azra/
 
+# Generated files from .vibe framework tests
+_framework_*.json
+
 # OS files
 .DS_Store
 Thumbs.db

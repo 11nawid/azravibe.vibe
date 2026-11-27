@@ -1,0 +1,152 @@
+note: 20_frameworks.vibe — end-to-end checks for the Round 1 frameworks
+use "std/config"
+use "std/log"
+use "std/template"
+use "std/auth"
+use "std/orm"
+use "std/queue"
+use "std/cli"
+use "std/metrics"
+use "std/i18n"
+use "std/upload"
+use "std/plugin"
+use "std/validate"
+use "std/query"
+use "std/gui"
+
+define plugin_handler with payload:
+    set result to key "result" of payload
+    give back result
+
+test "config framework":
+    set cfg to empty map
+    set key "name" of cfg to "azra"
+    set got to config_get with cfg, "name", "fallback"
+    assert equals got, "azra"
+    set missing to config_get with cfg, "nope", 7
+    assert equals missing, 7
+
+test "templating framework":
+    set values to empty map
+    set key "name" of values to "Azra"
+    set rendered to render with "Hello, \{\{name\}\}!", values
+    assert equals rendered, "Hello, Azra!"
+
+test "auth and crypto framework":
+    set token to sign with "user:1", "secret"
+    set valid to verify with token, "secret"
+    assert valid
+    set payload to payload_of with token
+    assert equals payload, "user:1"
+    set digest to sha256 with "abc"
+    assert equals digest, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+    set encoded to base64_encode with "azra"
+    assert equals encoded, "YXpyYQ=="
+    set escaped to url_encode with "a b"
+    assert equals escaped, "a%20b"
+    set hash to hash_password with "pw", "salt"
+    set checked to check_password with "pw", "salt", hash
+    assert checked
+
+test "logging framework":
+    set line to log_info with "framework test"
+    assert line contains "[info]"
+
+test "ORM and query framework":
+    write "[]" to file "_framework_test.json"
+    set fields to "id", "name"
+    set definition to schema with "users", fields
+    set row to empty map
+    set key "id" of row to 1
+    set key "name" of row to "Ali"
+    set created to create with "_framework_test.json", definition, row
+    assert equals key "name" of created, "Ali"
+    set found to find with "_framework_test.json", definition, "id", 1
+    assert equals key "name" of found, "Ali"
+    set changes to empty map
+    set key "name" of changes to "Sara"
+    set updated to update with "_framework_test.json", definition, "id", 1, changes
+    set first to item 1 of updated
+    assert equals key "name" of first, "Sara"
+    set names to select with updated, "name"
+    assert equals item 1 of names, "Sara"
+    set removed to remove with "_framework_test.json", "id", 1
+    assert equals length of removed, 0
+
+test "job queue framework":
+    write "[]" to file "_framework_queue.json"
+    set job to empty map
+    set key "task" of job to "send email"
+    set id to enqueue with "_framework_queue.json", job
+    set next to dequeue with "_framework_queue.json"
+    assert equals key "status" of next, "processing"
+    set done to ack with "_framework_queue.json", key "id" of next
+    assert done
+    set stats to queue_stats with "_framework_queue.json"
+    assert equals key "done" of stats, 1
+
+test "CLI framework":
+    set args to "--name=azra", "--verbose", "file.vibe"
+    set parsed to parse with args
+    set name to flag with parsed, "name", "none"
+    assert equals name, "azra"
+    set first to positional with parsed, 1
+    assert equals first, "file.vibe"
+
+test "metrics framework":
+    set first to increment with "requests"
+    assert equals first, 1
+    set second to add_to with "requests", 4
+    assert equals second, 5
+    set total to value_of with "requests"
+    assert equals total, 5
+    set snap to snapshot
+    assert equals key "requests" of snap, 5
+
+test "i18n framework":
+    set catalog to empty map
+    set catalog to add_translation with catalog, "en", "hello", "Hello"
+    set catalog to add_translation with catalog, "fa", "hello", "سلام"
+    set en to translate with catalog, "en", "hello", "missing"
+    assert equals en, "Hello"
+    set fa to translate with catalog, "fa", "hello", "missing"
+    assert equals fa, "سلام"
+    set fallback to translate with catalog, "de", "hello", "fallback"
+    assert equals fallback, "fallback"
+
+test "upload framework":
+    set request to empty map
+    set key "headers" of request to "content-type: multipart/form-data; boundary=XYZ\n"
+    set key "body" of request to "--XYZ\r\nContent-Disposition: form-data; name=\"title\"\r\n\r\nAzra\r\n--XYZ--\r\n"
+    set files to parse_multipart with request
+    assert equals length of files, 1
+    set first to item 1 of files
+    assert equals key "field" of first, "title"
+    assert equals key "content" of first, "Azra"
+
+test "plugin framework":
+    set count to register with "save", plugin_handler
+    assert equals count, 1
+    set payload to empty map
+    set key "result" of payload to "ok"
+    set fired to emit with "save", payload
+    assert equals fired, 1
+    set names to hook_names
+    assert "save" contains "save"
+
+test "GUI framework":
+    set content to heading with 1, "Hello"
+    set content to content + paragraph with "Azra GUI body"
+    set html to page with "Demo", content
+    assert html contains "<h1>Hello</h1>"
+    assert html contains "Azra GUI body"
+    set link to button with "Go", "/next"
+    assert link contains "/next"
+
+test "validation framework":
+    assert required with "value"
+    assert is_email with "a@b.com"
+    assert min_length with "azra", 4
+    set options to "a", "b"
+    assert one_of with "b", options
+    assert is_number with "42"

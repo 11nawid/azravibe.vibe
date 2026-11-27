@@ -1,0 +1,41 @@
+note: std/validate — reusable field validators
+note: use "std/validate"
+
+define required with value:
+    if value equals null:
+        give back false
+    if value equals "":
+        give back false
+    give back true
+
+define is_email with text:
+    if text contains "@" and text contains ".":
+        give back true
+    give back false
+
+define min_length with text, length:
+    if length of text greater_than= length:
+        give back true
+    give back false
+
+define one_of with value, options:
+    for each option in options:
+        if value equals option:
+            give back true
+    give back false
+
+define is_number with value:
+    try:
+        set parsed to parse json value
+        give back true
+    if error as err:
+        give back false
+
+define validate_row with row, rules:
+    for each field in keys of rules:
+        set rule to key field of rules
+        set value to key field of row
+        set ok to rule with value
+        if ok equals false:
+            fail with "validation failed for " + field
+    give back true

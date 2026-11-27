@@ -1,0 +1,27 @@
+note: std/plugin — named hook registry for extensible Azra apps
+note: use "std/plugin"
+
+set hooks to empty map
+
+define register with name, handler:
+    set listeners to key name of hooks
+    if listeners equals null:
+        set listeners to empty list
+    add handler to listeners
+    set key name of hooks to listeners
+    give back length of listeners
+
+define emit with name, payload:
+    set listeners to key name of hooks
+    if listeners equals null:
+        give back 0
+    for each handler in listeners:
+        set result to handler with payload
+    give back length of listeners
+
+define clear_hooks with name:
+    set key name of hooks to empty list
+    give back true
+
+define hook_names:
+    give back keys of hooks

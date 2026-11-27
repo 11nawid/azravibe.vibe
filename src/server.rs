@@ -61,6 +61,7 @@ impl ServerApp {
             max_call_depth: 512,
             ..SandboxConfig::permissive()
         });
+        crate::host::register_common(&mut engine);
         let server = Rc::new(RefCell::new(Some(
             native::Server::listen(port).map_err(|e| format!("cannot start HTTP server: {e}"))?,
         )));

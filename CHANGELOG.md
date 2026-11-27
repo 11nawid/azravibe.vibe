@@ -17,6 +17,10 @@ Semantic Versioning where practical (pre-1.0 versions may break syntax).
 - `azra-lsp` language server with diagnostics, completion, hover,
   go-to-definition and formatting, plus VS Code and Neovim clients.
 - WebAssembly bridge and browser playground in `playground/`.
+- Round 1 application frameworks: `std/config`, `log`, `template`, `auth`,
+  `orm`, `queue`, `cli`, `metrics`, `i18n`, `upload`, `plugin`, `validate`,
+  `gui`; common crypto/encoding/environment host functions; browser GUI via
+  `azra gui`; standalone executable builder via `azra build`.
 - HTTP server framework: C++ networking core, Rust FFI bridge, `azra serve`,
   `respond`/`http_fetch`/`http_get` host functions, and `std/http`,
   `std/query`, `std/db` modules with `examples/server.vibe`.

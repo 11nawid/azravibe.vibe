@@ -1,0 +1,43 @@
+note: std/config — layered configuration from JSON files and environment
+note: use "std/config"
+
+define load_config with path:
+    if file exists path:
+        give back parse json read file path
+    give back empty map
+
+define config_get with config, name, fallback:
+    set value to key name of config
+    if value equals null:
+        give back fallback
+    give back value
+
+define config_text with config, name, fallback:
+    set value to config_get with config, name, fallback
+    give back value
+
+define config_number with config, name, fallback:
+    set value to config_get with config, name, fallback
+    if value equals null:
+        give back 0
+    give back value
+
+define config_bool with config, name, fallback:
+    set value to config_get with config, name, fallback
+    if value equals true or value equals "true":
+        give back true
+    if value equals false or value equals "false":
+        give back false
+    give back fallback
+
+define env_or with name, fallback:
+    set value to env_get with name
+    if value equals null:
+        give back fallback
+    give back value
+
+define config_overlay with base, override:
+    set out to base
+    for each name in keys of override:
+        set key name of out to key name of override
+    give back out

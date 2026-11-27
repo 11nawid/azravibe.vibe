@@ -1,0 +1,64 @@
+note: std/queue — persistent JSON job queue with retries
+note: use "std/queue"
+
+use "std/db"
+use "std/query"
+
+define enqueue with path, job:
+    set jobs to open_table with path
+    set wrapped to empty map
+    set key "id" of wrapped to uuid with
+    set key "job" of wrapped to job
+    set key "status" of wrapped to "pending"
+    set key "attempts" of wrapped to 0
+    set jobs to insert_row with jobs, wrapped
+    save_table with path, jobs
+    give back key "id" of wrapped
+
+define dequeue with path:
+    set jobs to open_table with path
+    set i to 1
+    while i less_than= length of jobs:
+        set row to item i of jobs
+        if key "status" of row equals "pending":
+            set key "status" of row to "processing"
+            set attempts to key "attempts" of row
+            set key "attempts" of row to attempts + 1
+            set item i of jobs to row
+            save_table with path, jobs
+            give back row
+        set i to i + 1
+    give back null
+
+define ack with path, id:
+    set jobs to open_table with path
+    set i to 1
+    while i less_than= length of jobs:
+        set row to item i of jobs
+        if key "id" of row equals id:
+            set key "status" of row to "done"
+            set item i of jobs to row
+            save_table with path, jobs
+            give back true
+        set i to i + 1
+    give back false
+
+define retry_failed with path:
+    set jobs to open_table with path
+    set i to 1
+    while i less_than= length of jobs:
+        set row to item i of jobs
+        if key "status" of row equals "failed":
+            set key "status" of row to "pending"
+            set item i of jobs to row
+        set i to i + 1
+    save_table with path, jobs
+    give back length of jobs
+
+define queue_stats with path:
+    set jobs to open_table with path
+    set stats to empty map
+    set key "total" of stats to length of jobs
+    set key "done" of stats to count_where with jobs, "status", "done"
+    set key "pending" of stats to count_where with jobs, "status", "pending"
+    give back stats

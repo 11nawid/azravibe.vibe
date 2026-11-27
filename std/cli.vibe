@@ -1,0 +1,40 @@
+note: std/cli — command-line argument parsing helpers
+note: use "std/cli"
+
+define parse with args:
+    set out to empty map
+    set positionals to empty list
+    set i to 1
+    while i less_than= length of args:
+        set value to item i of args
+        if value starts with "--":
+            set parts to split value by "="
+            set raw_key to item 1 of parts
+            set name to replace "--" with "" in raw_key
+            if length of parts greater_than 1:
+                set key name of out to item 2 of parts
+            otherwise:
+                set key name of out to true
+        otherwise:
+            add value to positionals
+        set i to i + 1
+    set key "positionals" of out to positionals
+    give back out
+
+define flag with parsed, name, fallback:
+    set value to key name of parsed
+    if value equals null:
+        give back fallback
+    give back value
+
+define positional with parsed, index:
+    set values to key "positionals" of parsed
+    if index greater_than length of values:
+        give back null
+    give back item index of values
+
+define usage with app, description, options:
+    set text to app + " — " + description + "\nOptions:\n"
+    for each option in options:
+        set text to text + "  " + option + "\n"
+    give back text
