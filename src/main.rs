@@ -33,6 +33,7 @@ USAGE:
     azra lsp                                   language server (stdio JSON-RPC)
     azra setup-vscode                          install editor support
     azra setup-path                            add this exe's folder to PATH
+    azra update                                download and install the latest release
     azra --help
     azra --version
 
@@ -102,6 +103,17 @@ fn cli_main(args: &[String]) -> i32 {
             azra::lsp::run();
             0
         }
+        Some("update") => match azra::updater::update() {
+            Ok(message) => {
+                println!("{message}");
+                0
+            }
+            Err(error) => {
+                eprintln!("error: {error}");
+                eprintln!("tip: {}", azra::updater::reinstall_hint());
+                1
+            }
+        },
         Some("setup-path") => match azra::path_setup::setup() {
             Ok(message) => {
                 println!("{message}");

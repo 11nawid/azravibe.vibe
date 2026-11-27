@@ -38,6 +38,7 @@ pub mod server;
 pub mod stdlib;
 pub mod stdlib_embed;
 pub mod token;
+pub mod updater;
 pub mod value;
 pub mod vm;
 #[cfg(target_arch = "wasm32")]

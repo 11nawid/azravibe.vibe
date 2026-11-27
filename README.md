@@ -86,6 +86,7 @@ curl -fsSL https://raw.githubusercontent.com/11nawid/azravibe.vibe/main/install/
 
 The installer adds `azra` to PATH and sets up VS Code highlighting automatically.
 No Rust, C++ compiler or Visual Studio needed — the stdlib is embedded in the exe.
+To update later, run `azra update` (or just re-run the same installer command).
 
 ## 🚀 Build from source
 

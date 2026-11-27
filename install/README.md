@@ -36,6 +36,22 @@ VS Code extension if `code` is on PATH. Restart your shell afterwards.
 - `azra build app.vibe --out app.exe` — the resulting exe is self-contained and
   carries the Azra icon; it needs no installed interpreter
 
+## Update
+
+From any installed version:
+
+```bash
+azra update
+```
+
+This downloads the latest one-file release, checks the version, replaces the
+running exe (via a detached helper on Windows) and re-runs `setup-path` and
+`setup-vscode`. On Windows the replacement happens a moment after the command
+returns.
+
+You can also simply re-run the one-line installer from the section above — it
+always downloads the latest release and overwrites the old executable.
+
 ## Build a standalone app
 
 ```bash

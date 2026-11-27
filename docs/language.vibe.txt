@@ -465,4 +465,13 @@ ative/azra_net.cpp) and
 - `azra setup-vscode` writes the embedded extension into
   `~/.vscode/extensions` (also Insiders/OSS), so highlighting works even when
   the `code` CLI is not on PATH.
+
+17. UPDATING
+--------------------------------------------------------------------------------
+- `azra update` downloads the latest one-file release for the current OS,
+  downloads it with `curl`, compares the version, and replaces the running
+  executable. On Windows a detached PowerShell helper performs the replacement
+  after the process exits and re-runs `setup-path` and `setup-vscode`.
+- Re-running the one-line installer also updates: it always downloads the latest
+  release and overwrites the installed executable.
 ================================================================================
