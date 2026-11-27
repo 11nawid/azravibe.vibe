@@ -1,0 +1,47 @@
+note: std/query — table-style queries over lists of maps
+note: use "std/query"
+
+define where with rows, field_name, wanted:
+    set out to empty list
+    for each row in rows:
+        set value to key field_name of row
+        if value equals wanted:
+            add row to out
+    give back out
+
+define select with rows, field_name:
+    set out to empty list
+    for each row in rows:
+        add key field_name of row to out
+    give back out
+
+define first_where with rows, field_name, wanted:
+    set found to where with rows, field_name, wanted
+    if length of found greater_than 0:
+        give back item 1 of found
+    give back null
+
+define order_by with rows, field_name:
+    set out to empty list
+    for each row in rows:
+        add row to out
+    set i to 2
+    while i less_than= length of out:
+        set current to item i of out
+        set current_key to key field_name of current
+        set j to i - 1
+        while j greater_than 0:
+            set previous to item j of out
+            set previous_key to key field_name of previous
+            if previous_key less_than= current_key:
+                stop loop
+            set following to item j + 1 of out
+            set item j + 1 of out to previous
+            set item j of out to following
+            set j to j - 1
+        set i to i + 1
+    give back out
+
+define count_where with rows, field_name, wanted:
+    set found to where with rows, field_name, wanted
+    give back length of found

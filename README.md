@@ -191,6 +191,34 @@ cp target/wasm32-unknown-unknown/release/azra.wasm playground/azra.wasm
 cd playground && python -m http.server 8000
 ```
 
+### HTTP server framework
+
+A C++ HTTP core (`native/azra_net.cpp`) is linked through a Rust FFI bridge;
+routing and business logic stay in Azra:
+
+```bash
+azra serve examples/server.vibe --port 8080
+```
+
+```vibe
+use "std/http"
+use "std/db"
+
+when http request with req:
+    if req.path equals "/health":
+        send_text with req, 200, "ok"
+    otherwise:
+        send_text with req, 404, "not found"
+```
+
+Host functions: `respond with req, status, body, content_type`,
+`http_fetch with method, url, headers, body` and `http_get with url`.
+`std/http` adds header/query helpers and JSON responders, `std/query` adds
+`where`/`select`/`order_by`, and `std/db` is a JSON-file table store
+(`open_table`, `insert_row`, `find_row`, `save_table`). See
+`examples/server.vibe`. If no C++ compiler is available, a pure-Rust fallback
+with the same API is used automatically.
+
 ### Standalone engine verbs
 
 Game scripts can call engine actions directly — in standalone CLI mode they

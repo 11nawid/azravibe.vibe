@@ -16,9 +16,13 @@ pub mod format;
 pub mod interpreter;
 pub mod lexer;
 pub mod manifest;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod native;
 pub mod parser;
 pub mod pkg;
 pub mod sandbox;
+#[cfg(not(target_arch = "wasm32"))]
+pub mod server;
 pub mod stdlib;
 pub mod token;
 pub mod value;

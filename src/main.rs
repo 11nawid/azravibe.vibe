@@ -16,6 +16,7 @@ USAGE:
     azra check <script.vibe>
     azra repl
     azra eval <code>
+    azra serve <app.vibe> [--port 8080]      run an HTTP server app
     azra test [file-or-directory]            run `test \"...\":` blocks
     azra fmt [--check] <file.vibe>           format a source file
     azra init [name]                       create azra.toml + main.vibe
@@ -76,6 +77,7 @@ fn cli_main(args: &[String]) -> i32 {
         Some("check") => cmd_check(&args[1..]),
         Some("repl") => cmd_repl(),
         Some("eval") => cmd_eval(&args[1..]),
+        Some("serve") => cmd_serve(&args[1..]),
         Some("test") => cmd_test(&args[1..]),
         Some("fmt") => cmd_fmt(&args[1..]),
         Some("init") => cmd_init(&args[1..]),
@@ -266,6 +268,69 @@ fn collect_vibe_files(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) 
             out.push(path);
         }
     }
+}
+
+/// `azra serve <app.vibe> [--port 8080]` — run an HTTP server app.
+#[cfg(not(target_arch = "wasm32"))]
+fn cmd_serve(args: &[String]) -> i32 {
+    let mut file: Option<String> = None;
+    let mut port: u16 = 8080;
+    let mut i = 0;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--port" => {
+                i += 1;
+                match args.get(i).and_then(|s| s.parse::<u16>().ok()) {
+                    Some(p) => port = p,
+                    None => {
+                        eprintln!("error: `--port` requires a number between 0 and 65535");
+                        return 2;
+                    }
+                }
+            }
+            arg if arg.starts_with("--port=") => match arg[7..].parse::<u16>() {
+                Ok(p) => port = p,
+                Err(_) => {
+                    eprintln!("error: `--port` requires a valid port number");
+                    return 2;
+                }
+            },
+            arg if arg.starts_with('-') => {
+                eprintln!("error: unknown option `{arg}`");
+                return 2;
+            }
+            arg if file.is_none() => file = Some(arg.to_string()),
+            arg => {
+                eprintln!("error: unexpected argument `{arg}`");
+                return 2;
+            }
+        }
+        i += 1;
+    }
+    let Some(file) = file else {
+        eprintln!("error: `azra serve` requires an app file\n");
+        eprint!("{}", USAGE);
+        return 2;
+    };
+    match azra::server::ServerApp::new(std::path::Path::new(&file), port) {
+        Ok(mut app) => match app.run() {
+            Ok(()) => 0,
+            Err(e) => {
+                eprintln!("error: {e}");
+                1
+            }
+        },
+        Err(e) => {
+            eprintln!("error: {e}");
+            1
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn cmd_serve(_args: &[String]) -> i32 {
+    eprintln!("error: `azra serve` is unavailable in WebAssembly builds");
+    2
 }
 
 /// `azra test [file-or-directory]` — run all `test "name":` blocks.

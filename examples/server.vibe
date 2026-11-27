@@ -1,0 +1,31 @@
+note: server.vibe — example Azra HTTP app
+note: run with `azra serve examples/server.vibe --port 8080`
+use "std/http"
+use "std/db"
+
+set notes to open_table with "notes.json"
+
+when http request with req:
+    if req.path equals "/" and req.method equals "GET":
+        send_html with req, 200, "<h1>Azra HTTP server</h1><p>Try /health or /notes</p>"
+    otherwise if req.path equals "/health":
+        set health to empty map
+        set key "status" of health to "ok"
+        set key "engine" of health to "azra"
+        send_json with req, 200, health
+    otherwise if req.path equals "/notes" and req.method equals "GET":
+        set response to empty map
+        set key "notes" of response to notes
+        send_json with req, 200, response
+    otherwise if req.path equals "/notes" and req.method equals "POST":
+        set row to empty map
+        set key "id" of row to length of notes + 1
+        set key "title" of row to query_param with req, "title"
+        set notes to insert_row with notes, row
+        save_table with "notes.json", notes
+        send_json with req, 201, row
+    otherwise if req.path equals "/upper":
+        set text to query_param with req, "text"
+        send_text with req, 200, uppercase of text
+    otherwise:
+        send_text with req, 404, "Not found"

@@ -1,0 +1,46 @@
+note: std/http — helpers for `when http request with req:` handlers
+note: use "std/http"
+
+define header with request, name:
+    set wanted to lowercase of name
+    set lines to split request.headers by "\n"
+    for each line in lines:
+        set pair to split line by ":"
+        if length of pair greater_than 1:
+            set key to trim of item 1 of pair
+            if lowercase of key equals wanted:
+                give back trim of item 2 of pair
+    give back ""
+
+define query_param with request, name:
+    set pairs to split request.query by "&"
+    for each pair in pairs:
+        set parts to split pair by "="
+        if length of parts greater_than 1:
+            if item 1 of parts equals name:
+                give back item 2 of parts
+    give back ""
+
+define send_text with request, status, text:
+    respond with request, status, text, "text/plain; charset=utf-8"
+    give back true
+
+define send_json with request, status, value:
+    respond with request, status, to json value, "application/json; charset=utf-8"
+    give back true
+
+define send_html with request, status, html:
+    respond with request, status, html, "text/html; charset=utf-8"
+    give back true
+
+define fetch_json with method, url, headers, body:
+    set response to http_fetch with method, url, headers, body
+    set code to key "status" of response
+    set payload to key "body" of response
+    set result to empty map
+    set key "status" of result to code
+    if length of payload greater_than 0:
+        set key "data" of result to parse json payload
+    otherwise:
+        set key "data" of result to null
+    give back result

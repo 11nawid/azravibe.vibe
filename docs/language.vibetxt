@@ -338,4 +338,27 @@ Milestone 3 (planned): Azravibe Studio & Azravibe Player
   WebAssembly (`src/wasm.rs`), with shareable URLs; all execution is local.
 - Project website and hosted playground: https://azravibe.com/vibe
 - Source and contributions: https://github.com/11nawid/azravibe.vibe
+
+9. HTTP SERVER FRAMEWORK
+--------------------------------------------------------------------------------
+- The native networking core is written in C++ (
+ative/azra_net.cpp) and
+  exposed through a Rust FFI bridge (src/native.rs). It provides an HTTP/1.1
+  server and client. A pure-Rust fallback with the same API is compiled when no
+  C++ toolchain is available.
+- zra serve <app.vibe> [--port 8080] loads an app, starts the server and
+  dispatches each request to a when http request with request: handler. If no
+  handler calls espond, a 404 response is sent automatically.
+- The request map has fields id, method, path, query, headers and
+  ody; map properties can be read with dot notation (equest.path).
+- Host functions: espond with request, status, body, content_type,
+  http_fetch with method, url, headers, body (returns a map with status,
+  headers, ody) and http_get with url (returns the body string).
+- std/http provides header, query_param, send_text, send_json,
+  send_html and etch_json. std/query provides where, select,
+  irst_where, order_by and count_where over lists of maps. std/db
+  implements a JSON-file table store: open_table, save_table, insert_row,
+  ind_row, ilter_rows, update_row, delete_row.
+- Scripts remain sandboxed: the host owns sockets/files, and scripts only see
+  the values handed to them by the host functions.
 ================================================================================

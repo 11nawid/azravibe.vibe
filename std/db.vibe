@@ -1,0 +1,41 @@
+note: std/db — a tiny JSON-file table store built from stdlib pieces
+note: use "std/db"
+
+use "std/query"
+
+define open_table with path:
+    if file exists path:
+        give back parse json read file path
+    give back empty list
+
+define save_table with path, rows:
+    write to json rows to file path
+    give back true
+
+define insert_row with rows, row:
+    add row to rows
+    give back rows
+
+define find_row with rows, field_name, wanted:
+    give back first_where with rows, field_name, wanted
+
+define filter_rows with rows, field_name, wanted:
+    give back where with rows, field_name, wanted
+
+define update_row with rows, field_name, wanted, changes:
+    set i to 1
+    while i less_than= length of rows:
+        set row to item i of rows
+        if key field_name of row equals wanted:
+            for each field_name2 in keys of changes:
+                set key field_name2 of row to key field_name2 of changes
+            set item i of rows to row
+        set i to i + 1
+    give back rows
+
+define delete_row with rows, field_name, wanted:
+    set out to empty list
+    for each row in rows:
+        if key field_name of row not_equals wanted:
+            add row to out
+    give back out

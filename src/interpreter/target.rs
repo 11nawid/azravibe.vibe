@@ -297,6 +297,10 @@ pub(super) fn read_property(obj: &Value, name: &str, line: usize) -> Result<Valu
                 }
             }
         }
+        Value::Map(data) => {
+            let found = data.borrow().get(name).cloned();
+            found.ok_or_else(|| AzraError::runtime_at(format!("map has no key `{name}`"), line))
+        }
         Value::Vec3(v) => match name {
             "x" => Ok(Value::Number(Num::Float(v.x))),
             "y" => Ok(Value::Number(Num::Float(v.y))),
