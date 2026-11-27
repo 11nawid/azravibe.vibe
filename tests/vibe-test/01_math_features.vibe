@@ -1,0 +1,37 @@
+note: 01_math_features.vibe — advanced math built-ins, zero-bracket syntax
+note: one value per line so the Rust harness can assert each result
+
+say pi
+say e
+set half to degrees to radians of 45
+say tan half
+say asin 0.5
+say acos 0.5
+say atan 1
+say atan2 of 1, 1
+say log of e
+say log base 2 of 1024
+say log10 of 1000000
+say exp of 1
+say lerp 3 to 7 by 0.25
+say degrees to radians of 180
+say radians to degrees of pi
+say magnitude of vec3 3, 4, 0
+say length of vec3 3, 4, 0
+say dot of vec3 1, 2, 3 and vec3 4, 5, 6
+say cross of vec3 1, 2, 3 and vec3 4, 5, 6
+set xaxis to vec3 1, 0, 0
+set yaxis to vec3 0, 1, 0
+say radians to degrees of angle between xaxis and yaxis
+say normalize vec3 3, 4, 0
+say distance between vec3 0, 0, 0 and vec3 3, 4, 0
+say lerp xaxis to yaxis by 0.5
+say round 4.6
+say floor -4.6
+say ceil -4.5
+say abs -7
+say sqrt 16
+say 2 power 10
+say -17 modulo 5
+say 7 / 2
+say 7 / 2.0

@@ -97,6 +97,29 @@ impl Vec3Data {
         let dz = self.z - other.z;
         (dx * dx + dy * dy + dz * dz).sqrt()
     }
+
+    /// Scalar (dot) product.
+    pub fn dot(&self, other: &Vec3Data) -> f64 {
+        self.x * other.x + self.y * other.y + self.z * other.z
+    }
+
+    /// Vector (cross) product.
+    pub fn cross(&self, other: &Vec3Data) -> Vec3Data {
+        Vec3Data::new(
+            self.y * other.z - self.z * other.y,
+            self.z * other.x - self.x * other.z,
+            self.x * other.y - self.y * other.x,
+        )
+    }
+
+    /// Component-wise linear interpolation used by `lerp` on vectors.
+    pub fn lerp(&self, other: &Vec3Data, t: f64) -> Vec3Data {
+        Vec3Data::new(
+            self.x + (other.x - self.x) * t,
+            self.y + (other.y - self.y) * t,
+            self.z + (other.z - self.z) * t,
+        )
+    }
 }
 
 /// An RGB color created with `color 255, 100, 50` or `color "red"`.
@@ -214,6 +237,15 @@ impl Value {
     }
 
     fn equals_depth(&self, other: &Value, depth: u32) -> bool {
+        // Identity implies equality. Without this, a self-containing list or
+        // map hits the recursion cap and `a equals a` incorrectly says false.
+        match (self, other) {
+            (Value::List(a), Value::List(b)) if Rc::ptr_eq(a, b) => return true,
+            (Value::Map(a), Value::Map(b)) if Rc::ptr_eq(a, b) => return true,
+            (Value::Object(a), Value::Object(b)) if Rc::ptr_eq(a, b) => return true,
+            (Value::Function(a), Value::Function(b)) if Rc::ptr_eq(a, b) => return true,
+            _ => {}
+        }
         if depth > 32 {
             return false;
         }

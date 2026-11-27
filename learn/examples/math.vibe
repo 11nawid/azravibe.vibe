@@ -1,0 +1,13 @@
+note: Math Helpers (math.vibe)
+
+define add with a, b:
+    give back a + b
+
+define sub with a, b:
+    give back a - b
+
+define mul with a, b:
+    give back a * b
+
+define div with a, b:
+    give back a / b

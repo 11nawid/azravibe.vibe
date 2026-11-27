@@ -1,0 +1,12 @@
+note: 04_newton_raphson.vibe — iterative square root approximation
+
+set target to 123456.0
+set guess to target / 2
+set steps to 0
+while steps less_than 12:
+    set q to target / guess
+    set s to guess + q
+    set guess to s / 2
+    set steps to steps + 1
+say guess
+say sqrt target

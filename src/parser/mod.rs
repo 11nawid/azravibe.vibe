@@ -30,6 +30,9 @@ pub(super) const BUILTIN_WORDS: &[&str] = &[
     "round", "floor", "ceil", "abs", "sqrt", "sin", "cos", "min", "max", "clamp", "random",
     "uppercase", "lowercase", "trim", "split", "join", "replace", "current", "format", "read",
     "file", "parse", "to", "empty",
+    // Advanced mathematics / 3D geometry.
+    "tan", "asin", "acos", "atan", "atan2", "pi", "e", "log", "log10", "exp", "lerp",
+    "degrees", "radians", "dot", "cross", "magnitude", "angle",
 ];
 
 const MAX_PARSE_DEPTH: usize = 128;

@@ -12,58 +12,52 @@
   </section>
   <nav class="max-w-4xl mx-auto py-2"><a href="index.html" class="text-indigo-600 hover:underline">← Back to Index</a></nav>
   <section class="max-w-4xl mx-auto px-4 py-8">
-    <p>Below are ready‑to‑run example scripts that demonstrate the concepts covered in the course.</p>
+    <p>Below are ready-to-run example scripts that demonstrate the concepts covered in the course. Azra has no keyboard-input primitive, so values are set in the script.</p>
     <section class="mt-6">
-        <h3 class="text-xl font-semibold mb-2">Calculator (calc.azra)</h3>
-        <p>A simple interactive calculator that uses the <code>math.azra</code> module.</p>
-        <pre class="bg-gray-100 p-2 rounded"><code class="language-azra"># Import math helpers
-use "math.azra"
+        <h3 class="text-xl font-semibold mb-2">Calculator (calculator.vibe)</h3>
+        <p>A simple calculator that uses the <code>math.vibe</code> module.</p>
+        <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">note: Import math helpers
+use "math.vibe"
 
-say "Enter first number:"
-set a to read number
-say "Enter second number:"
-set b to read number
+set a to 8
+set b to 2
 
-say "Sum: " + add a b
-say "Difference: " + sub a b
-say "Product: " + mul a b
-if b != 0:
-    say "Quotient: " + div a b
-else:
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
     say "Cannot divide by zero"
 </code></pre>
-        <p><strong>Sample output (enter 8 and 2):</strong></p>
-        <pre class="bg-gray-100 p-2 rounded">Enter first number:
-8
-Enter second number:
-2
-Sum: 10
+        <p><strong>Output:</strong></p>
+        <pre class="bg-gray-100 p-2 rounded">Sum: 10
 Difference: 6
 Product: 16
 Quotient: 4
 </pre>
       </section>
       <section class="mt-6">
-        <h3 class="text-xl font-semibold mb-2">Math Helpers (math.azra)</h3>
+        <h3 class="text-xl font-semibold mb-2">Math Helpers (math.vibe)</h3>
         <p>Utility module used by the calculator and other programs.</p>
-        <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">define add a b:
+        <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">define add with a, b:
     give back a + b
 
-define sub a b:
+define sub with a, b:
     give back a - b
 
-define mul a b:
+define mul with a, b:
     give back a * b
 
-define div a b:
+define div with a, b:
     give back a / b
 </code></pre>
         <p>This module defines four basic arithmetic functions that return the result.</p>
       </section>
     <h3 class="mt-6 font-semibold">How to run</h3>
     <p>From the repository root, run:</p>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-bash">azra learn/examples/calculator.azra</code></pre>
-    <p>The script will prompt for two numbers and display sum, difference, product, and quotient.</p>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-bash">azra run learn/examples/calculator.vibe</code></pre>
+    <p>The script prints the sum, difference, product and quotient.</p>
   </section>
   <footer class="bg-indigo-600 text-white py-4 mt-12"><div class="max-w-4xl mx-auto text-center"><p>© 2026 Azra Language – All rights reserved.</p></div></footer>
 </body>

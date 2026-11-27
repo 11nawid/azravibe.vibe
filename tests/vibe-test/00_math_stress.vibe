@@ -1,0 +1,183 @@
+note: math_stress.vibe — advanced mathematics, geometry and heavy algorithms
+note: all syntax is zero-bracket, plain English; run with `azra run examples/math_stress.vibe`
+
+note: --- 1. ARITHMETIC, PRECISION AND EXPONENTS ---
+say "--- arithmetic ---"
+say "integer division:", 7 / 2
+say "float division:", 7 / 2.0
+say "float noise:", 0.1 + 0.2
+say "power tower:", 2 power 3 power 2
+say "negative exponent:", 2 power -3
+say "euclidean modulo:", -17 modulo 5
+say "large integer:", 9007199254740993
+set deep to 2 power 0.5
+say "nested sqrt via power:", deep * deep
+
+note: --- 2. TRIGONOMETRY, CONSTANTS AND CONVERSIONS ---
+say "--- trigonometry ---"
+say "pi:", pi
+say "e:", e
+set right to degrees to radians of 90
+set half to degrees to radians of 45
+say "right angle radians:", right
+say "sin right:", sin right
+say "cos right:", cos right
+say "tan 45:", tan half
+say "asin 0.5:", asin 0.5
+say "acos 0.5:", acos 0.5
+say "atan 1:", atan 1
+say "atan2 1,1:", atan2 of 1, 1
+say "degrees back:", radians to degrees of pi
+
+note: --- 3. LOGARITHMS, EXPONENTIALS, LERP, CLAMP ---
+say "--- logarithms and interpolation ---"
+say "natural log of e:", log of e
+say "log base 2 of 1024:", log base 2 of 1024
+say "log10 of 1000000:", log10 of 1000000
+say "exp of 1:", exp of 1
+say "lerp scalar:", lerp 3 to 7 by 0.25
+say "clamp:", clamp 25 between 0 and 10
+say "min/max:", min of -3, 7, max of 2.5, 3
+
+note: --- 4. VECTORS AND 3D GEOMETRY ---
+say "--- vectors ---"
+set a to vec3 1, 2, 3
+set b to vec3 4, 5, 6
+set xaxis to vec3 1, 0, 0
+set yaxis to vec3 0, 1, 0
+say "dot:", dot of a and b
+say "cross:", cross of a and b
+say "magnitude:", magnitude of a
+say "length:", length of a
+say "normalize:", normalize a
+say "distance:", distance between a and b
+say "angle degrees:", radians to degrees of angle between xaxis and yaxis
+say "lerp vectors:", lerp xaxis to yaxis by 0.5
+
+note: --- 5. RECURSION: FIBONACCI, FACTORIAL, ACKERMANN ---
+say "--- recursion ---"
+define fib with n:
+    if n less_than 2:
+        give back n
+    set left to fib with n - 1
+    set right to fib with n - 2
+    give back left + right
+say "fib 20:", fib with 20
+
+define factorial with n:
+    if n less_than= 1:
+        give back 1
+    set smaller to factorial with n - 1
+    give back n * smaller
+say "factorial 20:", factorial with 20
+
+define ackermann with m, n:
+    if m equals 0:
+        give back n + 1
+    if n equals 0:
+        give back ackermann with m - 1, 1
+    set inner to ackermann with m, n - 1
+    give back ackermann with m - 1, inner
+say "ackermann 3,3:", ackermann with 3, 3
+
+note: --- 6. PRIME SIEVE 1..10000 ---
+say "--- sieve ---"
+set limit to 10000
+set flags to empty list
+set idx to 0
+repeat limit + 1 times:
+    add true to flags
+    set idx to idx + 1
+repeat with p from 2 to 100:
+    if item p + 1 of flags equals true:
+        set multiple to p * p
+        while multiple less_than= limit:
+            set item multiple + 1 of flags to false
+            set multiple to multiple + p
+set primes to 0
+set i to 2
+while i less_than= limit:
+    if item i + 1 of flags equals true:
+        set primes to primes + 1
+    set i to i + 1
+say "primes up to 10000:", primes
+
+note: --- 7. NEWTON-RAPHSON SQUARE ROOT ---
+say "--- newton ---"
+set target to 123456.0
+set guess to target / 2
+set steps to 0
+while steps less_than 12:
+    set q to target / guess
+    set s to guess + q
+    set guess to s / 2
+    set steps to steps + 1
+say "newton sqrt:", guess
+say "builtin sqrt:", sqrt target
+
+note: --- 8. QUADRATIC FORMULA ---
+say "--- quadratic ---"
+set qa to 1.0
+set qb to -5.0
+set qc to 6.0
+set disc to qb * qb - 4 * qa * qc
+set sd to sqrt disc
+set negb to 0 - qb
+set den to 2 * qa
+set n1 to negb + sd
+set n2 to negb - sd
+say "roots:", n1 / den, n2 / den
+
+note: --- 9. 3D PROJECTILE TRAJECTORY ---
+say "--- projectile ---"
+set gravity to 9.81
+set speed to 40.0
+set theta to degrees to radians of 45
+set vx to speed * cos theta
+set vy to speed * sin theta
+set flight to 2 * vy / gravity
+set t to 0.0
+set dt to 0.05
+set peak to 0.0
+set pos to vec3 0, 0, 0
+while t less_than flight:
+    set y to vy * t - 0.5 * gravity * t * t
+    if y greater_than peak:
+        set peak to y
+    set x to vx * t
+    set pos to vec3 x, y, 0
+    set t to t + dt
+say "range:", vx * flight
+say "peak:", peak
+say "landing:", pos
+
+note: --- 10. ERROR HANDLING ---
+say "--- errors ---"
+try:
+    say 1 / 0
+if error as err:
+    say "division by zero:", err
+try:
+    say sqrt -1
+if error as err:
+    say "negative sqrt:", err
+try:
+    say 9223372036854775807 + 1
+if error as err:
+    say "overflow:", err
+try:
+    say 5 modulo 0
+if error as err:
+    say "modulo by zero:", err
+try:
+    say asin 2
+if error as err:
+    say "asin domain:", err
+try:
+    say log of 0
+if error as err:
+    say "log domain:", err
+try:
+    say normalize vec3 0, 0, 0
+if error as err:
+    say "zero vector:", err

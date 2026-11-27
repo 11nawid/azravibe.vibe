@@ -90,6 +90,12 @@ pub(super) fn eval_math(
                 (Value::Number(a), Value::Number(b)) => {
                     let a = a.as_f64();
                     let b = b.as_f64();
+                    if a.is_nan() || b.is_nan() {
+                        return Err(AzraError::runtime_at(
+                            format!("`{}` cannot compare NaN", name.as_str()),
+                            line,
+                        ));
+                    }
                     let keep_a = if want_min { a <= b } else { a >= b };
                     if keep_a { a } else { b }
                 }
@@ -115,6 +121,9 @@ pub(super) fn eval_math(
             let v = args[0].as_number("clamp value", line)?.as_f64();
             let lo = args[1].as_number("clamp lower bound", line)?.as_f64();
             let hi = args[2].as_number("clamp upper bound", line)?.as_f64();
+            if lo.is_nan() || hi.is_nan() {
+                return Err(AzraError::runtime_at("clamp bounds must not be NaN", line));
+            }
             if lo > hi {
                 return Err(AzraError::runtime_at(
                     format!(
@@ -124,6 +133,9 @@ pub(super) fn eval_math(
                     line,
                 ));
             }
+            // `f64::clamp` panics when either bound is NaN; the guard above
+            // keeps that failure inside the language's error system so `try:`
+            // can catch it and the CLI never aborts with a Rust panic.
             let clamped = v.clamp(lo, hi);
             if matches!(
                 (&args[0], &args[1], &args[2]),
@@ -152,6 +164,160 @@ pub(super) fn eval_math(
                 ));
             }
             Ok(num(Num::Float(ctx.rng.next_f64())))
+        }
+        Builtin::Tan => {
+            expect_args(name, args, 1, line)?;
+            let x = args[0].as_number("tan", line)?.as_f64();
+            let v = x.tan();
+            if !v.is_finite() {
+                return Err(AzraError::runtime_at("`tan` is undefined at this angle", line));
+            }
+            Ok(num(Num::Float(v)))
+        }
+        Builtin::Asin | Builtin::Acos => {
+            expect_args(name, args, 1, line)?;
+            let op = name.as_str();
+            let x = args[0].as_number(op, line)?.as_f64();
+            if !(-1.0..=1.0).contains(&x) {
+                return Err(AzraError::runtime_at(
+                    format!("`{}` needs a value between -1 and 1, got {}", op, x),
+                    line,
+                ));
+            }
+            let v = if name == Builtin::Asin {
+                x.asin()
+            } else {
+                x.acos()
+            };
+            Ok(num(Num::Float(v)))
+        }
+        Builtin::Atan => {
+            expect_args(name, args, 1, line)?;
+            Ok(num(Num::Float(
+                args[0].as_number("atan", line)?.as_f64().atan(),
+            )))
+        }
+        Builtin::Atan2 => {
+            expect_args(name, args, 2, line)?;
+            let y = args[0].as_number("atan2 y", line)?.as_f64();
+            let x = args[1].as_number("atan2 x", line)?.as_f64();
+            Ok(num(Num::Float(y.atan2(x))))
+        }
+        Builtin::Pi => {
+            expect_args(name, args, 0, line)?;
+            Ok(num(Num::Float(std::f64::consts::PI)))
+        }
+        Builtin::Euler => {
+            expect_args(name, args, 0, line)?;
+            Ok(num(Num::Float(std::f64::consts::E)))
+        }
+        Builtin::Log => {
+            if args.is_empty() || args.len() > 2 {
+                return Err(AzraError::runtime_at(
+                    "`log` expects 1 or 2 arguments: `log of x` or `log base b of x`",
+                    line,
+                ));
+            }
+            let x = args[0].as_number("log", line)?.as_f64();
+            if !x.is_finite() || x <= 0.0 {
+                return Err(AzraError::runtime_at(
+                    format!("`log` needs a positive finite number, got {}", x),
+                    line,
+                ));
+            }
+            if args.len() == 2 {
+                let base = args[1].as_number("log base", line)?.as_f64();
+                if !base.is_finite() || base <= 0.0 || base == 1.0 {
+                    return Err(AzraError::runtime_at(
+                        format!("`log` base must be positive and not 1, got {}", base),
+                        line,
+                    ));
+                }
+                Ok(num(Num::Float(x.ln() / base.ln())))
+            } else {
+                Ok(num(Num::Float(x.ln())))
+            }
+        }
+        Builtin::Log10 => {
+            expect_args(name, args, 1, line)?;
+            let x = args[0].as_number("log10", line)?.as_f64();
+            if !x.is_finite() || x <= 0.0 {
+                return Err(AzraError::runtime_at(
+                    format!("`log10` needs a positive finite number, got {}", x),
+                    line,
+                ));
+            }
+            Ok(num(Num::Float(x.log10())))
+        }
+        Builtin::Exp => {
+            expect_args(name, args, 1, line)?;
+            let x = args[0].as_number("exp", line)?.as_f64();
+            let v = x.exp();
+            if !v.is_finite() {
+                return Err(AzraError::runtime_at("`exp` overflowed", line));
+            }
+            Ok(num(Num::Float(v)))
+        }
+        Builtin::Lerp => {
+            expect_args(name, args, 3, line)?;
+            let t = args[2].as_number("lerp amount", line)?.as_f64();
+            if !t.is_finite() {
+                return Err(AzraError::runtime_at("`lerp` amount must be finite", line));
+            }
+            match (&args[0], &args[1]) {
+                (Value::Vec3(a), Value::Vec3(b)) => Ok(Value::Vec3(a.lerp(b, t))),
+                (a, b) => {
+                    let a = a.as_number("lerp from", line)?.as_f64();
+                    let b = b.as_number("lerp to", line)?.as_f64();
+                    Ok(num(Num::Float(a + (b - a) * t)))
+                }
+            }
+        }
+        Builtin::DegreesToRadians | Builtin::RadiansToDegrees => {
+            expect_args(name, args, 1, line)?;
+            let x = args[0].as_number(name.as_str(), line)?.as_f64();
+            let v = if name == Builtin::DegreesToRadians {
+                x.to_radians()
+            } else {
+                x.to_degrees()
+            };
+            Ok(num(Num::Float(v)))
+        }
+        Builtin::Dot => {
+            expect_args(name, args, 2, line)?;
+            let a = as_vec3(&args[0], "dot", line)?;
+            let b = as_vec3(&args[1], "dot", line)?;
+            Ok(num(Num::Float(a.dot(&b))))
+        }
+        Builtin::Cross => {
+            expect_args(name, args, 2, line)?;
+            let a = as_vec3(&args[0], "cross", line)?;
+            let b = as_vec3(&args[1], "cross", line)?;
+            Ok(Value::Vec3(a.cross(&b)))
+        }
+        Builtin::Magnitude => {
+            expect_args(name, args, 1, line)?;
+            match &args[0] {
+                Value::Vec3(v) => Ok(num(Num::Float(v.length()))),
+                other => {
+                    let x = other.as_number("magnitude", line)?.as_f64();
+                    Ok(num(Num::Float(x.abs())))
+                }
+            }
+        }
+        Builtin::AngleBetween => {
+            expect_args(name, args, 2, line)?;
+            let a = as_vec3(&args[0], "angle between", line)?;
+            let b = as_vec3(&args[1], "angle between", line)?;
+            let (la, lb) = (a.length(), b.length());
+            if la == 0.0 || lb == 0.0 {
+                return Err(AzraError::runtime_at(
+                    "`angle between` needs two non-zero vectors",
+                    line,
+                ));
+            }
+            let cos = (a.dot(&b) / (la * lb)).clamp(-1.0, 1.0);
+            Ok(num(Num::Float(cos.acos())))
         }
         _ => unreachable!("non-math builtin dispatched to eval_math"),
     }

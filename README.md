@@ -1,7 +1,7 @@
 # Azra (`.vibe`)
 
 **Azra** is the English-language, general-purpose & game-scripting language of the
-**Azravibe** ecosystem. Azra scripts run through a standalone interpreter/VM (this
+**Azravibe** ecosystem. Azra scripts run through a standalone interpreter (this
 repository) either from the command line or embedded inside the *Azravibe Studio*
 3D rounded-voxel builder.
 
@@ -14,28 +14,63 @@ repository) either from the command line or embedded inside the *Azravibe Studio
 ## Language highlights
 
 - **Zero brackets** — no `{}`, `[]` or `()`. Blocks start with `:` and use
-  **4-space indentation** (`INDENT` / `DEDENT` tokens).
-- **Comments** start with `note:` and run to the end of the line. An optional
-  trailing period `.` at the end of a statement is gracefully ignored.
-- **English operators** — comparisons are single tokens:
-  `equals`, `not_equals`, `less_than`, `less_than=`, `greater_than`,
-  `greater_than=`, plus `and`, `or`, `not` and standard math `+ - * /`.
-- **Variables** — `set health to 100`, lists — `set items to "sword", "shield"`,
+  exactly **4-space indentation** (`INDENT` / `DEDENT` tokens).
+- **Comments** — `note:`, `#` and `/* ... */` (multi-line). An optional trailing
+  period `.` at the end of a statement is ignored.
+- **English operators** — `equals`, `not_equals`, `less_than`, `less_than=`,
+  `greater_than`, `greater_than=`, plus `is`, `is not`, `contains`,
+  `starts with`, `has key`, `and`, `or`, `not`, math `+ - * / modulo power`.
+- **Variables** — `set health to 100`; lists — `set items to "sword", "shield"`;
   arithmetic — `add 10 to health`, `subtract 25 from health`,
-  `multiply health by 2`, `divide health by 2`, lists — `add "key" to items`,
-  `remove "key" from items`.
+  `multiply health by 2`, `divide health by 2`, `add "key" to items`,
+  `remove "key" from items`. Integer division truncates; use a decimal operand
+  (`7 / 2.0`) for a fractional result.
 - **Objects** — `make rounded_box as lava_block` creates a dynamic object whose
   properties are read/written with dot notation: `set lava_block.color to "red"`.
   Mock engine types (`rounded_box`, `sound`, `player`, …) are registered so game
-  scripts run and log actions cleanly in standalone CLI mode.
-- **Output** — `say` prints values joined by spaces, `warn` prints a yellow
-  `[WARN] …`, `error` prints a red `[ERROR] …`.
-- **Control flow** — `if …:` / `otherwise if …:` / `otherwise:`, `repeat N times:`,
-  `for each item in list:`, `while cond:`.
+  scripts run and log actions cleanly in standalone CLI mode. `player` is
+  pre-created with `health` 100.
+- **Maps** — `set m to empty map`, `set key "hp" of m to 100`,
+  `say key "hp" of m`, `keys of m`, `m has key "hp"`.
+- **Output** — `say` prints values joined by spaces, `warn` prints `[WARN] …`,
+  `error` prints `[ERROR] …` (both to stderr).
+- **Control flow** — `if …:` / `otherwise if …:` / `otherwise:`,
+  `repeat N times:`, `repeat with i from 1 to 10 by 2:`,
+  `for each item in list:`, `while cond:`, `stop loop` / `break`,
+  `skip next` / `continue`.
 - **Functions** — `define heal_player with target, amount:` … `give back value`,
   called **without parentheses**: `heal_player with player, 25`.
+- **Modules & errors** — `use "weapons.vibe" as w`,
+  `try:` … `if error as err:` … to catch `fail with "message"`.
+- **Timers & files** — `after 2 seconds:`, `every 1 seconds:`,
+  `wait 0.5 seconds`, `write data to file path`, `read file path`,
+  `parse json text`, `to json value`.
 - **Engine events** — `when player touches lava_block:` blocks are registered as
   event handlers and can be triggered from the CLI or tests.
+- **String interpolation** — `say "Welcome, {player.name}!"`.
+- **Advanced math** — `pi`, `e`, `tan`/`asin`/`acos`/`atan`/`atan2`,
+  `log`/`log10`/`exp`, `lerp`, degree/radian conversions, and 3D vector
+  `dot`/`cross`/`magnitude`/`normalize`/`distance`/`angle between`.
+- **Built-ins** — math, text, time, RNG, vectors/colors and a JSON codec.
+
+The full language reference is [`docs/language.vibetxt`](docs/language.vibetxt).
+
+### Math stress suites
+
+Runnable `.vibe` scripts under `tests/vibe-test/` cover recursion
+(Fibonacci, factorial, Ackermann), a 1..10000 prime sieve, Newton-Raphson,
+quadratics, 3D projectile physics, precision/overflow and every math built-in:
+
+```bash
+cargo run -- run tests/vibe-test/00_math_stress.vibe
+cargo test --test vibe_scripts
+```
+
+Also included: `09_euler500.vibe` solves Project Euler #500 in pure Azra
+(answer `35407281`, modulo 500500507) and `10_three_body.vibe` simulates the
+3-4-5 three-star system with adaptive RK4, stopping on ejection or a close
+binary while keeping relative energy drift below 10^-9 (`cargo test -- --ignored`
+runs the slower Euler suite).
 
 ### Example
 
@@ -49,7 +84,7 @@ define heal_player with target, amount:
     add amount to target.health
     give back target.health
 
-if inventory equals "sword":
+if first item of inventory equals "sword":
     say "Equipped the sword!"
 otherwise:
     say "Nothing to equip."
@@ -66,30 +101,35 @@ cargo build --release
 
 ## CLI usage
 
-Run a script:
+Run a script (the `run` keyword is optional for `.vibe` files):
 
 ```bash
 cargo run -- run examples/hello.vibe
+cargo run -- examples/hello.vibe
 ```
 
-Run the game demo and trigger an engine event:
+Check a script without executing it, or evaluate a snippet directly:
 
 ```bash
-cargo run -- run examples/game_demo.vibe
-cargo run -- run examples/game_demo.vibe --trigger "player touches lava_block"
+cargo run -- check examples/game_demo.vibe
+cargo run -- eval 'say "hi from Azra"'
 ```
 
-Interactive REPL:
+Run the game demo and trigger an engine event or simulate engine frames:
+
+```bash
+cargo run -- run examples/game_demo.vibe --trigger "player touches lava_block"
+cargo run -- run examples/game_demo.vibe --ticks 120
+```
+
+Interactive REPL (also starts when `azra` is run with no arguments):
 
 ```bash
 cargo run -- repl
 ```
 
-Evaluate a snippet directly:
-
-```bash
-cargo run -- eval 'say "hi from Azra"'
-```
+Inside the REPL: `:help`, `:vars`, `:reset`, `:clear`, `:quit` / `:exit`,
+and `leave azra` to exit. Multi-line blocks are entered with 4-space indentation.
 
 ### Standalone engine verbs
 
@@ -122,12 +162,15 @@ engine.register_function("spawn_enemy", |args| { /* ... */ Ok(Value::Null) });
 let output = engine.take_output();
 ```
 
+Use `AzraEngine::with_sandbox(SandboxConfig::strict())` to cap instructions and
+disable I/O when running untrusted scripts.
+
 ## Repository layout
 
 | Path                    | Purpose                                                  |
 |-------------------------|----------------------------------------------------------|
 | `src/lib.rs`            | Public embedding API (`AzraEngine`)                      |
-| `src/main.rs`           | CLI: `azra run`, `azra check`, `azra eval`, `azra repl`  |
+| `src/main.rs`           | CLI: `azra run`, `check`, `eval`, `repl`                  |
 | `src/cli/`              | REPL and colorized output presentation                   |
 | `src/error.rs`          | `AzraError` with line/column diagnostics                 |
 | `src/sandbox.rs`        | Security and resource-budget `SandboxConfig`             |
@@ -136,12 +179,13 @@ let output = engine.take_output();
 | `src/lexer/`            | Tokenizer with line/column tracking & INDENT/DEDENT      |
 | `src/ast/`              | AST node definitions (`stmt`, `expr`, `target`)          |
 | `src/parser/`           | Recursive descent parser with line-numbered errors       |
-| `src/value.rs`          | Runtime `Value` enum (`Object`, `Map`, `Vec3`, `Color`)  |
+| `src/value.rs`          | Runtime `Value` enum (`Object`, `Map`, `Vec3`, `Color`)   |
 | `src/stdlib/`           | Built-in math, text, time, RNG, and JSON codec           |
 | `src/interpreter/`      | Tree-walking VM, collections, events, timers, modules    |
-| `docs/langauge.vibetxt` | The Azra language specification                          |
+| `docs/language.vibetxt` | The Azra language specification                          |
 | `examples/`             | `.vibe` sample scripts                                   |
-| `tests/`                | Integration, feature, error, and CLI test suites         |
+| `tests/`                | Integration, feature, error, CLI and regression suites   |
+| `tests/vibe-test/`      | Runnable `.vibe` math/algorithm stress suites            |
 
 ## License
 

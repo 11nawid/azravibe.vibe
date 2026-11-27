@@ -105,7 +105,8 @@ impl Parser {
                 let v = self.parse_unary()?;
                 (Builtin::Normalize, vec![v])
             }
-            "round" | "floor" | "ceil" | "abs" | "sqrt" | "sin" | "cos" => {
+            "round" | "floor" | "ceil" | "abs" | "sqrt" | "sin" | "cos" | "tan" | "asin"
+            | "acos" | "atan" => {
                 self.advance();
                 let arg = self.parse_unary()?;
                 let name = match w.as_str() {
@@ -115,9 +116,106 @@ impl Parser {
                     "abs" => Builtin::Abs,
                     "sqrt" => Builtin::Sqrt,
                     "sin" => Builtin::Sin,
+                    "tan" => Builtin::Tan,
+                    "asin" => Builtin::Asin,
+                    "acos" => Builtin::Acos,
+                    "atan" => Builtin::Atan,
                     _ => Builtin::Cos,
                 };
                 (name, vec![arg])
+            }
+            // Mathematical constants are zero-argument built-ins.
+            "pi" | "e" => {
+                self.advance();
+                let name = if w == "pi" { Builtin::Pi } else { Builtin::Euler };
+                (name, Vec::new())
+            }
+            "atan2" => {
+                self.advance();
+                self.eat_word("of");
+                let y = self.parse_additive()?;
+                if self.check_word("and") {
+                    self.advance();
+                } else {
+                    self.expect_comma()?;
+                }
+                let x = self.parse_additive()?;
+                (Builtin::Atan2, vec![y, x])
+            }
+            "log" => {
+                self.advance();
+                if self.eat_word("base") {
+                    let base = self.parse_additive()?;
+                    self.expect_word("of", "in `log base <b> of <x>`")?;
+                    let x = self.parse_additive()?;
+                    (Builtin::Log, vec![x, base])
+                } else {
+                    self.expect_word("of", "in `log of <x>`")?;
+                    let x = self.parse_additive()?;
+                    (Builtin::Log, vec![x])
+                }
+            }
+            "log10" => {
+                self.advance();
+                self.expect_word("of", "in `log10 of <x>`")?;
+                let x = self.parse_additive()?;
+                (Builtin::Log10, vec![x])
+            }
+            "exp" => {
+                self.advance();
+                self.eat_word("of");
+                let x = self.parse_unary()?;
+                (Builtin::Exp, vec![x])
+            }
+            "lerp" => {
+                self.advance();
+                let a = self.parse_additive()?;
+                self.expect_word("to", "in `lerp <a> to <b> by <t>`")?;
+                let b = self.parse_additive()?;
+                self.expect_word("by", "in `lerp <a> to <b> by <t>`")?;
+                let t = self.parse_additive()?;
+                (Builtin::Lerp, vec![a, b, t])
+            }
+            "degrees" | "radians" => {
+                self.advance();
+                let target = if w == "degrees" { "radians" } else { "degrees" };
+                self.expect_word("to", "in `degrees to radians of <x>`")?;
+                self.expect_word(target, "in `degrees to radians of <x>`")?;
+                self.eat_word("of");
+                let x = self.parse_additive()?;
+                let name = if w == "degrees" {
+                    Builtin::DegreesToRadians
+                } else {
+                    Builtin::RadiansToDegrees
+                };
+                (name, vec![x])
+            }
+            "dot" | "cross" => {
+                self.advance();
+                self.eat_word("of");
+                let a = self.parse_postfix()?;
+                if self.check_word("and") {
+                    self.advance();
+                } else {
+                    self.expect_comma()?;
+                }
+                let b = self.parse_postfix()?;
+                let name = if w == "dot" { Builtin::Dot } else { Builtin::Cross };
+                (name, vec![a, b])
+            }
+            "magnitude" => {
+                self.advance();
+                self.expect_word("of", "in `magnitude of <vector>`")?;
+                let v = self.parse_postfix()?;
+                (Builtin::Magnitude, vec![v])
+            }
+            "angle" => {
+                self.advance();
+                self.expect_word("between", "in `angle between <a> and <b>`")?;
+                let a = self.parse_additive()?;
+                self.expect_word("and", "in `angle between <a> and <b>`")?;
+                let b = self.parse_additive()?;
+                (Builtin::AngleBetween, vec![a, b])
             }
             "min" | "max" => {
                 self.advance();

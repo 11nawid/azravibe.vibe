@@ -1,28 +1,27 @@
 ## Modules & Imports
 
-Large projects can be split into multiple files. Use `use "filename.azra"` to load a module.
+Large projects can be split into multiple files. Use `use "filename.vibe"` to load a module; an optional `as alias` gives it a short name.
 
 ### Creating a Module
-Create a file `math.azra`:
-```azra
-define add a b:
+Create a file `math.vibe`:
+```vibe
+define add with a, b:
     give back a + b
 
-define sub a b:
+define sub with a, b:
     give back a - b
 ```
 
 ### Using a Module
 In your main script:
-```azra
-use "math.azra"
-set result to add 10 5
+```vibe
+use "math.vibe"
+set result to add with 10, 5
 say "Sum = " + result
-set result2 to sub 10 5
+set result2 to sub with 10, 5
 say "Diff = " + result2
 ```
-
-Modules can also contain variables and other functions.
+Functions defined in a module are added to the importing script's globals. Modules can also contain variables, objects and event handlers. Import cycles are detected and reported as errors.
 
 ---
 Proceed to the next lesson: **Full Example Project**.

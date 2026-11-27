@@ -1,6 +1,9 @@
 ## Full Example Project
 
-In this final lesson we combine everything we have learned to build a simple calculator program.
+In this final lesson we combine everything we have learned to build a small calculator script backed by a module.
+
+> Note: this interpreter has no keyboard-input primitive. The example uses
+> predefined values so it can run unchanged from the command line.
 
 ### Project Structure
 ```
@@ -14,46 +17,50 @@ learn/course/
 └─ 07_full_example.md
 ```
 
-### `calc.azra`
-Create a file `calc.azra` with the following content:
-```azra
-# Import math helpers
-use "math.azra"
+### `calc.vibe`
+Create a file `calc.vibe` with the following content:
+```vibe
+note: import math helpers
+use "math.vibe"
 
-say "Enter first number:"
-set a to read number
-say "Enter second number:"
-set b to read number
+set a to 8
+set b to 2
 
-say "Sum: " + add a b
-say "Difference: " + sub a b
-say "Product: " + mul a b
-if b != 0:
-    say "Quotient: " + div a b
-else:
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
     say "Cannot divide by zero"
 ```
 
-### `math.azra`
-```azra
-define add a b:
+### `math.vibe`
+```vibe
+define add with a, b:
     give back a + b
 
-define sub a b:
+define sub with a, b:
     give back a - b
 
-define mul a b:
+define mul with a, b:
     give back a * b
 
-define div a b:
+define div with a, b:
     give back a / b
 ```
 
 ### Running the Program
 ```bash
-azra calc.azra
+azra run calc.vibe
 ```
-You will be prompted for two numbers and see the calculated results.
+Output:
+```
+Sum: 10
+Difference: 6
+Product: 16
+Quotient: 4
+```
 
 ---
 Congratulations! You have completed the Azra language course.

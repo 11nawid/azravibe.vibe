@@ -119,7 +119,10 @@ impl Lexer {
             }
             _ => {
                 // Comment-only line: ignored entirely (indentation untouched).
-                if self.starts_with_comment() {
+                // `#` is handled here too: consuming it in `lex_token` would
+                // leave the newline to be emitted as a stray token and would
+                // run indentation logic for a line that contains no code.
+                if self.starts_with_comment() || self.peek() == Some('#') {
                     while let Some(c) = self.peek() {
                         if c == '\n' {
                             break;

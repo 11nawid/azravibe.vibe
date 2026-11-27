@@ -1,0 +1,309 @@
+================================================================================
+AZRAVIBE ECOSYSTEM & AZRA (.vibe) PROGRAMMING LANGUAGE SPECIFICATION
+================================================================================
+
+Reference implementation: `Cargo.toml` v0.0.1 — a tree-walking interpreter in
+Rust (see section 5). This document describes the language the interpreter
+actually accepts; README.md is the short-form quick start.
+
+1. ECOSYSTEM ARCHITECTURE & NAMING
+--------------------------------------------------------------------------------
+- Existing Farsi Language : Azravibe (.azr) -> Persian programming language & RTL IDE
+- New English Language    : Azra (.vibe)    -> General-purpose & game scripting language
+- Creator Studio          : Azravibe Studio -> 3D rounded-voxel builder, physics & IDE
+- Game Client             : Azravibe Player -> Multiplayer game launcher & runtime
+
+Visual & Gameplay Style:
+- Rounded Voxels / Beveled Blocks (chamfered edges with procedural materials)
+- Physics Assemblies (welded block groups, hinges, motors, springs, vehicles)
+- Standalone + Embedded VM (runs via CLI `azra run app.vibe` or inside Studio)
+
+
+2. CORE SYNTAX RULES
+--------------------------------------------------------------------------------
+- No curly braces {}, square brackets [], or parentheses (). Lists are written
+  as comma-separated values; blocks are written with indentation.
+- Code blocks start with a colon `:` and use exactly 4 spaces per level. Tabs
+  are rejected, and mixed/inconsistent indentation is a syntax error.
+- Statements end with a newline. A single trailing period `.` is ignored
+  (`say "hi".`).
+- Function arguments and list items are separated by commas `,`.
+- Identifiers: `[a-zA-Z_][a-zA-Z0-9_]*`. No spaces, no leading digits, no
+  special symbols (`player_health`, `maxSpeed`). Keywords may be shadowed by
+  variable names, but doing so is discouraged.
+- Comments (three styles):
+    note: comment text        line comment (`note:` also works after code)
+    # comment text            line comment
+    /* comment text */        block comment, may span several lines
+  A comment-only line never changes the indentation of the surrounding block.
+- String literals use `"` or `'` quotes. Escapes: `\n`, `\t`, `\r`, `\\`, `\"`,
+  `\'`, `\{`, `\}`. `{dotted.path}` inside a string is interpolated at runtime
+  (`say "HP: {player.health}"`); the path must consist of identifiers and the
+  referenced variable must exist.
+- Numbers: integers (`100`, i64) and floats (`12.5`, f64). `-5` is unary minus.
+  Booleans are `true` / `false`; `null` / `nothing` are the empty value.
+
+
+3. KEYWORDS & OPERATORS
+--------------------------------------------------------------------------------
+
+3.1 Variables, objects and mutation
+- set <target> to <value>          create or update a variable/property/key/item
+- make <TYPE> as <NAME>            spawn a mock engine object (`rounded_box`,
+                                    `sound`, `player`, ... in standalone mode)
+- add <value> to <target>          number arithmetic or list append
+- subtract <value> from <target>
+- multiply <target> by <value>
+- divide <target> by <value>
+- remove <value> from <list>       remove the first matching item (no-op if absent)
+- remove item <index> from <list>  remove by 1-based index
+- remove key <key> from <map>
+- sort <list> / reverse <list> / clear <list-or-map>
+
+3.2 Console output
+- say <values...>       print to stdout, values joined by spaces
+- warn <values...>      print `[WARN] ...` to stderr
+- error <values...>     print `[ERROR] ...` to stderr
+
+3.3 Operators
+- Arithmetic: +  -  *  /  modulo  power
+- Comparison: equals, not_equals, less_than, less_than=, greater_than,
+  greater_than=, is / is not (aliases), contains, starts with, has key
+- Logical: and, or, not
+  `less_than=` and `greater_than=` are single tokens; no spaces around `=`.
+  Symbolic `==`, `!=`, `<`, `>` are not part of the language.
+- Precedence (high to low): `power` (right-assoc), unary `-` / `not`,
+  `* / modulo`, `+ -`, comparisons, `not`, `and`, `or`.
+- Assignment targets: `name`, `obj.prop`, `key "k" of map`, `map's "k"`,
+  `item 1 of list`, `first item of list`, `last item of list`.
+
+3.4 Control flow
+- if <condition>:
+      ...
+  otherwise if <condition>:
+      ...
+  otherwise:
+      ...
+- repeat <count> times:
+- repeat with <i> from <a> to <b> [by|step <n>] :
+- for each <ITEM> in <LIST>:
+- while <CONDITION>:
+- stop loop / break          leave the innermost loop
+- skip next / continue       start the next iteration
+
+3.5 Functions
+- define <NAME> with <ARG1>, <ARG2>:
+      ...
+      give back <VALUE>
+  Call them without parentheses: `heal_player with target, 25`. A function with
+  no arguments runs when its name appears in an expression (`status_report`).
+  A call in expression position requires `with`; comma-separated bare arguments
+  (`add 3 5`) are only accepted in statement position.
+
+3.6 Collections and maps
+- set items to "sword", "shield"          list literal (comma-separated)
+- set m to empty map                      map literal (string keys)
+- set key "hp" of m to 100                set a map entry
+- set m's "hp" to 100                     equivalent possessive form
+- say key "hp" of m / item 2 of items     read a map entry / 1-based list item
+- keys of m                               list of string keys
+- `add "x" to loot` bootstraps `loot` as a list when it does not exist yet;
+  numeric `add` requires the variable to be set first.
+- Lists compare structurally; objects/functions compare by identity.
+
+3.7 Modules, errors, files and timers
+- use "path.vibe" [as alias]      load a module; exports are its globals
+- try:  ...  if error as err: ... catch `fail with "message"` errors
+- write <data> to file <path>     file writing (sandbox: `allow_io`)
+- read file <path> / file exists <path> / parse json <text> / to json <value>
+- wait <seconds> [seconds]        pause; bare `wait` is an engine verb
+- after <seconds> seconds:        one-shot timer block
+- every <seconds> seconds:        repeating timer block
+
+3.8 Engine events and verbs
+- when <event phrase>:            register an event handler. Examples:
+      when player touches lava_block:
+      when key "space" is pressed:
+      when game starts:
+      when game updates with delta:
+- Engine verbs in standalone mode are logged as `[ENGINE] ...`:
+      play boom_sfx / destroy lava_block / jump player with 15
+      spawn zombie / move player / rotate lava_block / wait
+- Implicit global: `player` is pre-created with `health` 100 so game scripts
+  run standalone (its properties can be changed freely).
+
+
+3.9 Built-in expression forms
+- Basic math: round x, floor x, ceil x, abs x, sqrt x, min of a, b,
+  max of a, b, clamp v between lo and hi.
+- Powers and logs: a power b (right-associative), a modulo b, exp of x,
+  log of x (natural log), log base b of x, log10 of x.
+- Trigonometry (angles are radians): sin x, cos x, tan x, asin x, acos x,
+  atan x, atan2 of y, x. Constants: pi, e.
+  Conversions: degrees to radians of x, radians to degrees of x.
+- Interpolation: lerp a to b by t — works on numbers and on vec3 values.
+- 3D vectors: vec3 x, y, z; magnitude of v (also length of v);
+  normalize v; distance between a and b; dot of a and b;
+  cross of a and b; angle between a and b (radians).
+- Random: random number from a to b, random decimal
+- Text: uppercase of t, lowercase of t, trim of t, split t by sep,
+  join list with sep, replace a with b in text, length of value
+- Time: current time, format time <timestamp>
+- Colors: color "red" / color 255, 100, 50
+- File/JSON: read file p, file exists p, parse json t, to json v
+
+
+4. COMPLETE CODE EXAMPLE (game_demo.vibe)
+--------------------------------------------------------------------------------
+note: --- 1. VARIABLES & LISTS ---
+set player_name to "Ali"
+set health to 100
+set max_health to 100
+set move_speed to 12.5
+set is_alive to true
+
+set inventory to "sword", "shield", "potion"
+add "gold_key" to inventory
+
+note: --- 2. PRINTING ---
+say "Welcome to Azravibe,", player_name
+say "Starting health:", health
+
+note: --- 3. CREATING 3D OBJECTS (MAKE) ---
+make rounded_box as lava_block
+set lava_block.color to "red"
+set lava_block.material to "glowing"
+set lava_block.position to 0, 5, 10
+set lava_block.size to 4, 1, 4
+
+make sound as boom_sfx
+set boom_sfx.file to "explosion.wav"
+
+note: --- 4. MATH & CONDITIONS ---
+subtract 25 from health
+
+if health less_than= 0:
+    set is_alive to false
+    error "Player has died!"
+otherwise if health less_than 30 and is_alive equals true:
+    warn "Low health warning!"
+otherwise if health greater_than= max_health:
+    say "Full health!"
+otherwise:
+    say "Current health is", health
+
+note: --- 5. LOOPS ---
+repeat 3 times:
+    say "Countdown tick..."
+
+for each item in inventory:
+    say "Inventory slot:", item
+
+note: --- 6. FUNCTIONS ---
+define heal_player with target, amount:
+    add amount to target.health
+    say "Healed by", amount, "points."
+    give back target.health
+
+set updated_hp to heal_player with player, 25
+
+note: --- 7. GAME ENGINE EVENTS ---
+when player touches lava_block:
+    set player.health to 0
+    play boom_sfx
+    destroy lava_block
+    say "Game Over!"
+
+when key "space" is pressed:
+    jump player with 15
+
+note: --- 8. MULTIPLY / DIVIDE & ZERO-ARG FUNCTIONS ---
+multiply health by 2
+say "Health doubled to:", health
+divide health by 2
+say "Health back to:", health
+
+define status_report:
+    give back "all systems go"
+
+set report to status_report
+say "System report:", report
+
+
+5. IMPLEMENTATION, CLI & RUNTIME MODEL
+--------------------------------------------------------------------------------
+Milestone 1 (implemented): Core Azra interpreter
+- Lexer: tokens for WORD, NUMBER, STRING, INDENT, DEDENT, NEWLINE, punctuation,
+  dot, possessive `'s`, and the single-token `less_than=` / `greater_than=`.
+- Parser: recursive descent building an AST, with line-numbered diagnostics and
+  a maximum nesting depth guard.
+- Tree-walking interpreter: evaluates the AST directly with a lexical scope
+  chain, checked integer arithmetic, events, timers and mock engine objects.
+  There is NO bytecode or stack VM in the current implementation; a stack-based
+  bytecode VM is a future milestone, not a shipped feature.
+- CLI runner: `azra run script.vibe`, `azra check script.vibe`,
+  `azra eval 'say "hi"'`, `azra repl`, or bare `azra` for the REPL.
+  `azra run` accepts `--ticks <n>` (engine frames) and a repeatable
+  `--trigger "<event phrase>"` flag.
+- REPL commands: `:help`, `:vars`, `:reset`, `:clear`, `:quit` / `:exit`,
+  and `leave azra` to exit.
+
+Milestone 2 (in progress): Rounded-Voxel 3D Engine
+- Graphics: chunked greedy meshing + bevel shader for smooth rounded block edges.
+- Physics: RigidBody assemblies (welded blocks), hinges, motors, and collisions.
+- Sandboxing: `SandboxConfig` gates I/O and instruction budget; the strict
+  profile caps instructions per tick. Default in the standalone CLI is permissive.
+
+Milestone 3 (planned): Azravibe Studio & Azravibe Player
+- Studio: Viewport gizmos, scene tree, property inspector, `.vibe` code editor.
+- Packaging: Export scenes + `.vibe` scripts into a single `.azv` world bundle.
+- Player: Multiplayer client launcher with authoritative server networking.
+
+
+6. NUMERIC SEMANTICS & EDGE RULES
+--------------------------------------------------------------------------------
+- Integers use i64 and all integer arithmetic is checked: overflow is a runtime
+  error, never a silent wrap or a Rust panic.
+- `/` of two integers truncates toward zero (`say 7 / 2` -> `3`). Give either
+  operand a decimal point for fractional division (`say 7 / 2.0` -> `3.5`).
+- `modulo` uses the Euclidean rule for both integers and floats: the result is
+  non-negative for a positive divisor (`say -5 modulo 2` -> `1`).
+- `power` with a zero base and a negative exponent is a division-by-zero error.
+- NaN can arise from invalid float operations such as `-8 power 0.5`. NaN cannot
+  be ordered: comparisons, `min`/`max`, `clamp` bounds and `sort` report a
+  runtime error instead of silently producing an arbitrary answer.
+- Loop bodies have a 10,000,000-iteration safety cap per loop; the REPL and the
+  strict sandbox impose a smaller instruction budget. The permissive CLI sandbox
+  has no global instruction budget, so use strict mode for untrusted scripts.
+- Scope: `if` and `try` blocks share the enclosing scope, while `for each` and
+  `repeat with` create a child scope so their loop variable does not leak.
+  `set` inside a function updates the nearest existing binding or creates a new
+  local; it never creates a global.
+- `+` concatenates when either operand is a string (`"hp: " + 75` -> `"hp: 75"`);
+  all other arithmetic operators require numbers.
+- Comparisons between integers use exact i64 values; mixed integer/float
+  comparisons convert through f64 and can lose precision above 2^53.
+- Domain errors are reported as catchable runtime errors: `sqrt` of a negative
+  number, `asin`/`acos` outside [-1, 1], `log` of a non-positive number,
+  a `log` base that is non-positive or 1, `exp` overflow, normalizing or
+  measuring the angle of a zero-length vector.
+- `atan2 of y, x` uses the two-argument arctangent, so it handles all quadrants.
+  `angle between` returns radians and always lies in [0, pi].
+- Deep recursion: the CLI runs scripts on a 64 MiB stack with a call-depth cap
+  of 512 (enough for Ackermann(3,3)); embedders using the library default get
+  a cap of 64. Exceeding the cap is a fatal, uncatchable runtime error.
+- Runnable stress suites live in `tests/vibe-test/*.vibe` and are executed by
+  `cargo test --test vibe_scripts`: advanced math, recursion, a 1..10000 prime
+  sieve, Newton-Raphson, quadratics, 3D projectile physics and error handling.
+  Two longer demonstrations are also included:
+    `09_euler500.vibe`  — smallest N with exactly 2^500500 divisors, computed
+                          entirely in Azra as the product of the 500500
+                          smallest p^(2^k) values; result modulo 500500507 is
+                          `35407281`. Run it with `azra run` (about 9 s in a
+                          release build).
+    `10_three_body.vibe` — Newtonian simulation of masses 3, 4, 5 at rest on a
+                          3-4-5 right triangle, adaptive RK4, stops when a
+                          close binary forms or a star is ejected. It reports
+                          a maximum relative energy drift near 8e-10.
+
+================================================================================

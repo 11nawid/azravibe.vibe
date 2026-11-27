@@ -294,7 +294,7 @@ impl Interpreter {
             let hint = if known.is_empty() {
                 "no `when` handlers are registered".to_string()
             } else {
-                format!("registered events: {}", known.join(", | "))
+                format!("registered events: {}", known.join(" | "))
             };
             return Err(AzraError::runtime(format!(
                 "no event handler matches `{}` ({})",

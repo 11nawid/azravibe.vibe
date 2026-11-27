@@ -1,0 +1,27 @@
+note: 02_recursion.vibe — recursive Fibonacci, factorial and Ackermann
+note: exercises the CLI's large stack and call-depth budget
+
+define fib with n:
+    if n less_than 2:
+        give back n
+    set left to fib with n - 1
+    set right to fib with n - 2
+    give back left + right
+
+define factorial with n:
+    if n less_than= 1:
+        give back 1
+    set smaller to factorial with n - 1
+    give back n * smaller
+
+define ackermann with m, n:
+    if m equals 0:
+        give back n + 1
+    if n equals 0:
+        give back ackermann with m - 1, 1
+    set inner to ackermann with m, n - 1
+    give back ackermann with m - 1, inner
+
+say fib with 20
+say factorial with 20
+say ackermann with 3, 3

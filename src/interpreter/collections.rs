@@ -203,7 +203,12 @@ impl Interpreter {
         match current {
             Value::List(items) => {
                 let mut items = items.borrow_mut();
-                let all_numbers = items.iter().all(|v| matches!(v, Value::Number(_)));
+                // NaN has no defined position in an ordering, and a
+                // comparator that calls NaN "equal" to everything produces
+                // an arbitrary (or panicking) sort.
+                let all_numbers = items.iter().all(|v| {
+                    matches!(v, Value::Number(n) if n.as_f64().is_finite())
+                });
                 let all_strings = items.iter().all(|v| matches!(v, Value::Str(_)));
                 if all_numbers {
                     items.sort_by(|a, b| {
@@ -220,7 +225,7 @@ impl Interpreter {
                     });
                 } else {
                     return Err(AzraError::runtime_at(
-                        "`sort` needs a list of all numbers or all strings",
+                        "`sort` needs a list of all finite numbers or all strings",
                         line,
                     ));
                 }

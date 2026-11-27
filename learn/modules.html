@@ -12,33 +12,34 @@
   </section>
   <nav class="max-w-4xl mx-auto py-2"><a href="index.html" class="text-indigo-600 hover:underline">← Back to Index</a></nav>
   <section class="max-w-4xl mx-auto px-4 py-8">
-    <p>Split large projects into multiple files. Load a module with <code>use "filename.azra"</code>.</p>
-    <h3 class="font-semibold mt-4">Creating a Module (math.azra)</h3>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">define add a b:
+    <p>Split large projects into multiple files. Load a module with <code>use "filename.vibe"</code>; an optional <code>as alias</code> gives it a short name.</p>
+    <h3 class="font-semibold mt-4">Creating a Module (math.vibe)</h3>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">define add with a, b:
     give back a + b
 
-define sub a b:
+define sub with a, b:
     give back a - b
 
-define mul a b:
+define mul with a, b:
     give back a * b
 
-define div a b:
+define div with a, b:
     give back a / b
 </code></pre>
     <h3 class="font-semibold mt-4">Using the Module</h3>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">use "math.azra"
-set a to read number
-set b to read number
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">use "math.vibe"
+set a to 8
+set b to 2
 
-say "Sum: " + add a b
-say "Difference: " + sub a b
-say "Product: " + mul a b
-if b != 0:
-    say "Quotient: " + div a b
-else:
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
     say "Cannot divide by zero"
 </code></pre>
+    <p>Functions defined in a module are added to the importing script's globals. Import cycles are detected and reported as errors.</p>
   </section>
   <footer class="bg-indigo-600 text-white py-4 mt-12"><div class="max-w-4xl mx-auto text-center"><p>© 2026 Azra Language – All rights reserved.</p></div></footer>
 </body>

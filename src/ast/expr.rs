@@ -50,6 +50,24 @@ pub enum Builtin {
     ToJson,
     EmptyList,
     EmptyMap,
+    // Advanced mathematics (all zero-bracket English forms).
+    Tan,
+    Asin,
+    Acos,
+    Atan,
+    Atan2,
+    Pi,
+    Euler,
+    Log,
+    Log10,
+    Exp,
+    Lerp,
+    DegreesToRadians,
+    RadiansToDegrees,
+    Dot,
+    Cross,
+    Magnitude,
+    AngleBetween,
 }
 
 impl Builtin {
@@ -91,6 +109,23 @@ impl Builtin {
             Builtin::ToJson => "to json ...",
             Builtin::EmptyList => "empty list",
             Builtin::EmptyMap => "empty map",
+            Builtin::Tan => "tan ...",
+            Builtin::Asin => "asin ...",
+            Builtin::Acos => "acos ...",
+            Builtin::Atan => "atan ...",
+            Builtin::Atan2 => "atan2 of ..., ...",
+            Builtin::Pi => "pi",
+            Builtin::Euler => "e",
+            Builtin::Log => "log of ... / log base <b> of ...",
+            Builtin::Log10 => "log10 of ...",
+            Builtin::Exp => "exp of ...",
+            Builtin::Lerp => "lerp ... to ... by ...",
+            Builtin::DegreesToRadians => "degrees to radians of ...",
+            Builtin::RadiansToDegrees => "radians to degrees of ...",
+            Builtin::Dot => "dot of ..., ...",
+            Builtin::Cross => "cross of ..., ...",
+            Builtin::Magnitude => "magnitude of ...",
+            Builtin::AngleBetween => "angle between ... and ...",
         }
     }
 }

@@ -14,7 +14,7 @@
     <section class="bg-indigo-600 text-white py-6">
         <div class="max-w-4xl mx-auto text-center">
             <h1 class="text-3xl font-bold">Azra Language – Full Course</h1>
-            <p class="mt-2">Learn the Azra scripting language from zero to a working project, all in one page.</p>
+            <p class="mt-2">Learn the Azra scripting language from zero to a working project, all in one page. Scripts use the .vibe extension.</p>
         </div>
     </section>
     <nav class="max-w-4xl mx-auto py-4">
@@ -32,32 +32,35 @@
     <!-- 1. Introduction -->
     <section id="intro" class="max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">1. Introduction</h2>
-        <p>Welcome to the Azra Language tutorial! This guide will take you from zero knowledge to building real programs, step‑by‑step, using plain English explanations.</p>
+        <p>Welcome to the Azra Language tutorial! This guide will take you from zero knowledge to building real programs, step-by-step, using plain English explanations.</p>
         <h3 class="mt-4 font-semibold">What is Azra?</h3>
         <ul class="list-disc list-inside ml-4">
             <li>A lightweight, interpreted scripting language.</li>
-            <li>Designed for teaching programming concepts.</li>
+            <li>Designed for teaching programming concepts and game scripting.</li>
             <li>Syntax looks like natural English, making it easy to read.</li>
         </ul>
         <h3 class="mt-4 font-semibold">How to run Azra code</h3>
         <ol class="list-decimal list-inside ml-4">
-            <li>Install the Azra interpreter (already bundled in this repository).</li>
-            <li>Run <code>azra my_script.azra</code> from the command line.</li>
-            <li>Start an interactive REPL with <code>azra</code>.</li>
+            <li>Build the interpreter bundled in this repository with <code>cargo build --release</code>.</li>
+            <li>Run <code>azra run my_script.vibe</code> from the command line.</li>
+            <li>Start an interactive REPL with <code>azra repl</code> (or bare <code>azra</code>).</li>
         </ol>
         <h3 class="mt-4 font-semibold">Your first program</h3>
-        <pre><code class="language-azra">say "Hello, world!"</code></pre>
-        <p>Run it with <code>azra hello.azra</code> – you should see <em>Hello, world!</em> printed.</p>
+        <pre><code class="language-vibe">say "Hello, world!"</code></pre>
+        <p>Run it with <code>azra run hello.vibe</code> – you should see <em>Hello, world!</em> printed.</p>
     </section>
 
     <!-- 2. Basic Syntax -->
     <section id="basics" class="bg-gray-100 max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">2. Basic Syntax</h2>
-        <p>Azra programs consist of statements, each ending with a newline. Indentation defines blocks, similar to Python.</p>
+        <p>Azra programs consist of statements, each ending with a newline. Blocks start with <code>:</code> and are indented by exactly 4 spaces. There are no brackets anywhere.</p>
         <h3 class="font-semibold">Hello World</h3>
-        <pre><code class="language-azra">say "Hello, world!"</code></pre>
+        <pre><code class="language-vibe">say "Hello, world!"</code></pre>
         <h3 class="font-semibold mt-4">Comments</h3>
-        <pre><code class="language-azra"># This is a comment
+        <pre><code class="language-vibe">note: This is a comment
+# This is also a comment
+/* This block
+   spans lines */
 say "Hi"
 </code></pre>
     </section>
@@ -66,38 +69,46 @@ say "Hi"
     <section id="variables" class="max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">3. Variables & Types</h2>
         <p>Use the <code>set</code> keyword to store values. Types are inferred automatically.</p>
-        <pre><code class="language-azra">set name to "Alice"   # String
-set age to 30          # Integer
-set price to 12.99     # Float
-set active to true     # Boolean
+        <pre><code class="language-vibe">set name to "Alice"   note: text
+set age to 30         note: integer
+set price to 12.99    note: float
+set active to true    note: boolean
 </code></pre>
         <h3 class="font-semibold mt-4">Collections</h3>
-        <p><strong>List</strong> – ordered collection:</p>
-        <pre><code class="language-azra">set numbers to [1, 2, 3]
+        <p><strong>List</strong> – ordered collection, written as comma-separated values:</p>
+        <pre><code class="language-vibe">set numbers to 1, 2, 3
+add 4 to numbers
+remove 2 from numbers
+say numbers
 </code></pre>
-        <p><strong>Map</strong> – key‑value pairs:</p>
-        <pre><code class="language-azra">set person to {"name": "Bob", "age": 25}
+        <p><strong>Map</strong> – string-keyed collection created with <code>empty map</code>:</p>
+        <pre><code class="language-vibe">set person to empty map
+set key "name" of person to "Bob"
+set key "age" of person to 25
+say key "name" of person
 </code></pre>
     </section>
 
     <!-- 4. Control Flow -->
     <section id="control" class="bg-gray-100 max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">4. Control Flow</h2>
-        <h3 class="font-semibold">If / Else</h3>
-        <pre><code class="language-azra">if age >= 18:
+        <h3 class="font-semibold">If / Otherwise</h3>
+        <pre><code class="language-vibe">set age to 20
+if age greater_than= 18:
     say "Adult"
-else:
+otherwise:
     say "Minor"
 </code></pre>
+        <p>Comparisons are English words: <code>equals</code>, <code>not_equals</code>, <code>less_than</code>, <code>less_than=</code>, <code>greater_than</code>, <code>greater_than=</code>, <code>is</code>, <code>contains</code>, <code>starts with</code>, <code>has key</code>. Symbolic <code>&gt;=</code> and <code>!=</code> are not part of Azra.</p>
         <h3 class="font-semibold mt-4">While Loop</h3>
-        <pre><code class="language-azra">set counter to 0
-while counter < 5:
+        <pre><code class="language-vibe">set counter to 0
+while counter less_than 5:
     say counter
     set counter to counter + 1
 </code></pre>
         <h3 class="font-semibold mt-4">For Loop (over a list)</h3>
-        <pre><code class="language-azra">set items to ["a", "b", "c"]
-for item in items:
+        <pre><code class="language-vibe">set items to "a", "b", "c"
+for each item in items:
     say item
 </code></pre>
     </section>
@@ -106,49 +117,49 @@ for item in items:
     <section id="functions" class="max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">5. Functions</h2>
         <h3 class="font-semibold">Defining a Function</h3>
-        <pre><code class="language-azra">define greet name:
+        <pre><code class="language-vibe">define greet with name:
     say "Hello, " + name
 </code></pre>
         <h3 class="font-semibold mt-4">Calling a Function</h3>
-        <pre><code class="language-azra">greet "Bob"
+        <pre><code class="language-vibe">greet with "Bob"
 </code></pre>
         <h3 class="font-semibold mt-4">Returning Values</h3>
-        <pre><code class="language-azra">define add a b:
+        <pre><code class="language-vibe">define add with a, b:
     give back a + b
 
-set sum to add 3 5
-say sum   # prints 8
+set sum to add with 3, 5
+say sum   note: prints 8
 </code></pre>
     </section>
 
     <!-- 6. Modules & Imports -->
     <section id="modules" class="bg-gray-100 max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">6. Modules & Imports</h2>
-        <p>Split large projects into multiple files. Load a module with <code>use "filename.azra"</code>.</p>
-        <h3 class="font-semibold">Creating a Module (math.azra)</h3>
-        <pre><code class="language-azra">define add a b:
+        <p>Split large projects into multiple files. Load a module with <code>use "filename.vibe"</code>.</p>
+        <h3 class="font-semibold">Creating a Module (math.vibe)</h3>
+        <pre><code class="language-vibe">define add with a, b:
     give back a + b
 
-define sub a b:
+define sub with a, b:
     give back a - b
 
-define mul a b:
+define mul with a, b:
     give back a * b
 
-define div a b:
+define div with a, b:
     give back a / b
 </code></pre>
         <h3 class="font-semibold mt-4">Using the Module</h3>
-        <pre><code class="language-azra">use "math.azra"
-set a to read number
-set b to read number
+        <pre><code class="language-vibe">use "math.vibe"
+set a to 8
+set b to 2
 
-say "Sum: " + add a b
-say "Difference: " + sub a b
-say "Product: " + mul a b
-if b != 0:
-    say "Quotient: " + div a b
-else:
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
     say "Cannot divide by zero"
 </code></pre>
     </section>
@@ -156,45 +167,47 @@ else:
     <!-- 7. Full Example Project -->
     <section id="example" class="max-w-4xl mx-auto px-4 py-8">
         <h2 class="text-2xl font-bold text-indigo-600 mb-4">7. Full Example Project – Simple Calculator</h2>
-        <p>Combine everything into a small calculator program.</p>
+        <p>Combine everything into a small calculator program. Azra has no keyboard-input primitive, so the values are set in the script.</p>
         <h3 class="font-semibold">File structure</h3>
         <pre><code>learn/course/
-├─ math.azra
-└─ calc.azra
+├─ math.vibe
+└─ calc.vibe
 </code></pre>
-        <h3 class="font-semibold mt-4">math.azra (module)</h3>
-        <pre><code class="language-azra">define add a b:
+        <h3 class="font-semibold mt-4">math.vibe (module)</h3>
+        <pre><code class="language-vibe">define add with a, b:
     give back a + b
 
-define sub a b:
+define sub with a, b:
     give back a - b
 
-define mul a b:
+define mul with a, b:
     give back a * b
 
-define div a b:
+define div with a, b:
     give back a / b
 </code></pre>
-        <h3 class="font-semibold mt-4">calc.azra (main script)</h3>
-        <pre><code class="language-azra"># Import math helpers
-use "math.azra"
+        <h3 class="font-semibold mt-4">calc.vibe (main script)</h3>
+        <pre><code class="language-vibe">note: Import math helpers
+use "math.vibe"
 
-say "Enter first number:"
-set a to read number
-say "Enter second number:"
-set b to read number
+set a to 8
+set b to 2
 
-say "Sum: " + add a b
-say "Difference: " + sub a b
-say "Product: " + mul a b
-if b != 0:
-    say "Quotient: " + div a b
-else:
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
     say "Cannot divide by zero"
 </code></pre>
         <h3 class="font-semibold mt-4">Running the program</h3>
-        <pre><code>azra calc.azra</code></pre>
-        <p>You will be prompted for two numbers and see the calculated results.</p>
+        <pre><code>azra run calc.vibe</code></pre>
+        <pre>Sum: 10
+Difference: 6
+Product: 16
+Quotient: 4
+</pre>
         <p class="mt-4 font-bold">Congratulations! You have completed the Azra language course.</p>
     </section>
 

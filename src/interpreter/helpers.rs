@@ -123,10 +123,15 @@ pub(super) fn compare_values(
     line: usize,
 ) -> Result<std::cmp::Ordering, AzraError> {
     match (l, r) {
-        (Value::Number(a), Value::Number(b)) => Ok(a
-            .as_f64()
-            .partial_cmp(&b.as_f64())
-            .unwrap_or(std::cmp::Ordering::Equal)),
+        (Value::Number(a), Value::Number(b)) => {
+            let (x, y) = (a.as_f64(), b.as_f64());
+            if x.is_nan() || y.is_nan() {
+                // `partial_cmp` returns None for NaN. Mapping that to `Equal`
+                // made both `NaN less_than= x` and `NaN greater_than= x` true.
+                return Err(AzraError::runtime_at("cannot compare NaN", line));
+            }
+            Ok(x.partial_cmp(&y).unwrap_or(std::cmp::Ordering::Equal))
+        }
         (Value::Str(a), Value::Str(b)) => Ok(a.cmp(b)),
         (Value::Bool(a), Value::Bool(b)) => Ok(a.cmp(b)),
         _ => Err(AzraError::runtime_at(
@@ -195,9 +200,12 @@ pub(super) fn num_mod(a: &Num, b: &Num, line: usize) -> Result<Num, AzraError> {
             if *y == 0 {
                 return Err(AzraError::runtime_at("modulo by zero", line));
             }
-            x.checked_rem(*y)
-                .map(Num::Int)
-                .ok_or_else(|| AzraError::runtime_at("integer overflow in modulo", line))
+            // Use the same Euclidean rule as the float arm below so that
+            // `-5 modulo 2` and `-5 modulo 2.0` cannot disagree.
+            if *x == i64::MIN && *y == -1 {
+                return Err(AzraError::runtime_at("integer overflow in modulo", line));
+            }
+            Ok(Num::Int(x.rem_euclid(*y)))
         }
         _ => {
             if b.as_f64() == 0.0 {
@@ -213,6 +221,11 @@ pub(super) fn num_pow(a: &Num, b: &Num, line: usize) -> Result<Num, AzraError> {
         (Num::Int(1), Num::Int(_)) => Ok(Num::Int(1)),
         (Num::Int(-1), Num::Int(y)) => Ok(Num::Int(if *y % 2 == 0 { 1 } else { -1 })),
         (Num::Int(0), Num::Int(y)) if *y > 0 => Ok(Num::Int(0)),
+        // `0 power -1` is a division by zero, not a valid way to produce
+        // `inf` (which would then be accepted by timers and JSON output).
+        (Num::Int(0), Num::Int(y)) if *y < 0 => {
+            Err(AzraError::runtime_at("division by zero in `power`", line))
+        }
         (Num::Int(x), Num::Int(y)) if *y >= 0 => match u32::try_from(*y) {
             Ok(exp) => x
                 .checked_pow(exp)
@@ -220,7 +233,13 @@ pub(super) fn num_pow(a: &Num, b: &Num, line: usize) -> Result<Num, AzraError> {
                 .ok_or_else(|| AzraError::runtime_at("integer overflow in `power`", line)),
             Err(_) => Err(AzraError::runtime_at("integer overflow in `power`", line)),
         },
-        _ => Ok(Num::Float(a.as_f64().powf(b.as_f64()))),
+        _ => {
+            let (base, exp) = (a.as_f64(), b.as_f64());
+            if base == 0.0 && exp < 0.0 {
+                return Err(AzraError::runtime_at("division by zero in `power`", line));
+            }
+            Ok(Num::Float(base.powf(exp)))
+        }
     }
 }
 

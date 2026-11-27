@@ -17,22 +17,23 @@
   </nav>
   <section class="max-w-4xl mx-auto px-4 py-8">
     <h2 class="text-xl font-semibold mb-2">Welcome</h2>
-    <p>Welcome to the Azra Language tutorial! This guide will take you from zero knowledge to building real programs, step‑by‑step, using plain English explanations.</p>
+    <p>Welcome to the Azra Language tutorial! This guide will take you from zero knowledge to building real programs, step-by-step, using plain English explanations.</p>
     <h3 class="mt-4 font-semibold">What is Azra?</h3>
     <ul class="list-disc list-inside ml-4">
       <li>A lightweight, interpreted scripting language.</li>
-      <li>Designed for teaching programming concepts.</li>
+      <li>Designed for teaching programming concepts and game scripting.</li>
       <li>Syntax looks like natural English, making it easy to read.</li>
+      <li>Scripts use the <code>.vibe</code> extension.</li>
     </ul>
     <h3 class="mt-4 font-semibold">How to run Azra code</h3>
     <ol class="list-decimal list-inside ml-4">
-      <li>Install the Azra interpreter (already bundled in this repository).</li>
-      <li>Run <code>azra my_script.azra</code> from the command line.</li>
-      <li>Start an interactive REPL with <code>azra</code>.</li>
+      <li>Build the interpreter bundled in this repository with <code>cargo build --release</code>.</li>
+      <li>Run <code>azra run my_script.vibe</code> from the command line (or just <code>azra my_script.vibe</code>).</li>
+      <li>Start an interactive REPL with <code>azra repl</code> (or bare <code>azra</code>).</li>
     </ol>
     <h3 class="mt-4 font-semibold">Your first program</h3>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">say "Hello, world!"</code></pre>
-    <p>Run it with <code>azra hello.azra</code> – you should see <em>Hello, world!</em> printed.</p>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">say "Hello, world!"</code></pre>
+    <p>Run it with <code>azra run hello.vibe</code> – you should see <em>Hello, world!</em> printed.</p>
   </section>
   <footer class="bg-indigo-600 text-white py-4 mt-12">
     <div class="max-w-4xl mx-auto text-center">

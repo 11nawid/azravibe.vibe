@@ -26,9 +26,9 @@ OPTIONS:
 EXAMPLES:
     azra                              (opens interactive interpreter)
     azra run examples/hello.vibe
-    azra run examples/obby_game.vibe --ticks 120
+    azra run examples/game_demo.vibe --ticks 120
     azra run examples/game_demo.vibe --trigger \"player touches lava_block\"
-    azra check examples/rpg_battle.vibe
+    azra check examples/game_demo.vibe
     azra repl
 ";
 
@@ -36,30 +36,16 @@ fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let launched_bare = args.is_empty();
 
-    let code = match args.first().map(String::as_str) {
-        Some("run") => cmd_run(&args[1..]),
-        Some("check") => cmd_check(&args[1..]),
-        Some("repl") => cmd_repl(),
-        Some("eval") => cmd_eval(&args[1..]),
-        Some("--help") | Some("-h") | Some("help") => {
-            print!("{}", USAGE);
-            0
-        }
-        Some("--version") | Some("-v") | Some("version") => {
-            println!("azra {}", env!("CARGO_PKG_VERSION"));
-            0
-        }
-        Some(other) if other.ends_with(".vibe") => cmd_run(&args),
-        Some(other) => {
-            eprintln!("error: unknown command `{}`\n", other);
-            eprint!("{}", USAGE);
-            2
-        }
-        None => {
-            // No arguments: start the interactive interpreter
-            cmd_repl()
-        }
-    };
+    // Recursive Azra functions (e.g. Ackermann) use Rust stack frames for
+    // every call. The OS default 1 MiB main-thread stack is too small, so run
+    // the CLI on a worker with room for deep user code.
+    let code = std::thread::Builder::new()
+        .name("azra-interpreter".to_string())
+        .stack_size(64 * 1024 * 1024)
+        .spawn(move || cli_main(&args))
+        .expect("could not start the Azra interpreter thread")
+        .join()
+        .unwrap_or(1);
 
     // If launched by double-clicking (no args), wait for Enter before closing
     // so the user can see any output. When run from an existing terminal this
@@ -73,6 +59,43 @@ fn main() {
     }
 
     std::process::exit(code);
+}
+
+fn cli_main(args: &[String]) -> i32 {
+    let code = match args.first().map(String::as_str) {
+        Some("run") => cmd_run(&args[1..]),
+        Some("check") => cmd_check(&args[1..]),
+        Some("repl") => cmd_repl(),
+        Some("eval") => cmd_eval(&args[1..]),
+        Some("--help") | Some("-h") | Some("help") => {
+            print!("{}", USAGE);
+            0
+        }
+        Some("--version") | Some("-v") | Some("version") => {
+            println!("azra {}", env!("CARGO_PKG_VERSION"));
+            0
+        }
+        Some(other) if other.to_ascii_lowercase().ends_with(".vibe") => cmd_run(&args),
+        Some(other) => {
+            eprintln!("error: unknown command `{}`\n", other);
+            eprint!("{}", USAGE);
+            2
+        }
+        None => {
+            // No arguments: start the interactive interpreter
+            cmd_repl()
+        }
+    };
+    code
+}
+
+/// Engine used by `run` / `eval`: permissive like the library default, with a
+/// higher call-depth cap for recursive algorithms (the CLI has a large stack).
+fn cli_engine() -> AzraEngine {
+    AzraEngine::with_sandbox(azra::SandboxConfig {
+        max_call_depth: 512,
+        ..azra::SandboxConfig::permissive()
+    })
 }
 
 /// `azra run <file> [--ticks n] [--trigger phrase]...`
@@ -135,7 +158,7 @@ fn cmd_run(args: &[String]) -> i32 {
         }
     };
 
-    let mut engine = AzraEngine::new();
+    let mut engine = cli_engine();
     if let Err(err) = engine.eval_file(&file) {
         flush_output(&mut engine);
         eprintln!("error: {}", err);
@@ -205,7 +228,7 @@ fn cmd_eval(args: &[String]) -> i32 {
         eprintln!("error: `eval` requires source code");
         return 2;
     }
-    let mut engine = AzraEngine::new();
+    let mut engine = cli_engine();
     if let Err(err) = engine.eval_str(&source) {
         flush_output(&mut engine);
         eprintln!("error: {}", err);

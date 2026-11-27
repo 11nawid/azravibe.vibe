@@ -1,0 +1,23 @@
+note: 03_prime_sieve.vibe — sieve of Eratosthenes from 1 to 10000
+
+set limit to 10000
+set flags to empty list
+set idx to 0
+repeat limit + 1 times:
+    add true to flags
+    set idx to idx + 1
+
+repeat with p from 2 to 100:
+    if item p + 1 of flags equals true:
+        set multiple to p * p
+        while multiple less_than= limit:
+            set item multiple + 1 of flags to false
+            set multiple to multiple + p
+
+set primes to 0
+set i to 2
+while i less_than= limit:
+    if item i + 1 of flags equals true:
+        set primes to primes + 1
+    set i to i + 1
+say primes

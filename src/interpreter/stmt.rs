@@ -242,6 +242,12 @@ impl Interpreter {
             "`after` delay"
         };
         let secs = self.eval(expr)?.as_number(what, line)?.as_f64();
+        if !secs.is_finite() || !(self.now + secs).is_finite() {
+            return Err(AzraError::runtime_at(
+                format!("{} must be a finite number of seconds", what),
+                line,
+            ));
+        }
         let invalid = if repeating {
             secs.is_nan() || secs <= 0.0
         } else {

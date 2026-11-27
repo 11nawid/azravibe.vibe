@@ -1,0 +1,16 @@
+note: Calculator Example (calculator.vibe)
+note: Azra has no keyboard-input primitive, so this example uses set values.
+
+note: Import math helpers
+use "math.vibe"
+
+set a to 8
+set b to 2
+
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
+    say "Cannot divide by zero"

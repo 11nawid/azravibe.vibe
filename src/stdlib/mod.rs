@@ -86,10 +86,12 @@ pub fn eval_builtin(
                 Value::Map(m) => m.borrow().entries.len() as i64,
                 Value::Str(s) => s.chars().count() as i64,
                 Value::Object(o) => o.borrow().fields.len() as i64,
+                // A vec3 has no "number of items" — its length is its magnitude.
+                Value::Vec3(v) => return Ok(num(Num::Float(v.length()))),
                 other => {
                     return Err(AzraError::runtime_at(
                         format!(
-                            "`length of` needs a list, map or string, got {}",
+                            "`length of` needs a list, map, string or vec3, got {}",
                             other.type_name()
                         ),
                         line,
@@ -137,7 +139,24 @@ pub fn eval_builtin(
         | Builtin::Max
         | Builtin::Clamp
         | Builtin::RandomNumber
-        | Builtin::RandomDecimal => math::eval_math(name, &args, ctx, line),
+        | Builtin::RandomDecimal
+        | Builtin::Tan
+        | Builtin::Asin
+        | Builtin::Acos
+        | Builtin::Atan
+        | Builtin::Atan2
+        | Builtin::Pi
+        | Builtin::Euler
+        | Builtin::Log
+        | Builtin::Log10
+        | Builtin::Exp
+        | Builtin::Lerp
+        | Builtin::DegreesToRadians
+        | Builtin::RadiansToDegrees
+        | Builtin::Dot
+        | Builtin::Cross
+        | Builtin::Magnitude
+        | Builtin::AngleBetween => math::eval_math(name, &args, ctx, line),
         Builtin::Uppercase
         | Builtin::Lowercase
         | Builtin::Trim

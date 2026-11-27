@@ -1,0 +1,187 @@
+note: 10_three_body.vibe — Newtonian three-star simulation, G = 1
+note: masses 3, 4, 5 start at rest at the vertices (0,0), (3,0), (0,4)
+note: adaptive-step RK4; stop on ejection or a close binary; check energy drift
+
+set m1 to 3
+set m2 to 4
+set m3 to 5
+
+note: state layout: x1,y1,x2,y2,x3,y3,vx1,vy1,vx2,vy2,vx3,vy3
+define derivatives with s:
+    set x1 to item 1 of s
+    set y1 to item 2 of s
+    set x2 to item 3 of s
+    set y2 to item 4 of s
+    set x3 to item 5 of s
+    set y3 to item 6 of s
+    set vx1 to item 7 of s
+    set vy1 to item 8 of s
+    set vx2 to item 9 of s
+    set vy2 to item 10 of s
+    set vx3 to item 11 of s
+    set vy3 to item 12 of s
+    set d12x to x2 - x1
+    set d12y to y2 - y1
+    set d12q to d12x * d12x + d12y * d12y
+    set r12 to sqrt d12q
+    set den12 to r12 * d12q
+    set inv12 to 1 / den12
+    set d13x to x3 - x1
+    set d13y to y3 - y1
+    set d13q to d13x * d13x + d13y * d13y
+    set r13 to sqrt d13q
+    set den13 to r13 * d13q
+    set inv13 to 1 / den13
+    set d23x to x3 - x2
+    set d23y to y3 - y2
+    set d23q to d23x * d23x + d23y * d23y
+    set r23 to sqrt d23q
+    set den23 to r23 * d23q
+    set inv23 to 1 / den23
+    set a1x to m2 * d12x * inv12 + m3 * d13x * inv13
+    set a1y to m2 * d12y * inv12 + m3 * d13y * inv13
+    set p2x to m1 * d12x * inv12
+    set p2y to m1 * d12y * inv12
+    set a2x to 0 - p2x + m3 * d23x * inv23
+    set a2y to 0 - p2y + m3 * d23y * inv23
+    set p3x to m1 * d13x * inv13 + m2 * d23x * inv23
+    set p3y to m1 * d13y * inv13 + m2 * d23y * inv23
+    set a3x to 0 - p3x
+    set a3y to 0 - p3y
+    set out to vx1, vy1, vx2, vy2, vx3, vy3, a1x, a1y, a2x, a2y, a3x, a3y
+    give back out
+
+define add_scaled with s, k, scale:
+    set out to empty list
+    set i to 1
+    while i less_than= 12:
+        set a to item i of s
+        set b to item i of k
+        set bs to b * scale
+        add a + bs to out
+        set i to i + 1
+    give back out
+
+define energy with s:
+    set x1 to item 1 of s
+    set y1 to item 2 of s
+    set x2 to item 3 of s
+    set y2 to item 4 of s
+    set x3 to item 5 of s
+    set y3 to item 6 of s
+    set vx1 to item 7 of s
+    set vy1 to item 8 of s
+    set vx2 to item 9 of s
+    set vy2 to item 10 of s
+    set vx3 to item 11 of s
+    set vy3 to item 12 of s
+    set q1 to vx1 * vx1 + vy1 * vy1
+    set q2 to vx2 * vx2 + vy2 * vy2
+    set q3 to vx3 * vx3 + vy3 * vy3
+    set ke to 0.5 * m1 * q1 + 0.5 * m2 * q2 + 0.5 * m3 * q3
+    set x12 to x2 - x1
+    set y12 to y2 - y1
+    set q12 to x12 * x12 + y12 * y12
+    set r12 to sqrt q12
+    set x13 to x3 - x1
+    set y13 to y3 - y1
+    set q13 to x13 * x13 + y13 * y13
+    set r13 to sqrt q13
+    set x23 to x3 - x2
+    set y23 to y3 - y2
+    set q23 to x23 * x23 + y23 * y23
+    set r23 to sqrt q23
+    set pe to 0 - m1 * m2 / r12
+    set pe2 to 0 - m1 * m3 / r13
+    set pe to pe + pe2
+    set pe2 to 0 - m2 * m3 / r23
+    set pe to pe + pe2
+    set total to ke + pe
+    give back total
+
+set state to 0, 0, 3, 0, 0, 4, 0, 0, 0, 0, 0, 0
+set e0 to energy with state
+set absE0 to 0 - e0
+set t to 0
+set steps to 0
+set maxDrift to 0
+set minSep to 100
+set reason to "time limit"
+
+while t less_than 10:
+    set x1 to item 1 of state
+    set y1 to item 2 of state
+    set x2 to item 3 of state
+    set y2 to item 4 of state
+    set x3 to item 5 of state
+    set y3 to item 6 of state
+    set x12 to x2 - x1
+    set y12 to y2 - y1
+    set q12 to x12 * x12 + y12 * y12
+    set r12 to sqrt q12
+    set x13 to x3 - x1
+    set y13 to y3 - y1
+    set q13 to x13 * x13 + y13 * y13
+    set r13 to sqrt q13
+    set x23 to x3 - x2
+    set y23 to y3 - y2
+    set q23 to x23 * x23 + y23 * y23
+    set r23 to sqrt q23
+    set rmin to min of r12, min of r13, r23
+    set rmax to max of r12, max of r13, r23
+    if rmin less_than minSep:
+        set minSep to rmin
+    set factor to rmin power 1.5
+    set factor to clamp factor between 0 and 1
+    set dt to 0.001 * factor
+
+    set k1 to derivatives with state
+    set s2 to add_scaled with state, k1, 0.5 * dt
+    set k2 to derivatives with s2
+    set s3 to add_scaled with state, k2, 0.5 * dt
+    set k3 to derivatives with s3
+    set s4 to add_scaled with state, k3, dt
+    set k4 to derivatives with s4
+    set next to empty list
+    set i to 1
+    while i less_than= 12:
+        set a to item i of k1
+        set b to item i of k2
+        set c to item i of k3
+        set d to item i of k4
+        set b2 to 2 * b
+        set c2 to 2 * c
+        set sum to a + b2 + c2 + d
+        set scaled to sum * dt
+        set delta to scaled / 6
+        set base to item i of state
+        add base + delta to next
+        set i to i + 1
+    set state to next
+
+    set e1 to energy with state
+    set diff to e1 - e0
+    if diff less_than 0:
+        set diff to 0 - diff
+    set rel to diff / absE0
+    if rel greater_than maxDrift:
+        set maxDrift to rel
+    set t to t + dt
+    set steps to steps + 1
+    if rmin less_than 0.02:
+        set reason to "close binary formed"
+        stop loop
+    if rmax greater_than 20:
+        set reason to "star ejected"
+        stop loop
+
+say "reason:", reason
+say "time:", t
+say "steps:", steps
+say "minimum separation:", minSep
+say "initial energy:", e0
+say "final energy:", e1
+say "max relative drift:", maxDrift
+say "star1:", vec3 item 1 of state, item 2 of state, 0
+say "star2:", vec3 item 3 of state, item 4 of state, 0
+say "star3:", vec3 item 5 of state, item 6 of state, 0

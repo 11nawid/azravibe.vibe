@@ -5,6 +5,11 @@ use crate::ast::{BinOp, Builtin, Expr};
 use crate::error::AzraError;
 use crate::token::{Token, TokenKind};
 
+/// Left-associative operator loops are not covered by `Parser::with_depth`,
+/// so cap their length explicitly. A longer chain builds an AST deep enough
+/// to overflow the stack when evaluated (and when dropped).
+const MAX_EXPR_CHAIN: usize = 256;
+
 impl Parser {
     pub(super) fn starts_expr(&self) -> bool {
         matches!(
@@ -34,9 +39,25 @@ impl Parser {
         self.parse_or()
     }
 
+    /// Guard the flat operator loops below; unlike recursive descent they do
+    /// not increase `self.depth`, but each iteration still nests the AST.
+    fn chain_step(&self, count: &mut usize) -> Result<(), AzraError> {
+        *count += 1;
+        if *count > MAX_EXPR_CHAIN {
+            Err(self.error_here(format!(
+                "expression chain too long (maximum {} operators)",
+                MAX_EXPR_CHAIN
+            )))
+        } else {
+            Ok(())
+        }
+    }
+
     fn parse_or(&mut self) -> Result<Expr, AzraError> {
         let mut left = self.parse_and()?;
+        let mut count = 0;
         while self.check_word("or") {
+            self.chain_step(&mut count)?;
             let line = self.advance().line;
             let right = self.parse_and()?;
             left = Expr::Binary {
@@ -51,7 +72,9 @@ impl Parser {
 
     fn parse_and(&mut self) -> Result<Expr, AzraError> {
         let mut left = self.parse_not()?;
+        let mut count = 0;
         while self.check_word("and") {
+            self.chain_step(&mut count)?;
             let line = self.advance().line;
             let right = self.parse_not()?;
             left = Expr::Binary {
@@ -135,7 +158,9 @@ impl Parser {
 
     pub(super) fn parse_cmp(&mut self) -> Result<Expr, AzraError> {
         let mut left = self.parse_additive()?;
+        let mut count = 0;
         while let Some((op, line)) = self.cmp_op() {
+            self.chain_step(&mut count)?;
             let right = self.parse_additive()?;
             left = Expr::Binary {
                 op,
@@ -149,7 +174,9 @@ impl Parser {
 
     pub(super) fn parse_additive(&mut self) -> Result<Expr, AzraError> {
         let mut left = self.parse_mul()?;
+        let mut count = 0;
         loop {
+            self.chain_step(&mut count)?;
             let op = match self.peek_kind() {
                 TokenKind::Plus => BinOp::Add,
                 TokenKind::Minus => BinOp::Sub,
@@ -169,7 +196,9 @@ impl Parser {
 
     fn parse_mul(&mut self) -> Result<Expr, AzraError> {
         let mut left = self.parse_pow()?;
+        let mut count = 0;
         loop {
+            self.chain_step(&mut count)?;
             let op = match self.peek_kind() {
                 TokenKind::Star => BinOp::Mul,
                 TokenKind::Slash => BinOp::Div,
@@ -219,7 +248,9 @@ impl Parser {
 
     pub(super) fn parse_postfix(&mut self) -> Result<Expr, AzraError> {
         let mut expr = self.parse_primary()?;
+        let mut count = 0;
         loop {
+            self.chain_step(&mut count)?;
             // `.` + word = member access (a `.` at the end of a line is the
             // optional trailing statement period instead).
             if self.check(&TokenKind::Dot) && matches!(self.kind_at(1), TokenKind::Word(_)) {

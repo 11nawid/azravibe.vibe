@@ -12,23 +12,26 @@
   </section>
   <nav class="max-w-4xl mx-auto py-2"><a href="index.html" class="text-indigo-600 hover:underline">← Back to Index</a></nav>
   <section class="max-w-4xl mx-auto px-4 py-8">
-    <h2 class="text-xl font-semibold mb-2">If / Else</h2>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">if age >= 18:
+    <h2 class="text-xl font-semibold mb-2">If / Otherwise</h2>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">set age to 20
+if age greater_than= 18:
     say "Adult"
-else:
+otherwise:
     say "Minor"
 </code></pre>
+    <p>Use <code>otherwise if</code> for extra branches. Comparisons are English words: <code>equals</code>, <code>not_equals</code>, <code>less_than</code>, <code>less_than=</code>, <code>greater_than</code>, <code>greater_than=</code>, <code>is</code>, <code>contains</code>, <code>starts with</code>, <code>has key</code>. Symbolic <code>&gt;=</code> and <code>!=</code> are not part of Azra.</p>
     <h2 class="text-xl font-semibold mt-4 mb-2">While Loop</h2>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">set counter to 0
-while counter < 5:
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">set counter to 0
+while counter less_than 5:
     say counter
     set counter to counter + 1
 </code></pre>
     <h2 class="text-xl font-semibold mt-4 mb-2">For Loop (over a list)</h2>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">set items to ["a", "b", "c"]
-for item in items:
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">set items to "a", "b", "c"
+for each item in items:
     say item
 </code></pre>
+    <p><code>repeat 3 times:</code> repeats a fixed count; <code>repeat with i from 1 to 10 by 2:</code> counts over a range. Use <code>stop loop</code> / <code>break</code> and <code>skip next</code> / <code>continue</code> inside loops.</p>
   </section>
   <footer class="bg-indigo-600 text-white py-4 mt-12"><div class="max-w-4xl mx-auto text-center"><p>© 2026 Azra Language – All rights reserved.</p></div></footer>
 </body>

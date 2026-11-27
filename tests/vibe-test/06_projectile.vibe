@@ -1,0 +1,23 @@
+note: 06_projectile.vibe — 3D projectile trajectory with vec3 state
+
+set gravity to 9.81
+set speed to 40.0
+set theta to degrees to radians of 45
+set vx to speed * cos theta
+set vy to speed * sin theta
+set flight to 2 * vy / gravity
+set t to 0.0
+set dt to 0.05
+set peak to 0.0
+set pos to vec3 0, 0, 0
+while t less_than flight:
+    set y to vy * t - 0.5 * gravity * t * t
+    if y greater_than peak:
+        set peak to y
+    set x to vx * t
+    set pos to vec3 x, y, 0
+    set t to t + dt
+say vx * flight
+say peak
+say pos
+say vec3 vx, 0 - vy, 0

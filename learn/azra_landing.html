@@ -11,13 +11,13 @@
     <section class="bg-white py-20">
         <div class="max-w-4xl mx-auto px-4 text-center">
             <h1 class="text-4xl font-bold text-indigo-600 mb-4">Learn Azra – A Friendly Scripting Language</h1>
-            <p class="text-lg mb-6">From the very first line to building real programs, we guide you step‑by‑step in plain English.</p>
+            <p class="text-lg mb-6">From the very first line to building real programs, we guide you step-by-step in plain English. Azra scripts use the .vibe extension.</p>
             <a href="#get-started" class="inline-block bg-indigo-600 text-white px-6 py-3 rounded-full hover:bg-indigo-700 transition">Get Started</a>
         </div>
     </section>
 
     <!-- Table of Contents -->
-    <section class="max-w-4xl mx-auto px-4 py-10">
+    <section class="max-w-4xl mx-auto px-4 py-10" id="get-started">
         <h2 class="text-2xl font-semibold mb-4">Course Outline</h2>
         <ul class="list-disc list-inside space-y-2">
             <li><a href="#introduction" class="text-indigo-600 hover:underline">What is Azra?</a></li>
@@ -34,64 +34,65 @@
     <!-- Sections -->
     <section id="introduction" class="max-w-4xl mx-auto px-4 py-10">
         <h2 class="text-3xl font-bold text-indigo-600 mb-4">What is Azra?</h2>
-        <p>Azra is a lightweight, interpreted language designed for teaching programming concepts and scripting quick tasks. It blends the simplicity of Python with a clear, block‑based syntax that feels like natural English.</p>
+        <p>Azra is a lightweight, interpreted language designed for teaching programming concepts and scripting quick tasks. It blends the simplicity of Python with a clear, block-based syntax that feels like natural English — and it uses no brackets.</p>
     </section>
 
     <section id="basics" class="bg-white py-10">
         <div class="max-w-4xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-indigo-600 mb-4">Basic Syntax</h2>
-            <p>Every Azra program is a series of statements, each ending with a newline. Indentation defines blocks (similar to Python).</p>
-            <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-azra"># A comment starts with a hash
-say \"Hello, world!\"   # prints a line</code></pre>
+            <p>Every Azra program is a series of statements, each ending with a newline. Blocks start with <code>:</code> and are indented by exactly 4 spaces. Comments start with <code>note:</code> or <code>#</code> (or use <code>/* ... */</code> for a block).</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-vibe">note: A comment starts with note: or #
+say "Hello, world!"   note: prints a line</code></pre>
         </div>
     </section>
 
     <section id="variables" class="max-w-4xl mx-auto px-4 py-10">
         <h2 class="text-3xl font-bold text-indigo-600 mb-4">Variables & Types</h2>
         <p>Declare a variable with <code>set</code>. Types are inferred automatically.</p>
-        <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-azra">set name to \"Alice\"
+        <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-vibe">set name to "Alice"
 set age to 30
 set price to 12.99
 set flag to true</code></pre>
-        <p>Supported primitive types: <strong>String</strong>, <strong>Int</strong>, <strong>Float</strong>, <strong>Bool</strong>. Collections like <code>list</code> and <code>map</code> are also built‑in.</p>
+        <p>Supported primitive types: <strong>String</strong>, <strong>Int</strong>, <strong>Float</strong>, <strong>Bool</strong>. Collections like <code>list</code> and <code>map</code> are also built-in: <code>set numbers to 1, 2, 3</code> and <code>set person to empty map</code>.</p>
     </section>
 
     <section id="control" class="bg-gray-50 py-10">
         <div class="max-w-4xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-indigo-600 mb-4">Control Flow</h2>
-            <p>Use <code>if</code>, <code>while</code>, and <code>for</code> to direct execution.</p>
-            <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-azra">if age > 18:
-    say \"Adult\"
-else:
-    say \"Minor\"
+            <p>Use <code>if</code>, <code>while</code>, <code>repeat</code> and <code>for each</code> to direct execution. Comparisons are English words such as <code>greater_than</code> and <code>equals</code>.</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-vibe">set age to 20
+if age greater_than 18:
+    say "Adult"
+otherwise:
+    say "Minor"
 
 while flag:
-    say \"Looping\"
+    say "Looping"
     set flag to false</code></pre>
         </div>
     </section>
 
     <section id="functions" class="max-w-4xl mx-auto px-4 py-10">
         <h2 class="text-3xl font-bold text-indigo-600 mb-4">Functions</h2>
-        <p>Define reusable code blocks with <code>define</code>. Parameters are listed after the name.</p>
-        <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-azra">define greet name:
-    say \"Hello, \" + name
+        <p>Define reusable code blocks with <code>define</code>. Parameters follow <code>with</code>, and calls use <code>with</code> too — there are no parentheses.</p>
+        <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-vibe">define greet with name:
+    say "Hello, " + name
 
-greet \"Bob\"
+greet with "Bob"
 </code></pre>
     </section>
 
     <section id="modules" class="bg-white py-10">
         <div class="max-w-4xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-indigo-600 mb-4">Modules & Imports</h2>
-            <p>Split your code into files and import them.</p>
-            <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-azra"># file: math.azra
-define add a b:
+            <p>Split your code into files and import them with <code>use</code>.</p>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-vibe">note: file: math.vibe
+define add with a, b:
     give back a + b
 
-# main.azra
-use \"math.azra\"
-set result to add 3 5
+note: main.vibe
+use "math.vibe"
+set result to add with 3, 5
 say result
 </code></pre>
         </div>
@@ -99,29 +100,40 @@ say result
 
     <section id="examples" class="max-w-4xl mx-auto px-4 py-10">
         <h2 class="text-3xl font-bold text-indigo-600 mb-4">Full Example – A Simple Calculator</h2>
-        <p>This program reads two numbers and prints their sum, difference, product and quotient.</p>
-        <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-azra">say \"Enter first number:\"
-set a to read number
-say \"Enter second number:\"
-set b to read number
+        <p>This program prints the sum, difference, product and quotient of two set values. Azra has no keyboard-input primitive.</p>
+        <pre class="bg-gray-100 p-4 rounded overflow-x-auto"><code class="language-vibe">define add with a, b:
+    give back a + b
 
-say \"Sum: \" + (a + b)
-say \"Difference: \" + (a - b)
-say \"Product: \" + (a * b)
-if b != 0:
-    say \"Quotient: \" + (a / b)
-else:
-    say \"Cannot divide by zero\"
+define sub with a, b:
+    give back a - b
+
+define mul with a, b:
+    give back a * b
+
+define div with a, b:
+    give back a / b
+
+set a to 8
+set b to 2
+
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
+    say "Cannot divide by zero"
 </code></pre>
+        <p>Wrap each operation in a function so the arithmetic happens before the label is concatenated.</p>
     </section>
 
     <section id="resources" class="bg-gray-50 py-10">
         <div class="max-w-4xl mx-auto px-4">
             <h2 class="text-3xl font-bold text-indigo-600 mb-4">Further Resources</h2>
             <ul class="list-disc list-inside space-y-2">
-                <li><a href="https://github.com/11nawid/azravibe.vibe" class="text-indigo-600 hover:underline" target="_blank">Project Repository</a></li>
-                <li><a href="https://docs.azra-lang.org" class="text-indigo-600 hover:underline" target="_blank">Official Documentation</a></li>
-                <li><a href="https://discord.gg/azra" class="text-indigo-600 hover:underline" target="_blank">Community Discord</a></li>
+                <li><a href="../README.md" class="text-indigo-600 hover:underline">Project README</a></li>
+                <li><a href="../docs/language.vibetxt" class="text-indigo-600 hover:underline">Full Language Specification</a></li>
+                <li><a href="index.html" class="text-indigo-600 hover:underline">Full Course (HTML)</a></li>
             </ul>
         </div>
     </section>

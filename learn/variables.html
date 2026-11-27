@@ -12,16 +12,25 @@
   </section>
   <nav class="max-w-4xl mx-auto py-2"><a href="index.html" class="text-indigo-600 hover:underline">← Back to Index</a></nav>
   <section class="max-w-4xl mx-auto px-4 py-8">
-    <p>Use the <code>set</code> keyword to store values. Types are inferred automatically.</p>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">set name to "Alice"
+    <p>Use the <code>set</code> keyword to store values. Types are inferred automatically. There are no brackets in Azra.</p>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">set name to "Alice"
 set age to 30
 set price to 12.99
 set active to true</code></pre>
     <h3 class="mt-4 font-semibold">Collections</h3>
-    <p><strong>List</strong> – ordered collection:</p>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">set numbers to [1, 2, 3]</code></pre>
-    <p><strong>Map</strong> – key‑value pairs:</p>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">set person to {"name": "Bob", "age": 25}</code></pre>
+    <p><strong>List</strong> – ordered collection, written as comma-separated values:</p>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">set numbers to 1, 2, 3
+add 4 to numbers
+remove 2 from numbers
+say numbers</code></pre>
+    <p>Read an item with <code>item 2 of numbers</code> (1-based), or change it with <code>set item 2 of numbers to 9</code>.</p>
+    <p><strong>Map</strong> – string-keyed collection created with <code>empty map</code>:</p>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">set person to empty map
+set key "name" of person to "Bob"
+set key "age" of person to 25
+say key "name" of person
+say person has key "age"</code></pre>
+    <p><code>person's "name"</code> is an equivalent shorthand for <code>key "name" of person</code>.</p>
   </section>
   <footer class="bg-indigo-600 text-white py-4 mt-12"><div class="max-w-4xl mx-auto text-center"><p>© 2026 Azra Language – All rights reserved.</p></div></footer>
 </body>

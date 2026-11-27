@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azra Course – Full Example Project</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <section class="bg-indigo-600 text-white py-4">
+    <div class="max-w-4xl mx-auto text-center"><h1 class="text-2xl font-bold">Azra – Full Example Project</h1></div>
+  </section>
+  <nav class="max-w-4xl mx-auto py-2"><a href="index.html" class="text-indigo-600 hover:underline">← Back to Index</a></nav>
+  <section class="max-w-4xl mx-auto px-4 py-8">
+    <p>In this final lesson we combine everything we have learned to build a small calculator script backed by a module. Values are set in the script because Azra has no keyboard-input primitive.</p>
+    <h3 class="font-semibold mt-4">calc.vibe</h3>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">note: import math helpers
+use "math.vibe"
+
+set a to 8
+set b to 2
+
+say "Sum: " + add with a, b
+say "Difference: " + sub with a, b
+say "Product: " + mul with a, b
+if b not_equals 0:
+    say "Quotient: " + div with a, b
+otherwise:
+    say "Cannot divide by zero"
+</code></pre>
+    <h3 class="font-semibold mt-4">math.vibe</h3>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">define add with a, b:
+    give back a + b
+
+define sub with a, b:
+    give back a - b
+
+define mul with a, b:
+    give back a * b
+
+define div with a, b:
+    give back a / b
+</code></pre>
+    <h3 class="font-semibold mt-4">Running the program</h3>
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-bash">azra run calc.vibe</code></pre>
+    <pre class="bg-gray-100 p-2 rounded">Sum: 10
+Difference: 6
+Product: 16
+Quotient: 4
+</pre>
+  </section>
+  <footer class="bg-indigo-600 text-white py-4 mt-12"><div class="max-w-4xl mx-auto text-center"><p>© 2026 Azra Language – All rights reserved.</p></div></footer>
+</body>
+</html>

@@ -1,0 +1,22 @@
+note: 05_quadratic.vibe — quadratic formula without parentheses
+note: solves x^2 - 5x + 6 = 0, roots are 3 and 2
+
+set a to 1.0
+set b to -5.0
+set c to 6.0
+set disc to b * b - 4 * a * c
+set sd to sqrt disc
+set negb to 0 - b
+set den to 2 * a
+set n1 to negb + sd
+set n2 to negb - sd
+say n1 / den
+say n2 / den
+
+note: complex roots are reported as a clean runtime error
+try:
+    set c2 to 20.0
+    set disc2 to b * b - 4 * a * c2
+    say sqrt disc2
+if error as err:
+    say "caught:", err

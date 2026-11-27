@@ -13,19 +13,21 @@
   <nav class="max-w-4xl mx-auto py-2"><a href="index.html" class="text-indigo-600 hover:underline">← Back to Index</a></nav>
   <section class="max-w-4xl mx-auto px-4 py-8">
     <h2 class="text-xl font-semibold mb-2">Defining a Function</h2>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">define greet name:
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">define greet with name:
     say "Hello, " + name
 </code></pre>
     <h2 class="text-xl font-semibold mt-4 mb-2">Calling a Function</h2>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">greet "Bob"
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">greet with "Bob"
 </code></pre>
+    <p>Calls in expressions also use <code>with</code>: <code>set message to greet with "Alice"</code>.</p>
     <h2 class="text-xl font-semibold mt-4 mb-2">Returning Values</h2>
-    <pre class="bg-gray-100 p-2 rounded"><code class="language-azra">define add a b:
+    <pre class="bg-gray-100 p-2 rounded"><code class="language-vibe">define add with a, b:
     give back a + b
 
-set sum to add 3 5
-say sum   # prints 8
+set sum to add with 3, 5
+say sum   note: prints 8
 </code></pre>
+    <p>A function with no parameters runs when its name appears in an expression: <code>define status:</code> … <code>give back "ok"</code>, then <code>say status</code>.</p>
   </section>
   <footer class="bg-indigo-600 text-white py-4 mt-12"><div class="max-w-4xl mx-auto text-center"><p>© 2026 Azra Language – All rights reserved.</p></div></footer>
 </body>

@@ -1,0 +1,58 @@
+note: 09_euler500.vibe — smallest N with exactly 2^500500 divisors
+note: N is the product of the 500500 smallest numbers p^(2^k), p prime, k >= 0.
+note: Each such factor contributes one factor 2 to the divisor count; sorting
+note: them ascending assigns larger exponents to smaller primes, which is minimal.
+note: Only the product modulo 500500507 is needed, but comparisons use full values.
+
+set limit to 7400000
+set answer to 1
+
+note: odd composite sieve: item k of flags represents the odd number 2*k - 1
+set flags to empty list
+repeat limit / 2 times:
+    add true to flags
+set p to 3
+while p * p less_than= limit:
+    set pp to p * p
+    set t to pp + 1
+    set k to t / 2
+    if item k of flags equals true:
+        while 2 * k - 1 less_than= limit:
+            set item k of flags to false
+            set k to k + p
+    set p to p + 2
+
+note: collect every p^(2^k) up to the limit (including 2, 4, 16, 256, ...)
+set candidates to empty list
+note: powers of two: 2, 4, 16, 256, ...
+set power to 2
+while power less_than= limit:
+    add power to candidates
+    set nextPower to power * power
+    if nextPower greater_than limit:
+        stop loop
+    set power to nextPower
+note: odd primes and their squares, fourth powers, ...
+set p to 3
+while p less_than= limit:
+    set t to p + 1
+    set idx to t / 2
+    if item idx of flags equals true:
+        set power to p
+        while power less_than= limit:
+            add power to candidates
+            set nextPower to power * power
+            if nextPower greater_than limit:
+                stop loop
+            set power to nextPower
+    set p to p + 2
+
+note: multiply the 500500 smallest candidates modulo 500500507
+sort candidates
+set i to 1
+while i less_than= 500500:
+    set term to item i of candidates
+    set product to answer * term
+    set answer to product modulo 500500507
+    set i to i + 1
+say answer
