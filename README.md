@@ -8,7 +8,7 @@
 
 [![CI](https://github.com/11nawid/azravibe.vibe/actions/workflows/ci.yml/badge.svg)](https://github.com/11nawid/azravibe.vibe/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.0.1-8b5cf6.svg)](Cargo.toml)
+[![Version](https://img.shields.io/badge/version-0.0.9-8b5cf6.svg)](Cargo.toml)
 [![Website](https://img.shields.io/badge/site-azravibe.com%2Fvibe-4f46e5.svg)](https://azravibe.com/vibe)
 
 **[🌐 Website & Playground](https://azravibe.com/vibe)** · **[⭐ GitHub](https://github.com/11nawid/azravibe.vibe)** · **[📸 Instagram](https://www.instagram.com/1n1.nawid/)**
@@ -16,6 +16,18 @@
 </div>
 
 ---
+
+## The three core products
+
+1. **Azra (`.vibe`) — The Programming Language (Built in Rust):** A zero-bracket,
+   plain-English, indentation-based scripting and general-purpose language that runs
+   standalone and embeds natively into our game engine.
+2. **Azravibe Studio — The 3D Game Creator (Built in C++ & C):** A 100% offline desktop
+   3D rounded-voxel game editor (like Roblox Studio) powered by Azra (`.vibe`) scripts,
+   saving and opening local `.azraexpe` game files on the user's PC with zero servers or
+   paid databases required.
+3. **Azravibe Player — The Game Client (Built in C++ & C):** A lightweight standalone
+   launcher and runtime that opens and plays `.azraexpe` experiences cleanly.
 
 ## ✨ Why Azra?
 
