@@ -266,7 +266,7 @@ fn build_gcc(out: &Path) -> Result<PathBuf, String> {
         ("native/azra_gui.cpp", &gui_obj),
     ] {
         let compile = Command::new("g++")
-            .args(["-std=c++17", "-O2", "-c", source])
+            .args(["-std=c++17", "-O2", "-fPIC", "-c", source])
             .arg(format!("-o{}", object.display()))
             .status()
             .map_err(|e| e.to_string())?;
