@@ -50,12 +50,12 @@ define is_comment with t:
     give back false
 
 define strip_colon with t:
-    set quoted to is_quoted with t
-    if quoted equals true:
+    set cs to split t by ""
+    set last_at to length of cs
+    set last to item last_at of cs
+    if last not_equals ":":
         give back t
     set parts to split t by ":"
-    if length of parts less_than 2:
-        give back t
     give back item 1 of parts
 
 define is_separator with ch, in_string:
@@ -79,12 +79,17 @@ define tokenize_line with raw:
     set words to empty list
     set current to ""
     set in_string to false
-    set prev to ""
+    set escape_next to false
     for each ch in chars_list:
+        if escape_next equals true:
+            set current to current + ch
+            set escape_next to false
+            skip next
+        if in_string equals true and ch equals "\\":
+            set current to current + ch
+            set escape_next to true
+            skip next
         set is_quote to ch equals "\""
-        if prev equals "\\":
-            set is_quote to false
-        set prev to ch
         if is_quote equals true:
             set in_string to not in_string
             set current to current + ch
@@ -127,36 +132,17 @@ define peek with words, pos:
     give back item pos of words
 
 define unquote with t:
-    set cs to split t by ""
-    if length of cs less_than 2:
+    set quoted to is_quoted with t
+    if quoted equals false:
         give back t
-    set last_at to length of cs - 1
-    set inner to ""
-    repeat with i from 2 to last_at:
-        set inner to inner + item i of cs
-    set out to ""
-    set pending to false
-    for each c in split inner by "":
-        if pending equals true:
-            set mapped to c
-            if c equals "n":
-                set mapped to "\n"
-            if c equals "t":
-                set mapped to "\t"
-            if c equals "r":
-                set mapped to "\r"
-            if c equals "\"":
-                set mapped to "\""
-            if c equals "\\":
-                set mapped to "\\"
-            set out to out + mapped
-            set pending to false
-            skip next
-        if c equals "\\":
-            set pending to true
-            skip next
-        set out to out + c
-    give back out
+    set tc to split t by ""
+    set tc to split t by ""
+    set lastc to item length of tc of tc
+    if length of tc less_than 2:
+        give back t
+    if lastc not_equals "\"":
+        give back t
+    give back parse json t
 
 define pack with node, pos:
     set r to empty map
