@@ -52,12 +52,18 @@ native GUI calls.
 
 ## Honest status
 
-Round 1 is **in progress**. The compiler can now compile itself into bytecode,
-and a self-compiled compiler can successfully compile small Azra programs
-(functions, loops, calls, builtins all work). The full fixed point — compiling
-the entire compiler source with itself and getting identical bytecode — still
-fails because escape-sequence handling in the self-hosted lexer differs from
-the bootstrap interpreter for some literals. All regression tests pass.
+**Round 1 is complete.** The compiler compiles its own source into bytecode,
+and running that bytecode on the Azra VM produces **byte-identical** output.
+Verified by `bootstrap/tests/selfhost.vibe`
+(`self-host fixed point passed: 3775 instructions`). All regression tests pass.
+
+Key fixes that closed the gap: `contains`/`starts with` operators, zero-arg
+function calls in the VM, `remove item` statements, correct `strip_colon` for
+quoted strings containing colons, shared global state across VM calls, and
+proper break/continue patching.
+
+Round 2 (native code emitter / PE / standalone EXE) and Round 3 (native Windows
+GUI, Studio, Player) have not started yet.
 
 Rounds 2 and 3 (native code emitter / PE / native Windows GUI) have not
 started.

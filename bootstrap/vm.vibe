@@ -56,6 +56,10 @@ define binary with st, op:
         set x to truthy with a
         set y to truthy with b
         set result to x or y
+    if op equals "contains":
+        set result to a contains b
+    if op equals "startswith":
+        set result to a starts with b
     push_to with st, result
 
 define builtin_call with st, name, args:
@@ -189,8 +193,22 @@ define execute with code:
         if op equals "load":
             set envmap to key "env" of st
             set name to key "arg" of ins
-            set value to key name of envmap
-            push_to with st, value
+            set known_env to envmap has key name
+            if known_env equals true:
+                set value to key name of envmap
+                push_to with st, value
+            otherwise:
+                set funcs to key "funcs" of st
+                if funcs has key name:
+                    set fn to key name of funcs
+                    set frames to key "frames" of st
+                    set frame to empty map
+                    set key "env" of frame to envmap
+                    set key "ret" of frame to pc + 1
+                    add frame to frames
+                    set pc to key "addr" of fn
+                    skip next
+                push_to with st, nothing
             add 1 to pc
             skip next
         if op equals "store":
@@ -200,7 +218,7 @@ define execute with code:
             set key name of envmap to value
             add 1 to pc
             skip next
-        if op equals "add" or op equals "sub" or op equals "mul" or op equals "div" or op equals "mod" or op equals "eq" or op equals "neq" or op equals "lt" or op equals "lte" or op equals "gt" or op equals "gte" or op equals "and" or op equals "or":
+        if op equals "add" or op equals "sub" or op equals "mul" or op equals "div" or op equals "mod" or op equals "eq" or op equals "neq" or op equals "lt" or op equals "lte" or op equals "gt" or op equals "gte" or op equals "and" or op equals "or" or op equals "contains" or op equals "startswith":
             binary with st, op
             add 1 to pc
             skip next
@@ -239,6 +257,18 @@ define execute with code:
             otherwise:
                 set cur to cur + v
                 set key name of envmap to cur
+            add 1 to pc
+            skip next
+        if op equals "removeitem":
+            set idx to pop_from with st
+            set lst to pop_from with st
+            remove item idx from lst
+            add 1 to pc
+            skip next
+        if op equals "writefile":
+            set path to key "arg" of ins
+            set data to pop_from with st
+            write data to file path
             add 1 to pc
             skip next
         if op equals "listn":

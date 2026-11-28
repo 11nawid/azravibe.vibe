@@ -51,10 +51,18 @@ define is_comment with t:
 
 define strip_colon with t:
     set cs to split t by ""
-    set last_at to length of cs
-    set last to item last_at of cs
+    set n to length of cs
+    set last to item n of cs
     if last not_equals ":":
         give back t
+    set first to item 1 of cs
+    if first equals "\"":
+        set out to ""
+        set i to 1
+        while i less_than n:
+            set out to out + item i of cs
+            add 1 to i
+        give back out
     set parts to split t by ":"
     give back item 1 of parts
 
@@ -140,8 +148,10 @@ define unquote with t:
         give back t
     set last_at to length of cs - 1
     set inner to ""
-    repeat with i from 2 to last_at:
+    set i to 2
+    while i less_than= last_at:
         set inner to inner + item i of cs
+        add 1 to i
     set out to ""
     set pending to false
     for each c in split inner by "":
@@ -384,8 +394,17 @@ define parse_cmp with words, pos:
         set known to true
     if op equals "greater_than=":
         set known to true
+    if op equals "contains":
+        set known to true
+    set op2 to peek with words, p + 1
+    if op equals "starts" and op2 equals "with":
+        set op to "starts with"
+        set known to true
+    set right_at to p + 1
+    if op equals "starts with":
+        set right_at to p + 2
     if known equals true:
-        set right_r to parse_add with words, p + 1
+        set right_r to parse_add with words, right_at
         set right to key "node" of right_r
         set p to key "pos" of right_r
         set left to branch with op, left, right
@@ -473,6 +492,10 @@ define op_code with op:
         give back "and"
     if op equals "or":
         give back "or"
+    if op equals "contains":
+        give back "contains"
+    if op equals "starts with":
+        give back "startswith"
     if op equals "add":
         give back "add"
     if op equals "subtract":
@@ -567,6 +590,9 @@ define compile_block with lines, start, base_indent, offset:
             skip next
 
         set head to item 1 of words
+        set second_word to ""
+        if length of words greater_than 1:
+            set second_word to item 2 of words
 
         if head equals "skip":
             set f to current_loop
@@ -610,9 +636,29 @@ define compile_block with lines, start, base_indent, offset:
             add 1 to i
             skip next
 
-        if head equals "set" and item 2 of words not_equals "key":
+        if head equals "remove":
+            set item_at to find_word with words, "item"
+            set from_at to find_word with words, "from"
+            set idx_node to parse_expr with words, item_at + 1
+            set list_node to parse_expr with words, from_at + 1
+            emit_node with code, key "node" of list_node
+            emit_node with code, key "node" of idx_node
+            emit_op with code, "removeitem"
+            add 1 to i
+            skip next
+
+        if head equals "write":
+            set last_at to length of words
+            set path to unquote with item last_at of words
+            set r to parse_expr with words, 2
+            emit_node with code, key "node" of r
+            emit_arg with code, "writefile", path
+            add 1 to i
+            skip next
+
+        if head equals "set" and second_word not_equals "key":
             set to_at to find_to with words
-            set name to item 2 of words
+            set name to second_word
             set p to to_at + 1
             set value_count to 0
             while p less_than= length of words:
@@ -626,7 +672,7 @@ define compile_block with lines, start, base_indent, offset:
             add 1 to i
             skip next
 
-        if head equals "set" and item 2 of words equals "key":
+        if head equals "set" and second_word equals "key":
             set to_at to find_to with words
             set val_r to parse_expr with words, to_at + 1
             set key_r to parse_expr with words, 3
@@ -639,7 +685,7 @@ define compile_block with lines, start, base_indent, offset:
             skip next
 
         if head equals "add" or head equals "subtract" or head equals "multiply" or head equals "divide":
-            set name to item 2 of words
+            set name to second_word
             set expr_at to 4
             set opcode to "add"
             set last_at to length of words
@@ -862,8 +908,6 @@ define function_end with lines, start:
 
 define compile_source with source:
     set lines to tokenize_source with source
-    set loop_depth to 0
-    set loop_stack to empty list
     set main_lines to empty list
     set pending to empty list
     set i to 1

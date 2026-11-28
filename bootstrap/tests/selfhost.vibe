@@ -1,0 +1,19 @@
+note: Verifies the self-hosting fixed point entirely in Azra.
+use "../compiler.vibe"
+use "../vm.vibe"
+
+set lib to read file "bootstrap/compiler.vibe"
+set driver to read file "bootstrap/tests/selfhost_driver.vibe"
+set g1 to compile_source with lib
+set bootstrap to compile_source with lib + "\n" + driver
+execute with bootstrap
+set g2 to parse json read file "bootstrap/tests/gen2.json"
+
+assert equals length of g1, length of g2
+set bad to 0
+repeat with i from 1 to length of g1:
+    if to json item i of g1 not_equals to json item i of g2:
+        add 1 to bad
+assert equals bad, 0
+
+say "self-host fixed point passed:", length of g1, "instructions"

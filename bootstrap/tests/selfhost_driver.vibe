@@ -1,0 +1,3 @@
+set src to read file "bootstrap/compiler.vibe"
+set out to compile_source with src
+write to json out to file "bootstrap/tests/gen2.json"
