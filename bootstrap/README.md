@@ -43,16 +43,21 @@ The self-hosted compiler currently supports:
   `file exists`, `item`, `key`, `join`, `split`, `current time`,
   `random decimal`, `empty list`, `empty map`
 
-Not yet supported: `use` modules, `for each`, events, timers, `try`,
-host functions and native GUI calls.
+Also supported: `for each ... in ...`, `repeat with i from a to b [by n]`,
+`skip next`, `stop loop`, bare function-call statements, escape sequences in
+string literals and the `replace` builtin.
+
+Not yet supported: `use` modules, events, timers, `try`, host functions and
+native GUI calls.
 
 ## Honest status
 
-Round 1 is **in progress**. The compiler can parse itself into bytecode, and
-all self-hosted tests pass, but the self-hosting fixed point (running that
-bytecode on the Azra VM and getting an identical second generation) is not
-passing yet. The remaining issues are in the VM's function/frame handling and
-a few expression-precedence cases.
+Round 1 is **in progress**. The compiler can now compile itself into bytecode,
+and a self-compiled compiler can successfully compile small Azra programs
+(functions, loops, calls, builtins all work). The full fixed point — compiling
+the entire compiler source with itself and getting identical bytecode — still
+fails because escape-sequence handling in the self-hosted lexer differs from
+the bootstrap interpreter for some literals. All regression tests pass.
 
 Rounds 2 and 3 (native code emitter / PE / native Windows GUI) have not
 started.

@@ -156,6 +156,12 @@ define builtin_call with st, name, args:
     if name equals "join list":
         push_to with st, join first with second
         give back nothing
+    if name equals "replace":
+        set third to nothing
+        if length of args greater_than 2:
+            set third to item 3 of args
+        push_to with st, replace first with second in third
+        give back nothing
     if name equals "current time":
         push_to with st, current time
         give back nothing
