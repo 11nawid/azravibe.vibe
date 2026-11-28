@@ -1,0 +1,199 @@
+use "core.vibe"
+note: parser.vibe — expression parser and AST builders, written in Azra.
+
+define parse_primary with words, pos:
+    set t to peek with words, pos
+    set next to pos + 1
+    if t equals "true":
+        set n to leaf with "lit", true
+        give back pack with n, next
+    if t equals "false":
+        set n to leaf with "lit", false
+        give back pack with n, next
+    set quoted to is_quoted with t
+    if quoted equals true:
+        set v to unquote with t
+        set n to leaf with "lit", v
+        give back pack with n, next
+    set numeric to is_digit_start with t
+    if numeric equals true:
+        set v to parse json t
+        set n to leaf with "lit", v
+        give back pack with n, next
+
+    if t equals "empty":
+        set what to peek with words, next
+        set name to "empty " + what
+        set n to make_call with name, empty list
+        give back pack with n, next + 1
+
+    if t equals "item" or t equals "key":
+        set r1 to parse_primary with words, next
+        set p1 to key "pos" of r1
+        set r2 to parse_primary with words, p1 + 1
+        set args to empty list
+        add key "node" of r1 to args
+        add key "node" of r2 to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of r2
+
+    set of_builtins to ",length,uppercase,lowercase,trim,magnitude,min,max,"
+    set search to "," + t + ","
+    if of_builtins contains search:
+        set after_word to peek with words, next
+        if after_word equals "of":
+            if t equals "min" or t equals "max":
+                set r to parse_args with words, next + 1
+                set n to make_call with t, key "args" of r
+                give back pack with n, key "pos" of r
+            set arg_r to parse_primary with words, next + 1
+            set args to empty list
+            add key "node" of arg_r to args
+            set n to make_call with t, args
+            give back pack with n, key "pos" of arg_r
+
+    set direct_builtins to ",round,floor,ceil,abs,sqrt,sin,cos,tan,exp,log,log10,normalize,random decimal,current time,"
+    set dsearch to "," + t + ","
+    if direct_builtins contains dsearch:
+        set arg_r to parse_primary with words, next
+        set args to empty list
+        add key "node" of arg_r to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of arg_r
+
+    if t equals "replace":
+        set r1 to parse_expr with words, next
+        set p1 to key "pos" of r1
+        set r2 to parse_expr with words, p1 + 1
+        set p2 to key "pos" of r2
+        set r3 to parse_expr with words, p2 + 1
+        set args to empty list
+        add key "node" of r1 to args
+        add key "node" of r2 to args
+        add key "node" of r3 to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of r3
+
+    if t equals "split" or t equals "join":
+        set r1 to parse_expr with words, next
+        set p1 to key "pos" of r1
+        set r2 to parse_expr with words, p1 + 1
+        set args to empty list
+        add key "node" of r1 to args
+        add key "node" of r2 to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of r2
+
+    if t equals "parse" or t equals "to" or t equals "read" or t equals "file":
+        set w2 to peek with words, next
+        set bname to t + " " + w2
+        set r to parse_args with words, next + 1
+        set n to make_call with bname, key "args" of r
+        give back pack with n, key "pos" of r
+
+    set nxt to peek with words, next
+    if nxt equals "with":
+        set r to parse_args with words, next + 1
+        set n to make_call with t, key "args" of r
+        give back pack with n, key "pos" of r
+
+    set n to leaf with "var", t
+    give back pack with n, next
+
+define parse_mul with words, pos:
+    set left_r to parse_primary with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "*" or op equals "/" or op equals "modulo":
+        set right_r to parse_primary with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_add with words, pos:
+    set left_r to parse_mul with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "+" or op equals "-":
+        set right_r to parse_mul with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_cmp with words, pos:
+    set left_r to parse_add with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    set known to false
+    if op equals "equals":
+        set known to true
+    if op equals "not_equals":
+        set known to true
+    if op equals "less_than":
+        set known to true
+    if op equals "less_than=":
+        set known to true
+    if op equals "greater_than":
+        set known to true
+    if op equals "greater_than=":
+        set known to true
+    if op equals "contains":
+        set known to true
+    set op2 to peek with words, p + 1
+    if op equals "starts" and op2 equals "with":
+        set op to "starts with"
+        set known to true
+    set right_at to p + 1
+    if op equals "starts with":
+        set right_at to p + 2
+    if known equals true:
+        set right_r to parse_add with words, right_at
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+    give back pack with left, p
+
+define parse_and with words, pos:
+    set left_r to parse_cmp with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "and":
+        set right_r to parse_cmp with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_or with words, pos:
+    set left_r to parse_and with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "or":
+        set right_r to parse_and with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_expr with words, pos:
+    set t to peek with words, pos
+    if t equals "not":
+        set r to parse_or with words, pos + 1
+        set n to empty map
+        set key "kind" of n to "not"
+        set key "value" of n to key "node" of r
+        set p to key "pos" of r
+        give back pack with n, p
+    give back parse_or with words, pos
+

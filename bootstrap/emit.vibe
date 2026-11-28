@@ -1,0 +1,128 @@
+use "core.vibe"
+note: emit.vibe — bytecode instruction emitters, written in Azra.
+
+define emit_op with code, op:
+    set ins to empty map
+    set key "op" of ins to op
+    add ins to code
+
+define emit_arg with code, op, arg:
+    set ins to empty map
+    set key "op" of ins to op
+    set key "arg" of ins to arg
+    add ins to code
+
+define emit_call with code, name, count:
+    set ins to empty map
+    set key "op" of ins to "call"
+    set key "arg" of ins to name
+    set key "count" of ins to count
+    add ins to code
+
+define op_code with op:
+    if op equals "+":
+        give back "add"
+    if op equals "-":
+        give back "sub"
+    if op equals "*":
+        give back "mul"
+    if op equals "/":
+        give back "div"
+    if op equals "modulo":
+        give back "mod"
+    if op equals "equals":
+        give back "eq"
+    if op equals "not_equals":
+        give back "neq"
+    if op equals "less_than":
+        give back "lt"
+    if op equals "less_than=":
+        give back "lte"
+    if op equals "greater_than":
+        give back "gt"
+    if op equals "greater_than=":
+        give back "gte"
+    if op equals "and":
+        give back "and"
+    if op equals "or":
+        give back "or"
+    if op equals "contains":
+        give back "contains"
+    if op equals "starts with":
+        give back "startswith"
+    if op equals "add":
+        give back "add"
+    if op equals "subtract":
+        give back "sub"
+    if op equals "multiply":
+        give back "mul"
+    if op equals "divide":
+        give back "div"
+    give back op
+
+define emit_node with code, node:
+    set kind to key "kind" of node
+    set value to key "value" of node
+    if kind equals "lit":
+        emit_arg with code, "push", value
+        give back nothing
+    if kind equals "var":
+        emit_arg with code, "load", value
+        give back nothing
+    if kind equals "not":
+        emit_node with code, value
+        emit_op with code, "not"
+        give back nothing
+    if kind equals "call":
+        set args to key "args" of node
+        for each a in args:
+            emit_node with code, a
+        emit_call with code, value, length of args
+        give back nothing
+    set left_node to key "left" of node
+    set right_node to key "right" of node
+    emit_node with code, left_node
+    emit_node with code, right_node
+    set opcode to op_code with value
+    emit_op with code, opcode
+
+define find_word with words, target:
+    repeat with i from 1 to length of words:
+        set t to item i of words
+        if t equals target:
+            give back i
+    give back 0
+
+define find_to with words:
+    repeat with i from 1 to length of words:
+        set t to item i of words
+        if t equals "to":
+            give back i
+    give back 0
+
+define patch_arg with code, index, target:
+    set ins to item index of code
+    set key "arg" of ins to target
+    set item index of code to ins
+
+define patch_continues with code, f, base:
+    if f equals nothing:
+        give back nothing
+    if f equals false:
+        give back nothing
+    set cs to key "continues" of f
+    set target to key "continue" of f
+    for each ci in cs:
+        set idx to ci - base
+        patch_arg with code, idx, target
+
+define patch_breaks with code, f, base, target:
+    if f equals nothing:
+        give back nothing
+    if f equals false:
+        give back nothing
+    set brs to key "breaks" of f
+    for each bi in brs:
+        set idx to bi - base
+        patch_arg with code, idx, target
+

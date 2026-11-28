@@ -1,0 +1,321 @@
+use "core.vibe"
+use "parser.vibe"
+use "emit.vibe"
+note: compile_block.vibe — statement compiler, written in Azra.
+
+define compile_block with lines, start, base_indent, offset:
+    set code to empty list
+    set i to start
+    set count to length of lines
+    while i less_than= count:
+        set ln to item i of lines
+        set words to key "words" of ln
+        if length of words equals 0:
+            add 1 to i
+            skip next
+        set ind to key "indent" of ln
+        if ind less_than base_indent:
+            stop loop
+        if ind greater_than base_indent:
+            add 1 to i
+            skip next
+
+        set head to item 1 of words
+        set second_word to ""
+        if length of words greater_than 1:
+            set second_word to item 2 of words
+
+        if head equals "skip":
+            set f to current_loop
+            if f equals nothing:
+                add 1 to i
+                skip next
+            set ci to offset + length of code + 1
+            emit_arg with code, "jmp", 0
+            set cs to key "continues" of f
+            add ci to cs
+            add 1 to i
+            skip next
+
+        if head equals "stop":
+            set f to current_loop
+            if f equals nothing:
+                add 1 to i
+                skip next
+            set bi to offset + length of code + 1
+            emit_arg with code, "jmp", 0
+            set brs to key "breaks" of f
+            add bi to brs
+            add 1 to i
+            skip next
+
+        if head equals "say":
+            set p to 2
+            set arg_count to 0
+            while p less_than= length of words:
+                set r to parse_expr with words, p
+                set expr_node to key "node" of r
+                if arg_count greater_than 0:
+                    emit_arg with code, "push", " "
+                    emit_op with code, "add"
+                emit_node with code, expr_node
+                if arg_count greater_than 0:
+                    emit_op with code, "add"
+                set p to key "pos" of r
+                add 1 to arg_count
+            emit_op with code, "say"
+            add 1 to i
+            skip next
+
+        if head equals "remove":
+            set item_at to find_word with words, "item"
+            set from_at to find_word with words, "from"
+            set idx_node to parse_expr with words, item_at + 1
+            set list_node to parse_expr with words, from_at + 1
+            emit_node with code, key "node" of list_node
+            emit_node with code, key "node" of idx_node
+            emit_op with code, "removeitem"
+            add 1 to i
+            skip next
+
+        if head equals "write":
+            set last_at to length of words
+            set path to unquote with item last_at of words
+            set r to parse_expr with words, 2
+            emit_node with code, key "node" of r
+            emit_arg with code, "writefile", path
+            add 1 to i
+            skip next
+
+        if head equals "set" and second_word not_equals "key":
+            set to_at to find_to with words
+            set name to second_word
+            set p to to_at + 1
+            set value_count to 0
+            while p less_than= length of words:
+                set r to parse_expr with words, p
+                emit_node with code, key "node" of r
+                add 1 to value_count
+                set p to key "pos" of r
+            if value_count greater_than 1:
+                emit_arg with code, "listn", value_count
+            emit_arg with code, "store", name
+            add 1 to i
+            skip next
+
+        if head equals "set" and second_word equals "key":
+            set to_at to find_to with words
+            set val_r to parse_expr with words, to_at + 1
+            set key_r to parse_expr with words, 3
+            set map_r to parse_expr with words, to_at - 1
+            emit_node with code, key "node" of val_r
+            emit_node with code, key "node" of map_r
+            emit_node with code, key "node" of key_r
+            emit_op with code, "setkey"
+            add 1 to i
+            skip next
+
+        if head equals "add" or head equals "subtract" or head equals "multiply" or head equals "divide":
+            set name to second_word
+            set expr_at to 4
+            set opcode to "add"
+            set last_at to length of words
+            if head equals "add":
+                set name to item last_at of words
+                set expr_at to 2
+                set opcode to "add"
+            if head equals "subtract":
+                set name to item last_at of words
+                set expr_at to 2
+                set opcode to "sub"
+            if head equals "multiply":
+                set opcode to "mul"
+            if head equals "divide":
+                set opcode to "div"
+            set r to parse_expr with words, expr_at
+            emit_node with code, key "node" of r
+            if opcode equals "add":
+                emit_arg with code, "addto", name
+            otherwise:
+                emit_arg with code, "load", name
+                emit_op with code, opcode
+                emit_arg with code, "store", name
+            add 1 to i
+            skip next
+
+        if head equals "give":
+            set r to parse_expr with words, 3
+            emit_node with code, key "node" of r
+            emit_op with code, "ret"
+            add 1 to i
+            skip next
+
+        if head equals "if":
+            set r to parse_expr with words, 2
+            emit_node with code, key "node" of r
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set then_code to key "code" of nested
+            for each ins in then_code:
+                add ins to code
+            set next_i to key "next" of nested
+            emit_arg with code, "jmp", 0
+            set jmp_index to length of code
+            patch_arg with code, jf_index, offset + length of code + 1
+            set i to next_i
+            set after_words to empty list
+            if i less_than= count:
+                set after_words to key "words" of item i of lines
+            if length of after_words greater_than 0:
+                set after_head to item 1 of after_words
+                if after_head equals "otherwise":
+                    set other to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+                    set other_code to key "code" of other
+                    for each ins in other_code:
+                        add ins to code
+                    set i to key "next" of other
+            patch_arg with code, jmp_index, offset + length of code + 1
+            skip next
+
+        if head equals "for":
+            add 1 to loop_depth
+            set fname to "__f" + loop_depth
+            set fname2 to "__n" + loop_depth
+            set varname to item 3 of words
+            set list_r to parse_expr with words, 5
+            emit_node with code, key "node" of list_r
+            emit_arg with code, "store", fname2
+            emit_arg with code, "push", 0
+            emit_arg with code, "store", fname
+            set start_at to offset + length of code + 1
+            push_loop with start_at
+            emit_arg with code, "load", fname
+            emit_arg with code, "load", fname2
+            emit_call with code, "length", 1
+            emit_op with code, "lt"
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            emit_arg with code, "load", fname
+            emit_arg with code, "push", 1
+            emit_op with code, "add"
+            emit_arg with code, "load", fname2
+            emit_call with code, "item", 2
+            emit_arg with code, "store", varname
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set body_code to key "code" of nested
+            for each ins in body_code:
+                add ins to code
+            set f to current_loop
+            if f equals nothing:
+                set f to empty map
+            set key "continue" of f to offset + length of code + 1
+            emit_arg with code, "load", fname
+            emit_arg with code, "push", 1
+            emit_op with code, "add"
+            emit_arg with code, "store", fname
+            emit_arg with code, "jmp", start_at
+            set end_target to offset + length of code + 1
+            patch_arg with code, jf_index, end_target
+            set f to pop_loop
+            patch_continues with code, f, offset
+            patch_breaks with code, f, offset, end_target
+            set i to key "next" of nested
+            subtract 1 from loop_depth
+            skip next
+
+        if head equals "while":
+            set start_at to offset + length of code + 1
+            push_loop with start_at
+            set cond_r to parse_expr with words, 2
+            emit_node with code, key "node" of cond_r
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set body_code to key "code" of nested
+            for each ins in body_code:
+                add ins to code
+            emit_arg with code, "jmp", start_at
+            set end_target to offset + length of code + 1
+            patch_arg with code, jf_index, end_target
+            set f to pop_loop
+            patch_continues with code, f, offset
+            patch_breaks with code, f, offset, end_target
+            set i to key "next" of nested
+            skip next
+
+        if head equals "repeat":
+            add 1 to loop_depth
+            set cname to "__i" + loop_depth
+            set range_form to false
+            set second_word to ""
+            if length of words greater_than 1:
+                set second_word to item 2 of words
+            if second_word equals "with":
+                set range_form to true
+            set from_at to find_word with words, "from"
+            set to_at to find_word with words, "to"
+            set by_at to find_word with words, "by"
+            if by_at equals 0:
+                set by_at to find_word with words, "step"
+            if range_form equals true:
+                set cname to item 3 of words
+                set start_r to parse_expr with words, from_at + 1
+                emit_node with code, key "node" of start_r
+                emit_arg with code, "store", cname
+            otherwise:
+                emit_arg with code, "push", 0
+                emit_arg with code, "store", cname
+            set start_at to offset + length of code + 1
+            push_loop with start_at
+            emit_arg with code, "load", cname
+            if range_form equals true:
+                set end_r to parse_expr with words, to_at + 1
+                emit_node with code, key "node" of end_r
+                emit_op with code, "lte"
+            otherwise:
+                set count_r to parse_expr with words, 2
+                emit_node with code, key "node" of count_r
+                emit_op with code, "lt"
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set body_code to key "code" of nested
+            for each ins in body_code:
+                add ins to code
+            set f to current_loop
+            if f equals nothing:
+                set f to empty map
+            set key "continue" of f to offset + length of code + 1
+            emit_arg with code, "load", cname
+            if by_at greater_than 0:
+                set step_r to parse_expr with words, by_at + 1
+                emit_node with code, key "node" of step_r
+            otherwise:
+                emit_arg with code, "push", 1
+            emit_op with code, "add"
+            emit_arg with code, "store", cname
+            emit_arg with code, "jmp", start_at
+            set end_target to offset + length of code + 1
+            patch_arg with code, jf_index, end_target
+            set f to pop_loop
+            patch_continues with code, f, offset
+            patch_breaks with code, f, offset, end_target
+            set i to key "next" of nested
+            subtract 1 from loop_depth
+            skip next
+
+        set second_word to ""
+        if length of words greater_than 1:
+            set second_word to item 2 of words
+        if second_word equals "with":
+            set call_r to parse_expr with words, 1
+            emit_node with code, key "node" of call_r
+
+        add 1 to i
+
+    set result to empty map
+    set key "code" of result to code
+    set key "next" of result to i
+    give back result
+

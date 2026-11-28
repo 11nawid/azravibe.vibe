@@ -1,3 +1,8 @@
-set src to read file "bootstrap/compiler.vibe"
-set out to compile_source with src
+set files to "bootstrap/core.vibe", "bootstrap/parser.vibe", "bootstrap/emit.vibe", "bootstrap/compile_block.vibe", "bootstrap/compiler.vibe"
+set combined to ""
+for each f in files:
+    set part to read file f
+    set combined to combined + part + "\n"
+write combined to file "bootstrap/tests/combined.vibe"
+set out to compile_source with combined
 write to json out to file "bootstrap/tests/gen2.json"

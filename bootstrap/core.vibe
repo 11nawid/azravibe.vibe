@@ -1,0 +1,253 @@
+note: bootstrap/compiler.vibe — Azra compiler written in Azra.
+note: Round 1: calls, builtins, collections, user functions, control flow.
+
+set loop_depth to 0
+set loop_stack to empty list
+
+define push_loop with start_at:
+    set f to empty map
+    set key "start" of f to start_at
+    set key "continue" of f to start_at
+    set key "breaks" of f to empty list
+    set key "continues" of f to empty list
+    add f to loop_stack
+
+define current_loop:
+    set n to length of loop_stack
+    give back item n of loop_stack
+
+define pop_loop:
+    set n to length of loop_stack
+    set f to item n of loop_stack
+    remove item n from loop_stack
+    give back f
+
+define is_digit_start with t:
+    set cs to split t by ""
+    if length of cs equals 0:
+        give back false
+    set first to item 1 of cs
+    if first equals "-":
+        if length of cs less_than 2:
+            give back false
+        set first to item 2 of cs
+    set digits to split "0123456789" by ""
+    for each d in digits:
+        if first equals d:
+            give back true
+    give back false
+
+define is_quoted with t:
+    if t starts with "\"":
+        give back true
+    give back false
+
+define is_comment with t:
+    if t starts with "#":
+        give back true
+    if t starts with "note:":
+        give back true
+    give back false
+
+define strip_colon with t:
+    set cs to split t by ""
+    set n to length of cs
+    set last to item n of cs
+    if last not_equals ":":
+        give back t
+    set first to item 1 of cs
+    if first equals "\"":
+        set out to ""
+        set i to 1
+        while i less_than n:
+            set out to out + item i of cs
+            add 1 to i
+        give back out
+    set parts to split t by ":"
+    give back item 1 of parts
+
+define is_separator with ch, in_string:
+    if in_string equals true:
+        give back false
+    if ch equals " ":
+        give back true
+    if ch equals ",":
+        give back true
+    give back false
+
+define tokenize_line with raw:
+    set indent to 0
+    set chars_list to split raw by ""
+    for each ch in chars_list:
+        set sp to ch equals " "
+        if sp equals false:
+            stop loop
+        add 1 to indent
+
+    set words to empty list
+    set current to ""
+    set in_string to false
+    set escape_next to false
+    for each ch in chars_list:
+        if escape_next equals true:
+            set current to current + ch
+            set escape_next to false
+            skip next
+        if in_string equals true and ch equals "\\":
+            set current to current + ch
+            set escape_next to true
+            skip next
+        set is_quote to ch equals "\""
+        if is_quote equals true:
+            set in_string to not in_string
+            set current to current + ch
+            skip next
+        set sep to is_separator with ch, in_string
+        if sep equals false:
+            set current to current + ch
+            skip next
+        if length of current equals 0:
+            skip next
+        set commented to is_comment with current
+        if commented equals true:
+            stop loop
+        set fixed to strip_colon with current
+        add fixed to words
+        set current to ""
+
+    if length of current greater_than 0:
+        set commented to is_comment with current
+        if commented equals false:
+            set fixed to strip_colon with current
+            add fixed to words
+
+    set info to empty map
+    set key "indent" of info to indent
+    set key "words" of info to words
+    give back info
+
+define tokenize_source with source:
+    set result to empty list
+    set raw_lines to split source by "\n"
+    for each raw in raw_lines:
+        set info to tokenize_line with raw
+        add info to result
+    give back result
+
+define peek with words, pos:
+    if pos greater_than length of words:
+        give back ""
+    give back item pos of words
+
+define unquote with t:
+    set quoted to is_quoted with t
+    if quoted equals false:
+        give back t
+    set cs to split t by ""
+    if length of cs less_than 2:
+        give back t
+    set last_at to length of cs - 1
+    set inner to ""
+    set i to 2
+    while i less_than= last_at:
+        set inner to inner + item i of cs
+        add 1 to i
+    set out to ""
+    set pending to false
+    for each c in split inner by "":
+        if pending equals true:
+            set mapped to c
+            if c equals "n":
+                set mapped to "\n"
+            if c equals "t":
+                set mapped to "\t"
+            if c equals "r":
+                set mapped to "\r"
+            if c equals "\"":
+                set mapped to "\""
+            if c equals "\\":
+                set mapped to "\\"
+            set out to out + mapped
+            set pending to false
+            skip next
+        if c equals "\\":
+            set pending to true
+            skip next
+        set out to out + c
+    give back out
+
+define pack with node, pos:
+    set r to empty map
+    set key "node" of r to node
+    set key "pos" of r to pos
+    give back r
+
+define leaf with kind, value:
+    set n to empty map
+    set key "kind" of n to kind
+    set key "value" of n to value
+    give back n
+
+define branch with op, left, right:
+    set n to empty map
+    set key "kind" of n to "bin"
+    set key "value" of n to op
+    set key "left" of n to left
+    set key "right" of n to right
+    give back n
+
+define make_call with name, args:
+    set n to empty map
+    set key "kind" of n to "call"
+    set key "value" of n to name
+    set key "args" of n to args
+    give back n
+
+define is_op_word with t:
+    if t equals "and":
+        give back true
+    if t equals "or":
+        give back true
+    if t equals "equals":
+        give back true
+    if t equals "not_equals":
+        give back true
+    if t equals "less_than":
+        give back true
+    if t equals "less_than=":
+        give back true
+    if t equals "greater_than":
+        give back true
+    if t equals "greater_than=":
+        give back true
+    if t equals "with":
+        give back true
+    if t equals "of":
+        give back true
+    if t equals "in":
+        give back true
+    if t equals "by":
+        give back true
+    if t equals "from":
+        give back true
+    if t equals "to":
+        give back true
+    give back false
+
+define parse_args with words, pos:
+    set args to empty list
+    set p to pos
+    while p less_than= length of words:
+        set t to peek with words, p
+        set opw to is_op_word with t
+        if opw equals true:
+            stop loop
+        set r to parse_expr with words, p
+        set arg_node to key "node" of r
+        add arg_node to args
+        set p to key "pos" of r
+    set res to empty map
+    set key "args" of res to args
+    set key "pos" of res to p
+    give back res
+

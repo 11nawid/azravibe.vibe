@@ -1,11 +1,19 @@
 note: Verifies the self-hosting fixed point entirely in Azra.
+note: The compiler is split into small maintainable modules; this test
+note: concatenates them into one source for the fixed-point check.
 use "../compiler.vibe"
 use "../vm.vibe"
 
-set lib to read file "bootstrap/compiler.vibe"
+set files to "bootstrap/core.vibe", "bootstrap/parser.vibe", "bootstrap/emit.vibe", "bootstrap/compile_block.vibe", "bootstrap/compiler.vibe"
+set combined to ""
+for each f in files:
+    set part to read file f
+    set combined to combined + part + "\n"
+write combined to file "bootstrap/tests/combined.vibe"
+set g1 to compile_source with combined
+
 set driver to read file "bootstrap/tests/selfhost_driver.vibe"
-set g1 to compile_source with lib
-set bootstrap to compile_source with lib + "\n" + driver
+set bootstrap to compile_source with combined + "\n" + driver
 execute with bootstrap
 set g2 to parse json read file "bootstrap/tests/gen2.json"
 

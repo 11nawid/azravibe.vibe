@@ -22,6 +22,10 @@ Thumbs.db
 # Logs
 *.log
 
+# Generated self-host test artifacts
+/bootstrap/tests/combined.vibe
+/bootstrap/tests/gen2.json
+
 
 # Added by cargo
 #

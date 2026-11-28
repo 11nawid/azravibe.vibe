@@ -10,20 +10,25 @@ layer. That was a bootstrap implementation, not the final language. The goal is
 that the compiler, VM, standard tooling and apps are Azra programs, with a
 one-time bootstrap used only to run the first compiler.
 
-## Files
+## Files (all under 500 lines)
 
-| File | Purpose |
-| --- | --- |
-| `lexer.vibe` | Azra-written lexer: indentation, strings, comments, commas |
-| `compiler.vibe` | Azra-written parser and bytecode emitter (self-contained) |
-| `vm.vibe` | Azra-written stack VM |
-| `run.vibe` | Compiles and runs `tests/demo.vibe` |
-| `tests/demo.vibe` | Demo program with panels, conditionals and nested loops |
-| `tests/self_test.vibe` | Compiler + VM assertions, all in Azra |
+| File | Lines | Purpose |
+| --- | --- | --- |
+| `core.vibe` | 230 | lexer helpers, tokens, AST builders |
+| `parser.vibe` | 182 | expression parser and precedence |
+| `emit.vibe` | 117 | bytecode instruction emitters |
+| `compile_block.vibe` | 302 | statement compiler, loops, patches |
+| `compiler.vibe` | 91 | program entry point, functions, prologue |
+| `vm.vibe` | 347 | Azra stack VM |
+| `pe.vibe` | 212 | byte primitives, PE headers, imports |
+| `codegen.vibe` | 373 | bytecode to x64 machine code |
+| `protect.vibe` | 17 | HMAC integrity and obfuscation |
+| `run.vibe` | 9 | compiles and runs the demo |
+| `tests/*.vibe` | 1–16 | self-host, feature and native tests |
 
-`compiler.vibe` deliberately contains its own copy of the lexer helpers so it
-can be loaded as a standalone module without depending on module export
-behavior.
+The compiler is split into small modules for maintainability. The self-host
+test concatenates them into a generated source, so no maintained file exceeds
+500 lines.
 
 ## Supported subset (Round 1)
 
