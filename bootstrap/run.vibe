@@ -1,0 +1,11 @@
+note: bootstrap/run.vibe — self-hosted compiler driver.
+note: Run from the repository root: azra run bootstrap/run.vibe
+
+use "compiler.vibe"
+use "vm.vibe"
+
+set source to read file "bootstrap/tests/demo.vibe"
+set code to compile_source with source
+say "compiled", length of code, "instructions with an Azra-written compiler"
+execute with code
+say "done"

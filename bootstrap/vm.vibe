@@ -1,0 +1,120 @@
+note: bootstrap/vm.vibe — stack VM written entirely in Azra (.vibe).
+note: Executes the bytecode produced by compiler.vibe.
+
+define push_to with st, v:
+    set stk to key "stack" of st
+    add v to stk
+
+define pop_from with st:
+    set stk to key "stack" of st
+    set n to length of stk
+    set v to item n of stk
+    remove item n from stk
+    give back v
+
+define truthy with v:
+    set result to v equals true
+    give back result
+
+define binary with st, op:
+    set b to pop_from with st
+    set a to pop_from with st
+    set result to false
+    if op equals "add":
+        set result to a + b
+    if op equals "sub":
+        set result to a - b
+    if op equals "mul":
+        set result to a * b
+    if op equals "div":
+        set result to a / b
+    if op equals "mod":
+        set result to a modulo b
+    if op equals "eq":
+        set result to a equals b
+    if op equals "neq":
+        set result to a not_equals b
+    if op equals "lt":
+        set result to a less_than b
+    if op equals "lte":
+        set result to a less_than= b
+    if op equals "gt":
+        set result to a greater_than b
+    if op equals "gte":
+        set result to a greater_than= b
+    if op equals "and":
+        set x to truthy with a
+        set y to truthy with b
+        set result to x and y
+    if op equals "or":
+        set x to truthy with a
+        set y to truthy with b
+        set result to x or y
+    push_to with st, result
+
+define execute with code:
+    set st to empty map
+    set key "stack" of st to empty list
+    set key "env" of st to empty map
+    set pc to 1
+    while pc less_than= length of code:
+        set ins to item pc of code
+        set op to key "op" of ins
+
+        if op equals "push":
+            push_to with st, key "arg" of ins
+            add 1 to pc
+            skip next
+        if op equals "load":
+            set envmap to key "env" of st
+            set name to key "arg" of ins
+            set value to key name of envmap
+            push_to with st, value
+            add 1 to pc
+            skip next
+        if op equals "store":
+            set envmap to key "env" of st
+            set name to key "arg" of ins
+            set value to pop_from with st
+            set key name of envmap to value
+            add 1 to pc
+            skip next
+        if op equals "add" or op equals "sub" or op equals "mul" or op equals "div" or op equals "mod" or op equals "eq" or op equals "neq" or op equals "lt" or op equals "lte" or op equals "gt" or op equals "gte" or op equals "and" or op equals "or":
+            binary with st, op
+            add 1 to pc
+            skip next
+        if op equals "not":
+            set v to pop_from with st
+            set t to truthy with v
+            set result to not t
+            push_to with st, result
+            add 1 to pc
+            skip next
+        if op equals "neg":
+            set v to pop_from with st
+            set result to 0 - v
+            push_to with st, result
+            add 1 to pc
+            skip next
+        if op equals "jf":
+            set cond to pop_from with st
+            set t to truthy with cond
+            if t equals false:
+                set pc to key "arg" of ins
+                skip next
+            add 1 to pc
+            skip next
+        if op equals "jmp":
+            set pc to key "arg" of ins
+            skip next
+        if op equals "say":
+            set v to pop_from with st
+            say v
+            add 1 to pc
+            skip next
+        if op equals "ret":
+            stop loop
+
+        add 1 to pc
+
+    give back st

@@ -1,0 +1,83 @@
+note: bootstrap/lexer.vibe — lexer for the self-hosted Azra compiler.
+note: Written entirely in Azra (.vibe). No Rust, C, C++ or JavaScript.
+
+define is_comment with t:
+    if t starts with "#":
+        give back true
+    if t starts with "note:":
+        give back true
+    give back false
+
+define is_quoted with t:
+    if t starts with "\"":
+        give back true
+    give back false
+
+define strip_colon with t:
+    set quoted to is_quoted with t
+    if quoted equals true:
+        give back t
+    set parts to split t by ":"
+    if length of parts less_than 2:
+        give back t
+    give back item 1 of parts
+
+define is_separator with ch, in_string:
+    if in_string equals true:
+        give back false
+    if ch equals " ":
+        give back true
+    if ch equals ",":
+        give back true
+    give back false
+
+define tokenize_line with raw:
+    set indent to 0
+    set chars_list to split raw by ""
+    for each ch in chars_list:
+        if ch equals " ":
+            add 1 to indent
+        otherwise:
+            stop loop
+
+    set words to empty list
+    set current to ""
+    set in_string to false
+    for each ch in chars_list:
+        if ch equals "\"":
+            if in_string equals false:
+                set in_string to true
+            otherwise:
+                set in_string to false
+            set current to current + ch
+        otherwise:
+            set sep to is_separator with ch, in_string
+            if sep equals true:
+                if length of current greater_than 0:
+                    set commented to is_comment with current
+                    if commented equals true:
+                        stop loop
+                    set fixed to strip_colon with current
+                    add fixed to words
+                    set current to ""
+            otherwise:
+                set current to current + ch
+
+    if length of current greater_than 0:
+        set commented to is_comment with current
+        if commented equals false:
+            set fixed to strip_colon with current
+            add fixed to words
+
+    set info to empty map
+    set key "indent" of info to indent
+    set key "words" of info to words
+    give back info
+
+define tokenize_source with source:
+    set result to empty list
+    set raw_lines to split source by "\n"
+    for each raw in raw_lines:
+        set info to tokenize_line with raw
+        add info to result
+    give back result

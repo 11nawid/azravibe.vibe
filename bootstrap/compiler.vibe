@@ -1,0 +1,466 @@
+note: bootstrap/compiler.vibe — Azra compiler written in Azra.
+note: Compiles a supported subset of .vibe into a flat bytecode list.
+
+set loop_depth to 0
+
+define is_digit_start with t:
+    set cs to split t by ""
+    if length of cs equals 0:
+        give back false
+    set first to item 1 of cs
+    if first equals "-":
+        if length of cs less_than 2:
+            give back false
+        set first to item 2 of cs
+    set digits to split "0123456789" by ""
+    for each d in digits:
+        if first equals d:
+            give back true
+    give back false
+
+define is_quoted with t:
+    if t starts with "\"":
+        give back true
+    give back false
+
+define is_comment with t:
+    if t starts with "#":
+        give back true
+    if t starts with "note:":
+        give back true
+    give back false
+
+define strip_colon with t:
+    set quoted to is_quoted with t
+    if quoted equals true:
+        give back t
+    set parts to split t by ":"
+    if length of parts less_than 2:
+        give back t
+    give back item 1 of parts
+
+define is_separator with ch, in_string:
+    if in_string equals true:
+        give back false
+    if ch equals " ":
+        give back true
+    if ch equals ",":
+        give back true
+    give back false
+
+define tokenize_line with raw:
+    set indent to 0
+    set chars_list to split raw by ""
+    for each ch in chars_list:
+        if ch equals " ":
+            add 1 to indent
+        otherwise:
+            stop loop
+
+    set words to empty list
+    set current to ""
+    set in_string to false
+    for each ch in chars_list:
+        if ch equals "\"":
+            if in_string equals false:
+                set in_string to true
+            otherwise:
+                set in_string to false
+            set current to current + ch
+        otherwise:
+            set sep to is_separator with ch, in_string
+            if sep equals true:
+                if length of current greater_than 0:
+                    set commented to is_comment with current
+                    if commented equals true:
+                        stop loop
+                    set fixed to strip_colon with current
+                    add fixed to words
+                    set current to ""
+            otherwise:
+                set current to current + ch
+
+    if length of current greater_than 0:
+        set commented to is_comment with current
+        if commented equals false:
+            set fixed to strip_colon with current
+            add fixed to words
+
+    set info to empty map
+    set key "indent" of info to indent
+    set key "words" of info to words
+    give back info
+
+define tokenize_source with source:
+    set result to empty list
+    set raw_lines to split source by "\n"
+    for each raw in raw_lines:
+        set info to tokenize_line with raw
+        add info to result
+    give back result
+
+define peek with words, pos:
+    if pos greater_than length of words:
+        give back ""
+    give back item pos of words
+
+define unquote with t:
+    set parts to split t by "\""
+    if length of parts less_than 3:
+        give back t
+    give back item 2 of parts
+
+define pack with node, pos:
+    set r to empty map
+    set key "node" of r to node
+    set key "pos" of r to pos
+    give back r
+
+define leaf with kind, value:
+    set n to empty map
+    set key "kind" of n to kind
+    set key "value" of n to value
+    give back n
+
+define branch with op, left, right:
+    set n to empty map
+    set key "kind" of n to "bin"
+    set key "value" of n to op
+    set key "left" of n to left
+    set key "right" of n to right
+    give back n
+
+define parse_primary with words, pos:
+    set t to peek with words, pos
+    set next to pos + 1
+    if t equals "true":
+        set n to leaf with "lit", true
+        give back pack with n, next
+    if t equals "false":
+        set n to leaf with "lit", false
+        give back pack with n, next
+    set quoted to is_quoted with t
+    if quoted equals true:
+        set v to unquote with t
+        set n to leaf with "lit", v
+        give back pack with n, next
+    set numeric to is_digit_start with t
+    if numeric equals true:
+        set v to parse json t
+        set n to leaf with "lit", v
+        give back pack with n, next
+    set n to leaf with "var", t
+    give back pack with n, next
+
+define parse_mul with words, pos:
+    set left_r to parse_primary with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "*" or op equals "/" or op equals "modulo":
+        set right_r to parse_primary with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_add with words, pos:
+    set left_r to parse_mul with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "+" or op equals "-":
+        set right_r to parse_mul with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_cmp with words, pos:
+    set left_r to parse_add with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    set known to false
+    if op equals "equals":
+        set known to true
+    if op equals "not_equals":
+        set known to true
+    if op equals "less_than":
+        set known to true
+    if op equals "less_than=":
+        set known to true
+    if op equals "greater_than":
+        set known to true
+    if op equals "greater_than=":
+        set known to true
+    if known equals true:
+        set right_r to parse_add with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+    give back pack with left, p
+
+define parse_and with words, pos:
+    set left_r to parse_cmp with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "and":
+        set right_r to parse_cmp with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_or with words, pos:
+    set left_r to parse_and with words, pos
+    set left to key "node" of left_r
+    set p to key "pos" of left_r
+    set op to peek with words, p
+    while op equals "or":
+        set right_r to parse_and with words, p + 1
+        set right to key "node" of right_r
+        set p to key "pos" of right_r
+        set left to branch with op, left, right
+        set op to peek with words, p
+    give back pack with left, p
+
+define parse_expr with words, pos:
+    set t to peek with words, pos
+    if t equals "not":
+        set r to parse_or with words, pos + 1
+        set n to empty map
+        set key "kind" of n to "not"
+        set key "value" of n to key "node" of r
+        set p to key "pos" of r
+        give back pack with n, p
+    give back parse_or with words, pos
+
+define emit_op with code, op:
+    set ins to empty map
+    set key "op" of ins to op
+    add ins to code
+
+define emit_arg with code, op, arg:
+    set ins to empty map
+    set key "op" of ins to op
+    set key "arg" of ins to arg
+    add ins to code
+
+define op_code with op:
+    if op equals "+":
+        give back "add"
+    if op equals "-":
+        give back "sub"
+    if op equals "*":
+        give back "mul"
+    if op equals "/":
+        give back "div"
+    if op equals "modulo":
+        give back "mod"
+    if op equals "equals":
+        give back "eq"
+    if op equals "not_equals":
+        give back "neq"
+    if op equals "less_than":
+        give back "lt"
+    if op equals "less_than=":
+        give back "lte"
+    if op equals "greater_than":
+        give back "gt"
+    if op equals "greater_than=":
+        give back "gte"
+    if op equals "and":
+        give back "and"
+    if op equals "or":
+        give back "or"
+    if op equals "add":
+        give back "add"
+    if op equals "subtract":
+        give back "sub"
+    if op equals "multiply":
+        give back "mul"
+    if op equals "divide":
+        give back "div"
+    give back op
+
+define emit_node with code, node:
+    set kind to key "kind" of node
+    set value to key "value" of node
+    if kind equals "lit":
+        emit_arg with code, "push", value
+        give back nothing
+    if kind equals "var":
+        emit_arg with code, "load", value
+        give back nothing
+    if kind equals "not":
+        emit_node with code, value
+        emit_op with code, "not"
+        give back nothing
+    set left_node to key "left" of node
+    set right_node to key "right" of node
+    emit_node with code, left_node
+    emit_node with code, right_node
+    set opcode to op_code with value
+    emit_op with code, opcode
+
+define find_to with words:
+    repeat with i from 1 to length of words:
+        set t to item i of words
+        if t equals "to":
+            give back i
+    give back 0
+
+define patch_arg with code, index, target:
+    set ins to item index of code
+    set key "arg" of ins to target
+    set item index of code to ins
+
+define compile_block with lines, start, base_indent, offset:
+    set code to empty list
+    set i to start
+    set count to length of lines
+    while i less_than= count:
+        set ln to item i of lines
+        set ind to key "indent" of ln
+        if ind less_than base_indent:
+            stop loop
+        set words to key "words" of ln
+        if length of words equals 0:
+            add 1 to i
+            skip next
+        if ind greater_than base_indent:
+            add 1 to i
+            skip next
+
+        set head to item 1 of words
+
+        if head equals "say":
+            set p to 2
+            set arg_count to 0
+            while p less_than= length of words:
+                set r to parse_expr with words, p
+                set expr_node to key "node" of r
+                if arg_count greater_than 0:
+                    emit_arg with code, "push", " "
+                    emit_op with code, "add"
+                emit_node with code, expr_node
+                if arg_count greater_than 0:
+                    emit_op with code, "add"
+                set p to key "pos" of r
+                add 1 to arg_count
+            emit_op with code, "say"
+            add 1 to i
+            skip next
+
+        if head equals "set":
+            set to_at to find_to with words
+            set name to item 2 of words
+            set r to parse_expr with words, to_at + 1
+            emit_node with code, key "node" of r
+            emit_arg with code, "store", name
+            add 1 to i
+            skip next
+
+        if head equals "add" or head equals "subtract" or head equals "multiply" or head equals "divide":
+            set name to item 2 of words
+            set expr_at to 4
+            set opcode to "add"
+            set last_at to length of words
+            if head equals "add":
+                set name to item last_at of words
+                set expr_at to 2
+                set opcode to "add"
+            if head equals "subtract":
+                set name to item last_at of words
+                set expr_at to 2
+                set opcode to "sub"
+            if head equals "multiply":
+                set opcode to "mul"
+            if head equals "divide":
+                set opcode to "div"
+            emit_arg with code, "load", name
+            set r to parse_expr with words, expr_at
+            emit_node with code, key "node" of r
+            emit_op with code, opcode
+            emit_arg with code, "store", name
+            add 1 to i
+            skip next
+
+        if head equals "give":
+            set r to parse_expr with words, 3
+            emit_node with code, key "node" of r
+            emit_op with code, "ret"
+            add 1 to i
+            skip next
+
+        if head equals "if":
+            set r to parse_expr with words, 2
+            emit_node with code, key "node" of r
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set then_code to key "code" of nested
+            for each ins in then_code:
+                add ins to code
+            set next_i to key "next" of nested
+            emit_arg with code, "jmp", 0
+            set jmp_index to length of code
+            patch_arg with code, jf_index, offset + length of code + 1
+            set i to next_i
+            set after_words to empty list
+            if i less_than= count:
+                set after_words to key "words" of item i of lines
+            if length of after_words greater_than 0:
+                set after_head to item 1 of after_words
+                if after_head equals "otherwise":
+                    set other to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+                    set other_code to key "code" of other
+                    for each ins in other_code:
+                        add ins to code
+                    set i to key "next" of other
+            patch_arg with code, jmp_index, offset + length of code + 1
+            skip next
+
+        if head equals "repeat":
+            add 1 to loop_depth
+            set cname to "__i" + loop_depth
+            emit_arg with code, "push", 0
+            emit_arg with code, "store", cname
+            set start_at to offset + length of code + 1
+            emit_arg with code, "load", cname
+            set count_r to parse_expr with words, 2
+            emit_node with code, key "node" of count_r
+            emit_op with code, "lt"
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set body_code to key "code" of nested
+            for each ins in body_code:
+                add ins to code
+            emit_arg with code, "load", cname
+            emit_arg with code, "push", 1
+            emit_op with code, "add"
+            emit_arg with code, "store", cname
+            emit_arg with code, "jmp", start_at
+            patch_arg with code, jf_index, offset + length of code + 1
+            set i to key "next" of nested
+            subtract 1 from loop_depth
+            skip next
+
+        add 1 to i
+
+    set result to empty map
+    set key "code" of result to code
+    set key "next" of result to i
+    give back result
+
+define compile_source with source:
+    set lines to tokenize_source with source
+    set loop_depth to 0
+    set whole to compile_block with lines, 1, 0, 0
+    give back key "code" of whole

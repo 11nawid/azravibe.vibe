@@ -1,0 +1,17 @@
+note: Self-hosted compiler test — compiler, bytecode and VM are all Azra code.
+use "../compiler.vibe"
+use "../vm.vibe"
+
+set source to "set x to 2\nmultiply x by 3\nadd 4 to x\nset y to x + 1\nset flag to y greater_than 10\nif flag:\n    set result to \"yes\"\notherwise:\n    set result to \"no\"\nset total to 0\nrepeat 4 times:\n    add 2 to total"
+
+set code to compile_source with source
+set st to execute with code
+set envmap to key "env" of st
+
+assert equals key "x" of envmap, 10
+assert equals key "y" of envmap, 11
+assert equals key "flag" of envmap, true
+assert equals key "result" of envmap, "yes"
+assert equals key "total" of envmap, 8
+
+say "self-hosted compiler test passed"

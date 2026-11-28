@@ -1,0 +1,12 @@
+note: Demo compiled by the Azra-written compiler and run on the Azra-written VM.
+set x to 5
+add 3 to x
+say x
+if x greater_than 2:
+    say "big"
+otherwise:
+    say "small"
+set i to 0
+repeat 3 times:
+    add 1 to i
+    say i
