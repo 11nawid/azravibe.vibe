@@ -222,6 +222,19 @@ define execute with code:
         if op equals "jmp":
             set pc to key "arg" of ins
             skip next
+        if op equals "addto":
+            set envmap to key "env" of st
+            set name to key "arg" of ins
+            set v to pop_from with st
+            set cur to key name of envmap
+            set js to to json cur
+            if js starts with "[":
+                add v to cur
+            otherwise:
+                set cur to cur + v
+                set key name of envmap to cur
+            add 1 to pc
+            skip next
         if op equals "listn":
             set cnt to key "arg" of ins
             set popped to empty list

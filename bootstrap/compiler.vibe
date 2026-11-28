@@ -534,11 +534,14 @@ define compile_block with lines, start, base_indent, offset:
                 set opcode to "mul"
             if head equals "divide":
                 set opcode to "div"
-            emit_arg with code, "load", name
             set r to parse_expr with words, expr_at
             emit_node with code, key "node" of r
-            emit_op with code, opcode
-            emit_arg with code, "store", name
+            if opcode equals "add":
+                emit_arg with code, "addto", name
+            otherwise:
+                emit_arg with code, "load", name
+                emit_op with code, opcode
+                emit_arg with code, "store", name
             add 1 to i
             skip next
 
@@ -575,6 +578,43 @@ define compile_block with lines, start, base_indent, offset:
                         add ins to code
                     set i to key "next" of other
             patch_arg with code, jmp_index, offset + length of code + 1
+            skip next
+
+        if head equals "for":
+            add 1 to loop_depth
+            set fname to "__f" + loop_depth
+            set fname2 to "__n" + loop_depth
+            set varname to item 3 of words
+            set list_r to parse_expr with words, 5
+            emit_node with code, key "node" of list_r
+            emit_arg with code, "store", fname2
+            emit_arg with code, "push", 0
+            emit_arg with code, "store", fname
+            set start_at to offset + length of code + 1
+            emit_arg with code, "load", fname
+            emit_arg with code, "load", fname2
+            emit_call with code, "length", 1
+            emit_op with code, "lt"
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            emit_arg with code, "load", fname
+            emit_arg with code, "push", 1
+            emit_op with code, "add"
+            emit_arg with code, "load", fname2
+            emit_call with code, "item", 2
+            emit_arg with code, "store", varname
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set body_code to key "code" of nested
+            for each ins in body_code:
+                add ins to code
+            emit_arg with code, "load", fname
+            emit_arg with code, "push", 1
+            emit_op with code, "add"
+            emit_arg with code, "store", fname
+            emit_arg with code, "jmp", start_at
+            patch_arg with code, jf_index, offset + length of code + 1
+            set i to key "next" of nested
+            subtract 1 from loop_depth
             skip next
 
         if head equals "while":
