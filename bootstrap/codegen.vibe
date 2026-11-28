@@ -1,0 +1,119 @@
+note: bootstrap/codegen.vibe — native code and PE emitter written in Azra.
+note: Round 2 milestone 1: byte primitives and a minimal valid PE32+ image.
+
+define emit_byte with out, b:
+    set v to b modulo 256
+    add v to out
+
+define emit_word with out, w:
+    set low to w modulo 256
+    emit_byte with out, low
+    set high to w / 256 modulo 256
+    emit_byte with out, high
+
+define emit_dword with out, d:
+    set b0 to d modulo 256
+    emit_byte with out, b0
+    set d1 to d / 256
+    set b1 to d1 modulo 256
+    emit_byte with out, b1
+    set d2 to d1 / 256
+    set b2 to d2 modulo 256
+    emit_byte with out, b2
+    set d3 to d2 / 256
+    set b3 to d3 modulo 256
+    emit_byte with out, b3
+
+define emit_qword with out, q:
+    emit_dword with out, q modulo 4294967296
+    emit_dword with out, q / 4294967296
+
+define pad_to with out, target:
+    while length of out less_than target:
+        emit_byte with out, 0
+
+define emit_ret with out:
+    emit_byte with out, 195
+
+define build_minimal_pe with code:
+    set out to empty list
+
+    note: --- DOS header ---
+    emit_byte with out, 77
+    emit_byte with out, 90
+    pad_to with out, 60
+    emit_dword with out, 128
+    pad_to with out, 128
+
+    note: --- PE signature ---
+    emit_byte with out, 80
+    emit_byte with out, 69
+    emit_byte with out, 0
+    emit_byte with out, 0
+
+    note: --- COFF header ---
+    emit_word with out, 34404
+    emit_word with out, 1
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_word with out, 240
+    emit_word with out, 34
+
+    note: --- Optional header (PE32+) ---
+    emit_word with out, 523
+    emit_byte with out, 14
+    emit_byte with out, 0
+    emit_dword with out, 512
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_dword with out, 4096
+    emit_dword with out, 4096
+    emit_qword with out, 5368709120
+    emit_dword with out, 4096
+    emit_dword with out, 512
+    emit_word with out, 6
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_word with out, 6
+    emit_word with out, 0
+    emit_dword with out, 0
+    emit_dword with out, 8192
+    emit_dword with out, 512
+    emit_dword with out, 0
+    emit_word with out, 3
+    emit_word with out, 0
+    emit_qword with out, 1048576
+    emit_qword with out, 4096
+    emit_qword with out, 1048576
+    emit_qword with out, 4096
+    emit_dword with out, 0
+    emit_dword with out, 16
+    repeat 16 times:
+        emit_qword with out, 0
+
+    note: --- .text section header ---
+    emit_byte with out, 46
+    emit_byte with out, 116
+    emit_byte with out, 101
+    emit_byte with out, 120
+    emit_byte with out, 116
+    emit_byte with out, 0
+    emit_byte with out, 0
+    emit_byte with out, 0
+    emit_dword with out, 512
+    emit_dword with out, 4096
+    emit_dword with out, 512
+    emit_dword with out, 512
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_dword with out, 1610612768
+
+    pad_to with out, 512
+    for each b in code:
+        emit_byte with out, b
+    pad_to with out, 1024
+    give back out

@@ -1,0 +1,19 @@
+note: bootstrap/protect.vibe — bytecode protection written in Azra.
+note: Integrity: HMAC-SHA256 with a build secret detects any tampering.
+note: Obfuscation: base64url encoding hides plain JSON at a glance.
+note: This raises the bar; it is NOT unbreakable security.
+
+define seal_text with text, secret:
+    set mac to hmac_sha256 with secret, text
+    set box to empty map
+    set key "payload" of box to base64url_encode with text
+    set key "mac" of box to mac
+    give back box
+
+define unseal_text with box, secret:
+    set payload to key "payload" of box
+    set text to base64url_decode with payload
+    set mac to hmac_sha256 with secret, text
+    if mac not_equals key "mac" of box:
+        fail with "Azra integrity check failed: bundle was modified"
+    give back text
