@@ -1,6 +1,61 @@
 note: bootstrap/codegen.vibe — native code and PE emitter written in Azra.
 note: Round 2 milestone 1: byte primitives and a minimal valid PE32+ image.
 
+set ascii_map to empty map
+set key " " of ascii_map to 32
+set key "A" of ascii_map to 65
+set key "B" of ascii_map to 66
+set key "C" of ascii_map to 67
+set key "D" of ascii_map to 68
+set key "E" of ascii_map to 69
+set key "F" of ascii_map to 70
+set key "G" of ascii_map to 71
+set key "H" of ascii_map to 72
+set key "I" of ascii_map to 73
+set key "J" of ascii_map to 74
+set key "K" of ascii_map to 75
+set key "L" of ascii_map to 76
+set key "M" of ascii_map to 77
+set key "N" of ascii_map to 78
+set key "O" of ascii_map to 79
+set key "P" of ascii_map to 80
+set key "Q" of ascii_map to 81
+set key "R" of ascii_map to 82
+set key "S" of ascii_map to 83
+set key "T" of ascii_map to 84
+set key "U" of ascii_map to 85
+set key "V" of ascii_map to 86
+set key "W" of ascii_map to 87
+set key "X" of ascii_map to 88
+set key "Y" of ascii_map to 89
+set key "Z" of ascii_map to 90
+set key "a" of ascii_map to 97
+set key "b" of ascii_map to 98
+set key "c" of ascii_map to 99
+set key "d" of ascii_map to 100
+set key "e" of ascii_map to 101
+set key "f" of ascii_map to 102
+set key "g" of ascii_map to 103
+set key "h" of ascii_map to 104
+set key "i" of ascii_map to 105
+set key "j" of ascii_map to 106
+set key "k" of ascii_map to 107
+set key "l" of ascii_map to 108
+set key "m" of ascii_map to 109
+set key "n" of ascii_map to 110
+set key "o" of ascii_map to 111
+set key "p" of ascii_map to 112
+set key "q" of ascii_map to 113
+set key "r" of ascii_map to 114
+set key "s" of ascii_map to 115
+set key "t" of ascii_map to 116
+set key "u" of ascii_map to 117
+set key "v" of ascii_map to 118
+set key "w" of ascii_map to 119
+set key "x" of ascii_map to 120
+set key "y" of ascii_map to 121
+set key "z" of ascii_map to 122
+
 define emit_byte with out, b:
     set v to b modulo 256
     add v to out
@@ -300,6 +355,260 @@ define build_console_exe with message:
     emit_dword with out, 3221225504
     pad_to with out, 512
     for each b in code:
+        emit_byte with out, b
+    for each b in idata:
+        emit_byte with out, b
+    give back out
+
+define emit_movabs_rax with code, value:
+    emit_byte with code, 72
+    emit_byte with code, 184
+    emit_qword with code, value
+
+define emit_movabs_rcx with code, value:
+    emit_byte with code, 72
+    emit_byte with code, 185
+    emit_qword with code, value
+
+define emit_movabs_r9 with code, value:
+    emit_byte with code, 73
+    emit_byte with code, 185
+    emit_qword with code, value
+
+define emit_load_rax_addr with code, addr:
+    emit_byte with code, 72
+    emit_byte with code, 161
+    emit_qword with code, addr
+
+define emit_store_rax_addr with code, addr:
+    emit_byte with code, 72
+    emit_byte with code, 163
+    emit_qword with code, addr
+
+define emit_load_rip_rax with code, target_rva:
+    set here to 4096 + length of code
+    set adj to here + 6
+    set disp to target_rva - adj
+    emit_byte with code, 72
+    emit_byte with code, 139
+    emit_byte with code, 5
+    emit_dword with code, disp
+
+define emit_store_rip_rax with code, target_rva:
+    set here to 4096 + length of code
+    set adj to here + 6
+    set disp to target_rva - adj
+    emit_byte with code, 72
+    emit_byte with code, 137
+    emit_byte with code, 5
+    emit_dword with code, disp
+
+define collect_strings with code, strmap, strdata, base:
+    for each ins in code:
+        set op to key "op" of ins
+        if op equals "push":
+            set v to key "arg" of ins
+            set js to to json v
+            if js starts with "\"":
+                set known to strmap has key v
+                if known equals false:
+                    set addr to base + length of strdata
+                    set key v of strmap to addr
+                    set cs to split v by ""
+                    for each c in cs:
+                        emit_ascii with strdata, 0
+                    note: placeholder replaced below
+    give back strmap
+
+define emit_native_bytecode with code, strmap, handle_slot, written_slot, iat_write, iat_exit:
+    set native to empty list
+    emit_byte with native, 72
+    emit_byte with native, 131
+    emit_byte with native, 236
+    emit_byte with native, 40
+    emit_byte with native, 185
+    emit_dword with native, 4294967285
+    emit_rip_call with native, 8256
+    emit_store_rip_rax with native, 8448
+    for each ins in code:
+        set op to key "op" of ins
+        if op equals "push":
+            set v to key "arg" of ins
+            set js to to json v
+            if js starts with "\"":
+                set addr to 0
+                if strmap has key v:
+                    set addr to key v of strmap
+                set slen to length of v
+                emit_movabs_rax with native, addr
+                emit_byte with native, 80
+                emit_movabs_rax with native, slen
+                emit_byte with native, 80
+            otherwise:
+                emit_movabs_rax with native, v
+                emit_byte with native, 80
+        if op equals "say":
+            emit_byte with native, 88
+            emit_byte with native, 90
+            emit_byte with native, 73
+            emit_byte with native, 137
+            emit_byte with native, 192
+            emit_load_rip_rax with native, 8448
+            emit_byte with native, 72
+            emit_byte with native, 137
+            emit_byte with native, 193
+            emit_rip_lea with native, 76, 13, 8456
+            emit_byte with native, 72
+            emit_byte with native, 199
+            emit_byte with native, 68
+            emit_byte with native, 36
+            emit_byte with native, 32
+            emit_byte with native, 0
+            emit_byte with native, 0
+            emit_byte with native, 0
+            emit_byte with native, 0
+            emit_rip_call with native, iat_write
+        if op equals "add" or op equals "sub" or op equals "mul":
+            emit_byte with native, 91
+            emit_byte with native, 88
+            if op equals "add":
+                emit_byte with native, 72
+                emit_byte with native, 1
+                emit_byte with native, 216
+            if op equals "sub":
+                emit_byte with native, 72
+                emit_byte with native, 41
+                emit_byte with native, 216
+            if op equals "mul":
+                emit_byte with native, 72
+                emit_byte with native, 15
+                emit_byte with native, 195
+            emit_byte with native, 80
+        if op equals "store":
+            emit_byte with native, 88
+            set name to key "arg" of ins
+            set slot to 5368717568
+            if name equals "x":
+                set slot to 5368717568
+            emit_store_rip_rax with native, 8448
+        if op equals "load":
+            emit_load_rip_rax with native, 8448
+            emit_byte with native, 80
+    emit_byte with native, 49
+    emit_byte with native, 201
+    emit_rip_call with native, iat_exit
+    emit_byte with native, 72
+    emit_byte with native, 131
+    emit_byte with native, 196
+    emit_byte with native, 40
+    emit_byte with native, 195
+    give back native
+
+define build_bytecode_exe with code:
+    set strmap to empty map
+    set strdata to empty list
+    set native0 to emit_native_bytecode with code, strmap, 5368717568, 5368717576, 8264, 8272
+    set strbase to 4096 + length of native0
+    set strmap to empty map
+    for each ins in code:
+        set op to key "op" of ins
+        if op equals "push":
+            set v to key "arg" of ins
+            set js to to json v
+            if js starts with "\"":
+                set known to strmap has key v
+                if known equals false:
+                    set addr to 5368709120 + strbase + length of strdata + 16
+                    set key v of strmap to addr
+                    for each c in split v by "":
+                        set bc to key c of ascii_map
+                        emit_byte with strdata, bc
+    set native to emit_native_bytecode with code, strmap, 5368717568, 5368717576, 8264, 8272
+    set data to empty list
+    for each b in native:
+        emit_byte with data, b
+    emit_qword with data, 0
+    emit_qword with data, 0
+    for each b in strdata:
+        emit_byte with data, b
+    pad_to with data, 512
+    set idata to build_imports
+    set out to empty list
+    emit_byte with out, 77
+    emit_byte with out, 90
+    pad_to with out, 60
+    emit_dword with out, 128
+    pad_to with out, 128
+    emit_byte with out, 80
+    emit_byte with out, 69
+    emit_byte with out, 0
+    emit_byte with out, 0
+    emit_word with out, 34404
+    emit_word with out, 2
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_word with out, 240
+    emit_word with out, 34
+    emit_word with out, 523
+    emit_byte with out, 14
+    emit_byte with out, 0
+    emit_dword with out, 512
+    emit_dword with out, 512
+    emit_dword with out, 0
+    emit_dword with out, 4096
+    emit_dword with out, 4096
+    emit_qword with out, 5368709120
+    emit_dword with out, 4096
+    emit_dword with out, 512
+    emit_word with out, 6
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_word with out, 6
+    emit_word with out, 0
+    emit_dword with out, 0
+    emit_dword with out, 12288
+    emit_dword with out, 512
+    emit_dword with out, 0
+    emit_word with out, 3
+    emit_word with out, 0
+    emit_qword with out, 1048576
+    emit_qword with out, 4096
+    emit_qword with out, 1048576
+    emit_qword with out, 4096
+    emit_dword with out, 0
+    emit_dword with out, 16
+    repeat with di from 1 to 16:
+        if di equals 2:
+            emit_dword with out, 8192
+            emit_dword with out, 20
+        otherwise:
+            emit_qword with out, 0
+    set tname to 46, 116, 101, 120, 116, 0, 0, 0
+    emit_ascii with out, tname
+    emit_dword with out, 512
+    emit_dword with out, 4096
+    emit_dword with out, 512
+    emit_dword with out, 512
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_dword with out, 3758096416
+    set iname to 46, 105, 100, 97, 116, 97, 0, 0
+    emit_ascii with out, iname
+    emit_dword with out, 512
+    emit_dword with out, 8192
+    emit_dword with out, 512
+    emit_dword with out, 1024
+    emit_dword with out, 0
+    emit_dword with out, 0
+    emit_word with out, 0
+    emit_word with out, 0
+    emit_dword with out, 3221225504
+    pad_to with out, 512
+    for each b in data:
         emit_byte with out, b
     for each b in idata:
         emit_byte with out, b

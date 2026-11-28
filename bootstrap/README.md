@@ -75,6 +75,11 @@ AZRA NATIVE HELLO
 exit:0
 ```
 
+`bootstrap/tests/bytecode_native.vibe` closes the loop: `.vibe` source is
+compiled to bytecode by the self-hosted compiler, then translated to x64
+machine code and emitted as a PE. The generated EXE prints
+`AZRA NATIVE BYTECODE` and exits 0.
+
 `protect.vibe` adds HMAC-SHA256 integrity + base64url obfuscation to bytecode
 bundles. See `SECURITY.md` for the honest limits.
 

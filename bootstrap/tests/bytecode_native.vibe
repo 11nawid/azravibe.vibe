@@ -1,0 +1,11 @@
+note: Compiles .vibe source to bytecode, then to a native PE, all in Azra.
+use "../compiler.vibe"
+use "../codegen.vibe"
+
+set src to read file "bootstrap/tests/hello.vibe"
+set code to compile_source with src
+set pe to build_bytecode_exe with code
+assert equals length of pe, 1536
+assert equals item 1 of pe, 77
+assert equals item 2 of pe, 90
+say "bytecode-to-native test passed:", length of code, "instructions,", length of pe, "bytes"
