@@ -1,0 +1,11 @@
+note: Verifies the Azra-written PE/code emitter produces a complete image.
+use "../codegen.vibe"
+
+set msg to 65, 90, 82, 65, 32, 78, 65, 84, 73, 86, 69, 32, 72, 69, 76, 76, 79, 10
+set pe to build_console_exe with msg
+assert equals length of pe, 1536
+assert equals item 1 of pe, 77
+assert equals item 2 of pe, 90
+assert equals item 129 of pe, 80
+assert equals item 130 of pe, 69
+say "native PE emitter test passed:", length of pe, "bytes"

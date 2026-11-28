@@ -62,8 +62,23 @@ function calls in the VM, `remove item` statements, correct `strip_colon` for
 quoted strings containing colons, shared global state across VM calls, and
 proper break/continue patching.
 
-Round 2 (native code emitter / PE / standalone EXE) and Round 3 (native Windows
-GUI, Studio, Player) have not started yet.
+## Round 2 progress
+
+`codegen.vibe` now emits a complete **1536-byte PE32+ console executable**
+entirely in Azra: DOS/PE/COFF headers, optional header, import directory for
+`kernel32.dll` (`GetStdHandle`, `WriteFile`, `ExitProcess`), `.text` and
+`.idata` sections, and x64 machine code that prints a message and exits 0.
+Verified by `bootstrap/tests/native.vibe` and by running the generated EXE:
+
+```
+AZRA NATIVE HELLO
+exit:0
+```
+
+`protect.vibe` adds HMAC-SHA256 integrity + base64url obfuscation to bytecode
+bundles. See `SECURITY.md` for the honest limits.
+
+Round 3 (native Windows GUI, Studio, Player) has not started yet.
 
 Rounds 2 and 3 (native code emitter / PE / native Windows GUI) have not
 started.
