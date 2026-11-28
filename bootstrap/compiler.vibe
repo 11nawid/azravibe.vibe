@@ -136,13 +136,18 @@ define unquote with t:
     if quoted equals false:
         give back t
     set tc to split t by ""
-    set tc to split t by ""
-    set lastc to item length of tc of tc
-    if length of tc less_than 2:
+    set total to length of tc
+    if total less_than 2:
         give back t
+    set lastc to item total of tc
     if lastc not_equals "\"":
         give back t
-    give back parse json t
+    set last_at to total - 1
+    set inner to ""
+    repeat with i from 2 to last_at:
+        set inner to inner + item i of tc
+    set rebuilt to "\"" + inner + "\""
+    give back parse json rebuilt
 
 define pack with node, pos:
     set r to empty map
@@ -507,6 +512,10 @@ define patch_arg with code, index, target:
     set item index of code to ins
 
 define patch_continues with code, f, base:
+    if f equals nothing:
+        give back nothing
+    if f equals false:
+        give back nothing
     set cs to key "continues" of f
     set target to key "continue" of f
     for each ci in cs:
@@ -514,6 +523,10 @@ define patch_continues with code, f, base:
         patch_arg with code, idx, target
 
 define patch_breaks with code, f, base, target:
+    if f equals nothing:
+        give back nothing
+    if f equals false:
+        give back nothing
     set brs to key "breaks" of f
     for each bi in brs:
         set idx to bi - base
@@ -540,6 +553,9 @@ define compile_block with lines, start, base_indent, offset:
 
         if head equals "skip":
             set f to current_loop
+            if f equals nothing:
+                add 1 to i
+                skip next
             set ci to offset + length of code + 1
             emit_arg with code, "jmp", 0
             set cs to key "continues" of f
@@ -549,6 +565,9 @@ define compile_block with lines, start, base_indent, offset:
 
         if head equals "stop":
             set f to current_loop
+            if f equals nothing:
+                add 1 to i
+                skip next
             set bi to offset + length of code + 1
             emit_arg with code, "jmp", 0
             set brs to key "breaks" of f
@@ -694,6 +713,8 @@ define compile_block with lines, start, base_indent, offset:
             for each ins in body_code:
                 add ins to code
             set f to current_loop
+            if f equals nothing:
+                set f to empty map
             set key "continue" of f to offset + length of code + 1
             emit_arg with code, "load", fname
             emit_arg with code, "push", 1
@@ -769,6 +790,8 @@ define compile_block with lines, start, base_indent, offset:
             for each ins in body_code:
                 add ins to code
             set f to current_loop
+            if f equals nothing:
+                set f to empty map
             set key "continue" of f to offset + length of code + 1
             emit_arg with code, "load", cname
             if by_at greater_than 0:
