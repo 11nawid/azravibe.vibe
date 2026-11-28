@@ -1,5 +1,5 @@
-note: bootstrap/vm.vibe — stack VM written entirely in Azra (.vibe).
-note: Executes the bytecode produced by compiler.vibe.
+note: bootstrap/vm.vibe — Azra-written stack VM.
+note: Round 1: calls, user functions, builtins, collections, file IO.
 
 define push_to with st, v:
     set stk to key "stack" of st
@@ -15,6 +15,12 @@ define pop_from with st:
 define truthy with v:
     set result to v equals true
     give back result
+
+define copy_map with source:
+    set target to empty map
+    for each k in keys of source:
+        set key k of target to key k of source
+    give back target
 
 define binary with st, op:
     set b to pop_from with st
@@ -52,10 +58,119 @@ define binary with st, op:
         set result to x or y
     push_to with st, result
 
+define builtin_call with st, name, args:
+    set first to nothing
+    set second to nothing
+    if length of args greater_than 0:
+        set first to item 1 of args
+    if length of args greater_than 1:
+        set second to item 2 of args
+
+    if name equals "empty list":
+        push_to with st, empty list
+        give back nothing
+    if name equals "empty map":
+        push_to with st, empty map
+        give back nothing
+    if name equals "length":
+        push_to with st, length of first
+        give back nothing
+    if name equals "uppercase":
+        push_to with st, uppercase of first
+        give back nothing
+    if name equals "lowercase":
+        push_to with st, lowercase of first
+        give back nothing
+    if name equals "trim":
+        push_to with st, trim of first
+        give back nothing
+    if name equals "round":
+        push_to with st, round first
+        give back nothing
+    if name equals "floor":
+        push_to with st, floor first
+        give back nothing
+    if name equals "ceil":
+        push_to with st, ceil first
+        give back nothing
+    if name equals "abs":
+        push_to with st, abs first
+        give back nothing
+    if name equals "sqrt":
+        push_to with st, sqrt first
+        give back nothing
+    if name equals "sin":
+        push_to with st, sin first
+        give back nothing
+    if name equals "cos":
+        push_to with st, cos first
+        give back nothing
+    if name equals "tan":
+        push_to with st, tan first
+        give back nothing
+    if name equals "exp":
+        push_to with st, exp of first
+        give back nothing
+    if name equals "log":
+        push_to with st, log of first
+        give back nothing
+    if name equals "log10":
+        push_to with st, log10 of first
+        give back nothing
+    if name equals "min":
+        push_to with st, min of first, second
+        give back nothing
+    if name equals "max":
+        push_to with st, max of first, second
+        give back nothing
+    if name equals "magnitude":
+        push_to with st, magnitude of first
+        give back nothing
+    if name equals "normalize":
+        push_to with st, normalize first
+        give back nothing
+    if name equals "to json":
+        push_to with st, to json first
+        give back nothing
+    if name equals "parse json":
+        push_to with st, parse json first
+        give back nothing
+    if name equals "read file":
+        push_to with st, read file first
+        give back nothing
+    if name equals "file exists":
+        push_to with st, file exists first
+        give back nothing
+    if name equals "item":
+        push_to with st, item first of second
+        give back nothing
+    if name equals "key":
+        push_to with st, key first of second
+        give back nothing
+    if name equals "join":
+        push_to with st, join first with second
+        give back nothing
+    if name equals "split" or name equals "split source":
+        push_to with st, split first by second
+        give back nothing
+    if name equals "join list":
+        push_to with st, join first with second
+        give back nothing
+    if name equals "current time":
+        push_to with st, current time
+        give back nothing
+    if name equals "random decimal":
+        push_to with st, random decimal
+        give back nothing
+
+    error "unknown builtin: " + name
+
 define execute with code:
     set st to empty map
     set key "stack" of st to empty list
     set key "env" of st to empty map
+    set key "funcs" of st to empty map
+    set key "frames" of st to empty list
     set pc to 1
     while pc less_than= length of code:
         set ins to item pc of code
@@ -107,12 +222,87 @@ define execute with code:
         if op equals "jmp":
             set pc to key "arg" of ins
             skip next
+        if op equals "listn":
+            set cnt to key "arg" of ins
+            set popped to empty list
+            repeat cnt times:
+                set v to pop_from with st
+                add v to popped
+            set ordered to empty list
+            repeat with k from cnt to 1 by -1:
+                set v to item k of popped
+                add v to ordered
+            push_to with st, ordered
+            add 1 to pc
+            skip next
         if op equals "say":
             set v to pop_from with st
             say v
             add 1 to pc
             skip next
+        if op equals "funcdef":
+            set funcs to key "funcs" of st
+            set fd to empty map
+            set key "addr" of fd to key "addr" of ins
+            set key "params" of fd to key "params" of ins
+            set item_name to key "arg" of ins
+            set key item_name of funcs to fd
+            add 1 to pc
+            skip next
+        if op equals "setkey":
+            set k to pop_from with st
+            set m to pop_from with st
+            set v to pop_from with st
+            set key k of m to v
+            add 1 to pc
+            skip next
+        if op equals "call":
+            set name to key "arg" of ins
+            set cnt to key "count" of ins
+            set popped to empty list
+            repeat cnt times:
+                set v to pop_from with st
+                add v to popped
+            set ordered to empty list
+            repeat with k from cnt to 1 by -1:
+                set v to item k of popped
+                add v to ordered
+            set funcs to key "funcs" of st
+            set known to funcs has key name
+            if known equals true:
+                set fn to key name of funcs
+                set params to key "params" of fn
+                set frames to key "frames" of st
+                set frame to empty map
+                set oldenv to key "env" of st
+                set key "env" of frame to oldenv
+                set key "ret" of frame to pc + 1
+                add frame to frames
+                set newenv to copy_map with oldenv
+                repeat with k from 1 to length of params:
+                    set pname to item k of params
+                    set pv to item k of ordered
+                    set key pname of newenv to pv
+                set key "env" of st to newenv
+                set pc to key "addr" of fn
+                skip next
+            builtin_call with st, name, ordered
+            add 1 to pc
+            skip next
         if op equals "ret":
+            set frames to key "frames" of st
+            set n to length of frames
+            if n greater_than 0:
+                set v to false
+                set stk to key "stack" of st
+                if length of stk greater_than 0:
+                    set v to pop_from with st
+                set frame to item n of frames
+                remove item n from frames
+                set key "env" of st to key "env" of frame
+                set pc to key "ret" of frame
+                push_to with st, v
+                skip next
             stop loop
 
         add 1 to pc

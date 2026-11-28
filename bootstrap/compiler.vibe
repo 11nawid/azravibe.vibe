@@ -1,5 +1,5 @@
 note: bootstrap/compiler.vibe — Azra compiler written in Azra.
-note: Compiles a supported subset of .vibe into a flat bytecode list.
+note: Round 1: calls, builtins, collections, user functions, control flow.
 
 set loop_depth to 0
 
@@ -130,6 +130,61 @@ define branch with op, left, right:
     set key "right" of n to right
     give back n
 
+define make_call with name, args:
+    set n to empty map
+    set key "kind" of n to "call"
+    set key "value" of n to name
+    set key "args" of n to args
+    give back n
+
+define is_op_word with t:
+    if t equals "and":
+        give back true
+    if t equals "or":
+        give back true
+    if t equals "equals":
+        give back true
+    if t equals "not_equals":
+        give back true
+    if t equals "less_than":
+        give back true
+    if t equals "less_than=":
+        give back true
+    if t equals "greater_than":
+        give back true
+    if t equals "greater_than=":
+        give back true
+    if t equals "with":
+        give back true
+    if t equals "of":
+        give back true
+    if t equals "in":
+        give back true
+    if t equals "by":
+        give back true
+    if t equals "from":
+        give back true
+    if t equals "to":
+        give back true
+    give back false
+
+define parse_args with words, pos:
+    set args to empty list
+    set p to pos
+    while p less_than= length of words:
+        set t to peek with words, p
+        set opw to is_op_word with t
+        if opw equals true:
+            stop loop
+        set r to parse_expr with words, p
+        set arg_node to key "node" of r
+        add arg_node to args
+        set p to key "pos" of r
+    set res to empty map
+    set key "args" of res to args
+    set key "pos" of res to p
+    give back res
+
 define parse_primary with words, pos:
     set t to peek with words, pos
     set next to pos + 1
@@ -149,6 +204,70 @@ define parse_primary with words, pos:
         set v to parse json t
         set n to leaf with "lit", v
         give back pack with n, next
+
+    if t equals "empty":
+        set what to peek with words, next
+        set name to "empty " + what
+        set n to make_call with name, empty list
+        give back pack with n, next + 1
+
+    if t equals "item" or t equals "key":
+        set r1 to parse_expr with words, next
+        set p1 to key "pos" of r1
+        set r2 to parse_expr with words, p1 + 1
+        set args to empty list
+        add key "node" of r1 to args
+        add key "node" of r2 to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of r2
+
+    set of_builtins to ",length,uppercase,lowercase,trim,magnitude,min,max,"
+    set search to "," + t + ","
+    if of_builtins contains search:
+        set after_word to peek with words, next
+        if after_word equals "of":
+            if t equals "min" or t equals "max":
+                set r to parse_args with words, next + 1
+                set n to make_call with t, key "args" of r
+                give back pack with n, key "pos" of r
+            set arg_r to parse_primary with words, next + 1
+            set args to empty list
+            add key "node" of arg_r to args
+            set n to make_call with t, args
+            give back pack with n, key "pos" of arg_r
+
+    set direct_builtins to ",round,floor,ceil,abs,sqrt,sin,cos,tan,exp,log,log10,normalize,random decimal,current time,"
+    set dsearch to "," + t + ","
+    if direct_builtins contains dsearch:
+        set arg_r to parse_primary with words, next
+        set args to empty list
+        add key "node" of arg_r to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of arg_r
+
+    if t equals "split" or t equals "join":
+        set r1 to parse_expr with words, next
+        set p1 to key "pos" of r1
+        set r2 to parse_expr with words, p1 + 1
+        set args to empty list
+        add key "node" of r1 to args
+        add key "node" of r2 to args
+        set n to make_call with t, args
+        give back pack with n, key "pos" of r2
+
+    if t equals "parse" or t equals "to" or t equals "read" or t equals "file":
+        set w2 to peek with words, next
+        set bname to t + " " + w2
+        set r to parse_args with words, next + 1
+        set n to make_call with bname, key "args" of r
+        give back pack with n, key "pos" of r
+
+    set nxt to peek with words, next
+    if nxt equals "with":
+        set r to parse_args with words, next + 1
+        set n to make_call with t, key "args" of r
+        give back pack with n, key "pos" of r
+
     set n to leaf with "var", t
     give back pack with n, next
 
@@ -251,6 +370,13 @@ define emit_arg with code, op, arg:
     set key "arg" of ins to arg
     add ins to code
 
+define emit_call with code, name, count:
+    set ins to empty map
+    set key "op" of ins to "call"
+    set key "arg" of ins to name
+    set key "count" of ins to count
+    add ins to code
+
 define op_code with op:
     if op equals "+":
         give back "add"
@@ -301,6 +427,12 @@ define emit_node with code, node:
         emit_node with code, value
         emit_op with code, "not"
         give back nothing
+    if kind equals "call":
+        set args to key "args" of node
+        for each a in args:
+            emit_node with code, a
+        emit_call with code, value, length of args
+        give back nothing
     set left_node to key "left" of node
     set right_node to key "right" of node
     emit_node with code, left_node
@@ -326,13 +458,13 @@ define compile_block with lines, start, base_indent, offset:
     set count to length of lines
     while i less_than= count:
         set ln to item i of lines
-        set ind to key "indent" of ln
-        if ind less_than base_indent:
-            stop loop
         set words to key "words" of ln
         if length of words equals 0:
             add 1 to i
             skip next
+        set ind to key "indent" of ln
+        if ind less_than base_indent:
+            stop loop
         if ind greater_than base_indent:
             add 1 to i
             skip next
@@ -357,12 +489,31 @@ define compile_block with lines, start, base_indent, offset:
             add 1 to i
             skip next
 
-        if head equals "set":
+        if head equals "set" and item 2 of words not_equals "key":
             set to_at to find_to with words
             set name to item 2 of words
-            set r to parse_expr with words, to_at + 1
-            emit_node with code, key "node" of r
+            set p to to_at + 1
+            set value_count to 0
+            while p less_than= length of words:
+                set r to parse_expr with words, p
+                emit_node with code, key "node" of r
+                add 1 to value_count
+                set p to key "pos" of r
+            if value_count greater_than 1:
+                emit_arg with code, "listn", value_count
             emit_arg with code, "store", name
+            add 1 to i
+            skip next
+
+        if head equals "set" and item 2 of words equals "key":
+            set to_at to find_to with words
+            set val_r to parse_expr with words, to_at + 1
+            set key_r to parse_expr with words, 3
+            set map_r to parse_expr with words, to_at - 1
+            emit_node with code, key "node" of val_r
+            emit_node with code, key "node" of map_r
+            emit_node with code, key "node" of key_r
+            emit_op with code, "setkey"
             add 1 to i
             skip next
 
@@ -426,6 +577,21 @@ define compile_block with lines, start, base_indent, offset:
             patch_arg with code, jmp_index, offset + length of code + 1
             skip next
 
+        if head equals "while":
+            set start_at to offset + length of code + 1
+            set cond_r to parse_expr with words, 2
+            emit_node with code, key "node" of cond_r
+            set jf_index to length of code + 1
+            emit_arg with code, "jf", 0
+            set nested to compile_block with lines, i + 1, base_indent + 4, offset + length of code
+            set body_code to key "code" of nested
+            for each ins in body_code:
+                add ins to code
+            emit_arg with code, "jmp", start_at
+            patch_arg with code, jf_index, offset + length of code + 1
+            set i to key "next" of nested
+            skip next
+
         if head equals "repeat":
             add 1 to loop_depth
             set cname to "__i" + loop_depth
@@ -459,8 +625,95 @@ define compile_block with lines, start, base_indent, offset:
     set key "next" of result to i
     give back result
 
+define shift_code with code, delta:
+    for each ins in code:
+        set op to key "op" of ins
+        if op equals "jf" or op equals "jmp":
+            set a to key "arg" of ins
+            add delta to a
+            set key "arg" of ins to a
+
+define function_end with lines, start:
+    set j to start + 1
+    while j less_than= length of lines:
+        set l to item j of lines
+        set ind to key "indent" of l
+        if ind equals 0:
+            stop loop
+        add 1 to j
+    give back j
+
 define compile_source with source:
     set lines to tokenize_source with source
     set loop_depth to 0
-    set whole to compile_block with lines, 1, 0, 0
-    give back key "code" of whole
+    set main_lines to empty list
+    set pending to empty list
+    set i to 1
+    while i less_than= length of lines:
+        set ln to item i of lines
+        set ws to key "words" of ln
+        set is_def to false
+        if length of ws greater_than 0:
+            set h to item 1 of ws
+            if h equals "define" and key "indent" of ln equals 0:
+                set is_def to true
+        if is_def equals true:
+            set params to empty list
+            repeat with k from 4 to length of ws:
+                add item k of ws to params
+            set info to empty map
+            set key "name" of info to item 2 of ws
+            set key "params" of info to params
+            set key "start" of info to i + 1
+            set end_index to function_end with lines, i + 1
+            set key "end" of info to end_index - 1
+            add info to pending
+            set i to end_index
+            skip next
+        add ln to main_lines
+        add 1 to i
+
+    set whole to compile_block with main_lines, 1, 0, 0
+    set main_code to key "code" of whole
+    set fn_section to empty list
+    set defs to empty list
+    for each fn in pending:
+        set addr to length of main_code + length of fn_section + 1
+        set d to empty map
+        set key "name" of d to key "name" of fn
+        set key "params" of d to key "params" of fn
+        set key "addr" of d to addr
+        add d to defs
+        set fcomp to compile_block with lines, key "start" of fn, 4, length of main_code + length of fn_section + 1
+        set fcode to key "code" of fcomp
+        for each ins in fcode:
+            add ins to fn_section
+        emit_op with fn_section, "ret"
+
+    set prologue to empty list
+    for each d in defs:
+        set ins to empty map
+        set key "op" of ins to "funcdef"
+        set key "arg" of ins to key "name" of d
+        set key "params" of ins to key "params" of d
+        set a to key "addr" of d
+        add length of defs + 1 to a
+        set key "addr" of ins to a
+        add ins to prologue
+
+    set shift to length of defs
+    shift_code with main_code, shift
+    shift_code with fn_section, shift
+    emit_arg with main_code, "jmp", 0
+    set endjump_index to length of main_code
+    set target to length of prologue + length of main_code + length of fn_section + 1
+    patch_arg with main_code, endjump_index, target
+
+    set final to empty list
+    for each ins in prologue:
+        add ins to final
+    for each ins in main_code:
+        add ins to final
+    for each ins in fn_section:
+        add ins to final
+    give back final

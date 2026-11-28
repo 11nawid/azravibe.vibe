@@ -25,23 +25,37 @@ one-time bootstrap used only to run the first compiler.
 can be loaded as a standalone module without depending on module export
 behavior.
 
-## Supported subset
+## Supported subset (Round 1)
 
 The self-hosted compiler currently supports:
 
-- `set NAME to EXPR`
+- `set NAME to EXPR` and comma-separated list literals
+- `set key "k" of MAP to VALUE`
 - `say VALUE, VALUE, ...` (space-joined, like the real language)
-- `add VALUE to NAME`, `subtract VALUE from NAME`,
-  `multiply NAME by VALUE`, `divide NAME by VALUE`
-- numbers, strings, `true` / `false`, variables
-- `+ - * / modulo`, `equals`, `not_equals`, `less_than`, `less_than=`,
-  `greater_than`, `greater_than=`, `and`, `or`, `not`
-- `if` / `otherwise` blocks
-- `repeat N times` and nested loops
-- `give back VALUE`
+- `add` / `subtract` / `multiply` / `divide`
+- numbers, strings, booleans, lists, maps, variables
+- `+ - * / modulo`, all comparisons, `and`, `or`, `not`
+- `if` / `otherwise`, `while`, `repeat`, nested loops
+- `define NAME with a, b:` and user function calls (`NAME with a, b`)
+- builtins: `length`, `uppercase`, `lowercase`, `trim`, `round`, `floor`,
+  `ceil`, `abs`, `sqrt`, `sin`, `cos`, `tan`, `exp`, `log`, `log10`, `min`,
+  `max`, `magnitude`, `normalize`, `to json`, `parse json`, `read file`,
+  `file exists`, `item`, `key`, `join`, `split`, `current time`,
+  `random decimal`, `empty list`, `empty map`
 
-Not yet in the self-hosted compiler: user functions, lists/maps at runtime,
-`use`, events, timers, host functions and native GUI host calls.
+Not yet supported: `use` modules, `for each`, events, timers, `try`,
+host functions and native GUI calls.
+
+## Honest status
+
+Round 1 is **in progress**. The compiler can parse itself into bytecode, and
+all self-hosted tests pass, but the self-hosting fixed point (running that
+bytecode on the Azra VM and getting an identical second generation) is not
+passing yet. The remaining issues are in the VM's function/frame handling and
+a few expression-precedence cases.
+
+Rounds 2 and 3 (native code emitter / PE / native Windows GUI) have not
+started.
 
 ## Run it
 

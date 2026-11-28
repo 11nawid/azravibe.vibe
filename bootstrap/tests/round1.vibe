@@ -1,0 +1,15 @@
+note: Round 1 features — functions, builtins, collections, file IO.
+use "../compiler.vibe"
+use "../vm.vibe"
+
+set source to "define double with n:\n    give back n * 2\ndefine greet with name:\n    give back \"hi \" + name\nset a to double with 21\nset b to greet with \"azra\"\nset items to \"x\", \"y\", \"z\"\nset first to item 1 of items\nset n to length of items\nset big to uppercase of first\nset m to empty map\nset key \"hp\" of m to 100\nsay a, b, first, n, big"
+
+set code to compile_source with source
+set st to execute with code
+set envmap to key "env" of st
+assert equals key "a" of envmap, 42
+assert equals key "b" of envmap, "hi azra"
+assert equals key "first" of envmap, "x"
+assert equals key "n" of envmap, 3
+assert equals key "big" of envmap, "X"
+say "round1 feature test passed"
